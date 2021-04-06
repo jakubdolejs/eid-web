@@ -1,0 +1,22 @@
+{
+  "name": "ver-id-browser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jakub Dolejs",
+  "license": "ISC",
+  "dependencies": {
+    "@microblink/blinkid-in-browser-sdk": "^5.10.2",
+    "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "image-size": "^0.9.7",
+    "jimp": "^0.16.1",
+    "jstransformer-markdown-it": "^2.1.0",
+    "multer": "^1.4.2",
+    "pug": "^3.0.2"
+  }
+}

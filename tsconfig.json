@@ -1,0 +1,11 @@
+{  
+    "compilerOptions": {
+        "outDir": "./static/js",
+        "allowJs": true,
+        "target": "ES2015",
+        "sourceMap": true
+    },  
+    "include": [  
+        "./src/**/*"
+    ]
+}
