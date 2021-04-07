@@ -31,6 +31,7 @@ app.set("view engine", "pug")
 app.use(express.static("static"))
 app.use(express.static("node_modules"))
 app.use("/docs", express.static("docs"))
+app.use("/src", express.static("src"))
 
 async function detectFace(image) {
     let url = detcvURL+"/queue_image"

@@ -33,17 +33,28 @@
 
     ```javascript
     // Import the face detection module
-    import { livenessDetectionSession, isLivenessDetectionSupported } from "/js/faceDetection.js"
+    import { FaceDetection } from "/js/faceDetection.js"
     
-    if (!isLivenessDetectionSupported()) {
+    // Create an instance of the FaceDetection class
+    const faceDetection = new FaceDetection()
+
+    // Check that the browser supports liveness detection
+    if (!faceDetection.isLivenessDetectionSupported()) {
         alert("Liveness detection is not supported by your browser")
         return
     }
-    const subscription = livenessDetectionSession().subscribe({
+
+    // Create a session Observable and subscribe to it to start a liveness detection session
+    const subscription = faceDetection.livenessDetectionSession().subscribe({
         next: (result) => {
             // Session succeeded
             // Detected faces and images are available in the result's faceCaptures array
-            document.body.appendChild(resut.faceCaptures[0].faceImage)
+            // Obtain a face template that can be used for face recognition
+            const template = result.faceCaptures[0].face.template
+            // Get the captured image cropped to the face bounding box
+            result.faceCaptures[0].faceImage.then((image) => {
+                document.body.appendChild(image)
+            })
         },
         error: (error) => {
             // Session failed
@@ -57,28 +68,17 @@
     // cancel the session unsubscribe from the session:
     // subscription.unsubscribe()
     ```
-- Obtain a face template that can be used for face recognition
-
-    ```javascript
-    // Import the face recognition module
-    import { createRecognizableFace } from "/js/faceRecognition.js"
-    
-    // With the result of the liveness detection session (passing the face bounds 
-    // will crop the image for faster upload):
-    createRecognizableFace(result.faceCaptures[0].image, result.faceCaptures[0].face.bounds).then((face) => {
-        // You can now use face.faceTemplate for face comparison
-    }).catch((error) => {
-        // Face template extraction failed
-    })
-    ```
 - Compare faces
 
     ```javascript
     // Import the face recognition module
-    import { compareFaceTemplates } from "/js/faceRecognition.js"
+    import { FaceRecognition } from "/js/faceRecognition.js"
+
+    // Create an instance of FaceRecognition
+    const faceRecognition = new FaceRecognition()
     
     // With two face templates obtained from createRecognizableFace:
-    compareFaceTemplates(template1, template2).then((score) => {
+    faceRecognition.compareFaceTemplates(template1, template2).then((score) => {
         // Face comparison finished
         alert("The two faces scored "+score+" on similarity")
     }).catch((error) => {

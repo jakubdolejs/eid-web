@@ -69,6 +69,13 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Face capture settings</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -106,9 +113,20 @@
 					<div class="tsd-signature tsd-kind-icon">bearings<span class="tsd-signature-symbol">:</span> <a href="../enums/_facedetection_.bearing.html" class="tsd-signature-type">Bearing</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:495</li>
+							<li>Defined in faceDetection.ts:736</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Bearings the user may be asked to assume during the session</p>
+						</div>
+						<p>Note that the user will unlikely be asked to assume all the bearings in the set. The array is simply a pool from which the session will draw a random member.</p>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>[Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="expectedfaceextents" class="tsd-anchor"></a>
@@ -116,9 +134,19 @@
 					<div class="tsd-signature tsd-kind-icon">expected<wbr>Face<wbr>Extents<span class="tsd-signature-symbol">:</span> <a href="_facedetection_.faceextents.html" class="tsd-signature-type">FaceExtents</a><span class="tsd-signature-symbol"> =&nbsp;new FaceExtents(0.65, 0.85)</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:494</li>
+							<li>Defined in faceDetection.ts:729</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Where a face is expected in relation to the camera frame</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>FaceExtents(0.65, 0.85)</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="facecapturecount" class="tsd-anchor"></a>
@@ -126,9 +154,19 @@
 					<div class="tsd-signature tsd-kind-icon">face<wbr>Capture<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;2</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:488</li>
+							<li>Defined in faceDetection.ts:693</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>How many face captures should be collected in a session</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>2</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="facecapturefacecount" class="tsd-anchor"></a>
@@ -136,9 +174,19 @@
 					<div class="tsd-signature tsd-kind-icon">face<wbr>Capture<wbr>Face<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;2</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:492</li>
+							<li>Defined in faceDetection.ts:717</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Number of faces to collect per face capture</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>2</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="maxduration" class="tsd-anchor"></a>
@@ -146,9 +194,19 @@
 					<div class="tsd-signature tsd-kind-icon">max<wbr>Duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;30</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:489</li>
+							<li>Defined in faceDetection.ts:698</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Maximum session duration (seconds)</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>30</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="pauseduration" class="tsd-anchor"></a>
@@ -156,9 +214,20 @@
 					<div class="tsd-signature tsd-kind-icon">pause<wbr>Duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0.5</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:493</li>
+							<li>Defined in faceDetection.ts:724</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>When the face is fixed the face detection will pause to allow enough time for the user to read the on-screen instructions</p>
+						</div>
+						<p>Decreasing the pause time will shorten the session but may lead to a frustrating user experience if the user isn&#39;t allowed enough time to read the prompts</p>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>0.5</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="pitchthreshold" class="tsd-anchor"></a>
@@ -166,9 +235,20 @@
 					<div class="tsd-signature tsd-kind-icon">pitch<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;15</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:491</li>
+							<li>Defined in faceDetection.ts:712</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Vertical (pitch) threshold where face is considered to be at an angle</p>
+						</div>
+						<p>For example, a value of 15 indicates that a face with pitch -15 and below is oriented up and a face with pitch 15 or above is oriented down</p>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>15</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="usefrontcamera" class="tsd-anchor"></a>
@@ -176,9 +256,19 @@
 					<div class="tsd-signature tsd-kind-icon">use<wbr>Front<wbr>Camera<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;true</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:487</li>
+							<li>Defined in faceDetection.ts:688</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Whether to use the device&#39;s front-facing (selfie) camera</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>true</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="yawthreshold" class="tsd-anchor"></a>
@@ -186,9 +276,20 @@
 					<div class="tsd-signature tsd-kind-icon">yaw<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;20</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceDetection.ts:490</li>
+							<li>Defined in faceDetection.ts:705</li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Horizontal (yaw) threshold where face is considered to be at an angle</p>
+						</div>
+						<p>For example, a value of 15 indicates that a face with yaw -15 and below is oriented left and a face with yaw 15 or above is oriented right</p>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>20</code></p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -219,9 +320,6 @@
 					</li>
 					<li class=" tsd-kind-enum tsd-parent-kind-external-module">
 						<a href="../enums/_facedetection_.facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a>
-					</li>
-					<li class=" tsd-kind-enum tsd-parent-kind-external-module">
-						<a href="../enums/_facedetection_.facepresencestatus.html" class="tsd-kind-icon">Face<wbr>Presence<wbr>Status</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_facedetection_.face.html" class="tsd-kind-icon">Face</a>
@@ -263,6 +361,9 @@
 				</ul>
 				<ul class="after-current">
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_facedetection_.facedetection.html" class="tsd-kind-icon">Face<wbr>Detection</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_facedetection_.faceextents.html" class="tsd-kind-icon">Face<wbr>Extents</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
@@ -270,15 +371,6 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_facedetection_.livenessdetectionsessionresult.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Result</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_facedetection_.html#islivenessdetectionsupported" class="tsd-kind-icon">is<wbr>Liveness<wbr>Detection<wbr>Supported</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_facedetection_.html#livefacecapture-1" class="tsd-kind-icon">live<wbr>Face<wbr>Capture</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_facedetection_.html#livenessdetectionsession" class="tsd-kind-icon">liveness<wbr>Detection<wbr>Session</a>
 					</li>
 				</ul>
 			</nav>

@@ -1,92 +1,205 @@
 import { Bearing } from "./faceDetection.js";
+/**
+ * Circular (ring) buffer implementation
+ *
+ * @typeParam Type - Type of value the buffer contains
+ */
 export class CircularBuffer {
+    /**
+     * Constructor
+     * @param capacity Capacity of the buffer
+     */
     constructor(capacity) {
         this.buffer = [];
         this.capacity = capacity;
     }
+    /**
+     * Enqueue (add) an element into the buffer
+     *
+     * If the buffer is full the first value in the buffer will be discarded
+     * @param value Element to add to the buffer
+     */
     enqueue(value) {
         if (this.buffer.length == this.capacity) {
             this.buffer.shift();
         }
         this.buffer.push(value);
     }
+    /**
+     * Dequeue (remove) the first element from the buffer and return it
+     * @returns First element in the buffer or `null` if the buffer is empty
+     */
     dequeue() {
         if (this.buffer.length == 0) {
             return null;
         }
         return this.buffer.shift();
     }
+    /**
+     * Number of elements in the buffer
+     */
     get length() {
         return this.buffer.length;
     }
+    /**
+     * `true` if the buffer is empty
+     */
     get isEmpty() {
         return this.buffer.length == 0;
     }
+    /**
+     * Last element in the buffer or `null` if the buffer is empty
+     */
     get lastElement() {
         if (this.buffer.length > 0) {
             return this.buffer[this.buffer.length - 1];
         }
         return null;
     }
+    /**
+     * `true` if the buffer is full
+     */
     get isFull() {
         return this.buffer.length == this.capacity;
     }
+    /**
+     * Get an element in the buffer
+     * @param index Index of the element
+     * @returns Element at the given index or `null` if the buffer doesn't contain an element at the given index
+     */
     get(index) {
+        if (index < 0 || index >= this.buffer.length) {
+            return null;
+        }
         return this.buffer[index];
     }
+    /**
+     * Clear the buffer
+     */
     clear() {
         this.buffer = [];
     }
+    /**
+     * @param fn Function to use for reducing the buffer to a single value
+     * @returns Result of applying the supplied function to each element of the array
+     */
     reduce(fn) {
         return this.buffer.reduce(fn);
     }
 }
+/**
+ * Angle
+ */
 export class Angle {
+    /**
+     * Constructor
+     * @param yaw Yaw
+     * @param pitch Pitch
+     */
     constructor(yaw, pitch) {
         this.yaw = yaw || 0;
         this.pitch = pitch || 0;
     }
+    /**
+     * Arc tangent of the pitch and yaw (used for displaying the angle on screen)
+     */
     get screenAngle() {
         return Math.atan2(this.pitch, 0 - this.yaw);
     }
 }
+/**
+ * Point
+ */
 export class Point {
+    /**
+     * Constructor
+     * @param x Horizontal coordinate
+     * @param y Vertical coordinate
+     */
     constructor(x, y) {
         this.x = x || 0;
         this.y = y || 0;
     }
 }
+/**
+ * Rectangle
+ */
 export class Rect {
+    /**
+     * Constructor
+     * @param x Left edge of the rectangle
+     * @param y Top edge of the rectangle
+     * @param width Top edge of the rectangle
+     * @param height Rectangle height
+     */
     constructor(x, y, width, height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
     }
+    /**
+     * Inset all edges of the rectangle by the given amounts
+     * @param xInset Horizontal inset
+     * @param yInset Vertical inset
+     */
     inset(xInset, yInset) {
         this.x += xInset;
         this.y += yInset;
         this.width -= xInset;
         this.height -= yInset;
     }
+    /**
+     * Find out whether this rectangle contains another rectangle
+     * @param rect Challenge rectangle
+     * @returns `true` if this rectangle contains the challenge rectangle
+     */
     contains(rect) {
         return this.x <= rect.x && this.y >= rect.y && this.x + this.width >= rect.x + rect.width && this.y + this.height > rect.y + rect.height;
     }
+    /**
+     * Center of the rectangle
+     */
     get center() {
         return new Point(this.x + this.width / 2, this.y + this.height / 2);
     }
+    /**
+     * Scale rectangle by the given scale factor and return a new rectangle
+     * @param scaleX Horizontal scale
+     * @param scaleY Vertical scale (optional, if not specified scaleX will be used)
+     * @returns New rectangle that is this rectangle scaled by the scale values
+     */
     scaledBy(scaleX, scaleY) {
-        if (scaleY === undefined) {
+        if (scaleY === undefined || scaleY == null) {
             scaleY = scaleX;
         }
         return new Rect(this.x * scaleX, this.y * scaleY, this.width * scaleX, this.height * scaleY);
     }
+    /**
+     * @param planeWidth Width of the plane in which the rectangle should be mirrored
+     * @returns Rectangle mirrored horizontally along the plane's vertical axis
+     */
+    mirrored(planeWidth) {
+        return new Rect(planeWidth - this.x - this.width, this.y, this.width, this.height);
+    }
 }
+/**
+ * Axis
+ */
 export var Axis;
 (function (Axis) {
+    /**
+     * Yaw axis
+     */
     Axis[Axis["YAW"] = 0] = "YAW";
+    /**
+     * Pitch axis
+     */
     Axis[Axis["PITCH"] = 1] = "PITCH";
 })(Axis || (Axis = {}));
+/**
+ * Evaluates angles in relation to bearings
+ */
 export class AngleBearingEvaluation {
     constructor(settings, pitchThresholdTolerance, yawThresholdTolerance) {
         this.settings = settings;

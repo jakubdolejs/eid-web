@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>RecognizableFace | ver-id-browser</title>
+	<title>FaceRecognition | ver-id-browser</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -59,10 +59,10 @@
 					<a href="../modules/_facerecognition_.html">&quot;faceRecognition&quot;</a>
 				</li>
 				<li>
-					<a href="_facerecognition_.recognizableface.html">RecognizableFace</a>
+					<a href="_facerecognition_.facerecognition.html">FaceRecognition</a>
 				</li>
 			</ul>
-			<h1>Class RecognizableFace</h1>
+			<h1>Class FaceRecognition</h1>
 		</div>
 	</div>
 </header>
@@ -72,7 +72,7 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Face that contains a template that can be used for face recognition</p>
+						<p>Face recognition</p>
 					</div>
 				</div>
 			</section>
@@ -80,7 +80,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">RecognizableFace</span>
+						<span class="target">FaceRecognition</span>
 					</li>
 				</ul>
 			</section>
@@ -91,14 +91,20 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_facerecognition_.recognizableface.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_facerecognition_.facerecognition.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_facerecognition_.recognizableface.html#facetemplate" class="tsd-kind-icon">face<wbr>Template</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_facerecognition_.recognizableface.html#jpeg" class="tsd-kind-icon">jpeg</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_facerecognition_.facerecognition.html#serviceurl" class="tsd-kind-icon">serviceURL</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Methods</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_facerecognition_.facerecognition.html#comparefacetemplates" class="tsd-kind-icon">compare<wbr>Face<wbr>Templates</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_facerecognition_.facerecognition.html#createrecognizableface" class="tsd-kind-icon">create<wbr>Recognizable<wbr>Face</a></li>
 							</ul>
 						</section>
 					</div>
@@ -110,44 +116,32 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Recognizable<wbr>Face<span class="tsd-signature-symbol">(</span>jpeg<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, faceTemplate<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_facerecognition_.recognizableface.html" class="tsd-signature-type">RecognizableFace</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Face<wbr>Recognition<span class="tsd-signature-symbol">(</span>serviceURL<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_facerecognition_.facerecognition.html" class="tsd-signature-type">FaceRecognition</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in faceRecognition.ts:19</li>
+									<li>Defined in faceRecognition.ts:41</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Constructor</p>
 								</div>
-								<dl class="tsd-comment-tags">
-									<dt>internal</dt>
-									<dd></dd>
-								</dl>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>jpeg: <span class="tsd-signature-type">string</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> serviceURL: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<div class="lead">
-											<p>Base64-encoded JPEG image</p>
-										</div>
-									</div>
-								</li>
-								<li>
-									<h5>faceTemplate: <span class="tsd-signature-type">string</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>Base64-encoded JPEG image</p>
+											<p>Base URL of the server that accepts the face detection and comparison calls</p>
 										</div>
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_facerecognition_.recognizableface.html" class="tsd-signature-type">RecognizableFace</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_facerecognition_.facerecognition.html" class="tsd-signature-type">FaceRecognition</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -155,34 +149,98 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="facetemplate" class="tsd-anchor"></a>
-					<h3>face<wbr>Template</h3>
-					<div class="tsd-signature tsd-kind-icon">face<wbr>Template<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="serviceurl" class="tsd-anchor"></a>
+					<h3>serviceURL</h3>
+					<div class="tsd-signature tsd-kind-icon">serviceURL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in faceRecognition.ts:19</li>
+							<li>Defined in faceRecognition.ts:41</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Base64-encoded JPEG image</p>
+							<p>Base URL of the server that accepts the face detection and comparison calls</p>
 						</div>
 					</div>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="jpeg" class="tsd-anchor"></a>
-					<h3>jpeg</h3>
-					<div class="tsd-signature tsd-kind-icon">jpeg<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in faceRecognition.ts:15</li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Base64-encoded JPEG image</p>
-						</div>
-					</div>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="comparefacetemplates" class="tsd-anchor"></a>
+					<h3>compare<wbr>Face<wbr>Templates</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">compare<wbr>Face<wbr>Templates<span class="tsd-signature-symbol">(</span>template1<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, template2<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in faceRecognition.ts:126</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Compare face templates and return similarity score</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>template1: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Face template</p>
+									</div>
+								</li>
+								<li>
+									<h5>template2: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Face template</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Similarity score between the two templates</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="createrecognizableface" class="tsd-anchor"></a>
+					<h3>create<wbr>Recognizable<wbr>Face</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Recognizable<wbr>Face<span class="tsd-signature-symbol">(</span>image<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">HTMLImageElement</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span>, faceRect<span class="tsd-signature-symbol">?: </span><a href="_utils_.rect.html" class="tsd-signature-type">Rect</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="_facerecognition_.recognizableface.html" class="tsd-signature-type">RecognizableFace</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in faceRecognition.ts:57</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Create a face that can be used for face recognition</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>image: <span class="tsd-signature-type">HTMLImageElement</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> faceRect: <a href="_utils_.rect.html" class="tsd-signature-type">Rect</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Optional bounds of a face in the image</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="_facerecognition_.recognizableface.html" class="tsd-signature-type">RecognizableFace</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise that delivers a face that can be used for face recognition</p>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -208,27 +266,30 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_facerecognition_.facerecognition.html" class="tsd-kind-icon">Face<wbr>Recognition</a>
-					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_facerecognition_.recognizableface.html" class="tsd-kind-icon">Recognizable<wbr>Face</a>
+						<a href="_facerecognition_.facerecognition.html" class="tsd-kind-icon">Face<wbr>Recognition</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="_facerecognition_.recognizableface.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="_facerecognition_.facerecognition.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_facerecognition_.recognizableface.html#facetemplate" class="tsd-kind-icon">face<wbr>Template</a>
+								<a href="_facerecognition_.facerecognition.html#serviceurl" class="tsd-kind-icon">serviceURL</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_facerecognition_.recognizableface.html#jpeg" class="tsd-kind-icon">jpeg</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_facerecognition_.facerecognition.html#comparefacetemplates" class="tsd-kind-icon">compare<wbr>Face<wbr>Templates</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_facerecognition_.facerecognition.html#createrecognizableface" class="tsd-kind-icon">create<wbr>Recognizable<wbr>Face</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_facerecognition_.recognizableface.html" class="tsd-kind-icon">Recognizable<wbr>Face</a>
+					</li>
 				</ul>
 			</nav>
 		</div>

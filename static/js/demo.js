@@ -1,12 +1,15 @@
-import { livenessDetectionSession, Bearing, isLivenessDetectionSupported } from "/js/faceDetection.js"
-import { createRecognizableFace, compareFaceTemplates } from "/js/faceRecognition.js"
+import { FaceDetection, Bearing } from "/js/faceDetection.js"
+import { FaceRecognition } from "/js/faceRecognition.js"
 import captureImage from "https://cdn.jsdelivr.net/gh/AppliedRecognition/Ver-ID-Image-Capture-JS@3.1.0/dist/imageCapture.min.js"
 import generateQRCode from "https://cdn.jsdelivr.net/gh/AppliedRecognition/Ver-ID-Image-Capture-JS@3.1.0/dist/qrCodeGenerator.min.js"
-import { detectIdCard } from "/js/idCapture.js"
+import { IdCapture } from "/js/idCapture.js"
 
 var faceCaptureSubscription
 var liveFaceTemplate, liveFaceImage, idCardFaceImage
 var promptElement = document.getElementById("prompt")
+var faceRecognition = new FaceRecognition()
+var faceDetection = new FaceDetection()
+var idCapture = new IdCapture()
 
 generateQRCode(location.href).then(qrCode => {
     var img = document.createElement("img")
@@ -16,7 +19,7 @@ generateQRCode(location.href).then(qrCode => {
 }).catch(console.error)
 
 document.getElementById("startCapture").onclick = function() {
-    if (!isLivenessDetectionSupported()) {
+    if (!FaceDetection.isLivenessDetectionSupported()) {
         alert("Liveness detection is not supported by your browser")
         return false
     }
@@ -35,14 +38,14 @@ document.getElementById("startCapture").onclick = function() {
             return dataURL.replace(/^data\:image\/jpeg;base64,/i, "")
         }).then(jpeg => {
             promptElement.innerText = "Detecting ID card in image"
-            return detectIdCard({"front":jpeg})
+            return idCapture.detectIdCard({"front":jpeg})
         }).then(idCard => {
             promptElement.innerText = "Detecting face in ID card"
-            return createRecognizableFace(idCard[0].fullDocumentImageBase64)
+            return faceRecognition.createRecognizableFace(idCard[0].fullDocumentImageBase64)
         }).then(idCardFace => {
             idCardFaceImage = new Image()
             idCardFaceImage.src = "data:image/jpeg;base64,"+idCardFace.jpeg
-            return compareFaceTemplates(idCardFace.faceTemplate, liveFaceTemplate)
+            return faceRecognition.compareFaceTemplates(idCardFace.faceTemplate, liveFaceTemplate)
         }).then(score => {
             promptElement.innerHTML = '<div>Comparison result</div>'
             var images = document.createElement("div")
@@ -80,21 +83,18 @@ document.getElementById("startCapture").onclick = function() {
             bearings[Bearing.LEFT_DOWN] = "Left and down"
             bearings[Bearing.RIGHT_DOWN] = "Right and down"
 
-            faceCaptureSubscription = livenessDetectionSession().subscribe({
+            faceCaptureSubscription = faceDetection.livenessDetectionSession().subscribe({
                 "next": result => {
                     faceCaptureSubscription = null
-                    button.style.display = "none"
-                    promptElement.innerText = "Preparing faces for recognition"
+                    button.style.display = "inline"
+                    promptElement.innerText = ""
                     var capture = result.faceCaptures[0]
-                    createRecognizableFace(capture.image, capture.face.bounds).then(face => {
-                        promptElement.innerText = ""
-                        liveFaceImage = capture.faceImage
-                        liveFaceTemplate = face.faceTemplate
+                    capture.faceImage.then(img => {
+                        liveFaceImage = img
+                        liveFaceTemplate = capture.face.template
                         button.innerText = "Capture front of ID card"
                     }).catch(error => {
-                        promptElement.innerText = "Failed to prepare faces for recognition"
-                    }).finally(() => {
-                        button.style.display = "inline"
+                        promptElement.innerText = "Failed to crop face image"
                     })
                 },
                 "error": error => {

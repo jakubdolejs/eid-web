@@ -1,79 +1,177 @@
 import { Bearing, FaceCaptureSettings } from "./faceDetection.js"
 
+/**
+ * Circular (ring) buffer implementation
+ * 
+ * @typeParam Type - Type of value the buffer contains
+ */
 export class CircularBuffer<Type> {
     private buffer: Array<Type> = []
     private capacity: number
+    /**
+     * Constructor
+     * @param capacity Capacity of the buffer
+     */
     constructor(capacity: number) {
         this.capacity = capacity
     }
+    /**
+     * Enqueue (add) an element into the buffer
+     * 
+     * If the buffer is full the first value in the buffer will be discarded
+     * @param value Element to add to the buffer
+     */
     enqueue(value: Type) {
         if (this.buffer.length == this.capacity) {
             this.buffer.shift()
         }
         this.buffer.push(value)
     }
+    /**
+     * Dequeue (remove) the first element from the buffer and return it
+     * @returns First element in the buffer or `null` if the buffer is empty
+     */
     dequeue(): Type {
         if (this.buffer.length == 0) {
             return null
         }
         return this.buffer.shift()
     }
+    /**
+     * Number of elements in the buffer
+     */
     get length(): number {
         return this.buffer.length
     }
+    /**
+     * `true` if the buffer is empty
+     */
     get isEmpty(): boolean {
         return this.buffer.length == 0
     }
+    /**
+     * Last element in the buffer or `null` if the buffer is empty
+     */
     get lastElement(): Type {
         if (this.buffer.length > 0) {
             return this.buffer[this.buffer.length-1]
         }
         return null
     }
+    /**
+     * `true` if the buffer is full
+     */
     get isFull(): boolean {
         return this.buffer.length == this.capacity
     }
+    /**
+     * Get an element in the buffer
+     * @param index Index of the element 
+     * @returns Element at the given index or `null` if the buffer doesn't contain an element at the given index
+     */
     get(index: number): Type {
+        if (index < 0 || index >= this.buffer.length) {
+            return null
+        }
         return this.buffer[index]
     }
+    /**
+     * Clear the buffer
+     */
     clear() {
         this.buffer = []
     }
+    /**
+     * @param fn Function to use for reducing the buffer to a single value
+     * @returns Result of applying the supplied function to each element of the array
+     */
     reduce(fn: (previousValue: Type, currentValue: Type, currentIndex: number, array: Type[]) => Type) {
         return this.buffer.reduce(fn)
     }
 }
 
+/**
+ * Angle
+ */
 export class Angle {
+    /**
+     * Yaw
+     */
     yaw: number
+    /**
+     * Pitch
+     */
     pitch: number
+    /**
+     * Constructor
+     * @param yaw Yaw
+     * @param pitch Pitch
+     */
     constructor(yaw?: number, pitch?: number) {
         this.yaw = yaw || 0
         this.pitch = pitch || 0        
     }
 
+    /**
+     * Arc tangent of the pitch and yaw (used for displaying the angle on screen)
+     */
     get screenAngle(): number {
         return Math.atan2(this.pitch, 0-this.yaw)
     }
 }
 
+/**
+ * Point
+ */
 export class Point {
+    /**
+     * Horizontal coordinate
+     */
     x: number
+    /**
+     * Vertical coordinate
+     */
     y: number
 
+    /**
+     * Constructor
+     * @param x Horizontal coordinate
+     * @param y Vertical coordinate
+     */
     constructor(x?: number, y?: number) {
         this.x = x || 0
         this.y = y || 0
     }
 }
 
+/**
+ * Rectangle
+ */
 export class Rect {
-
+    /**
+     * Left edge of the rectangle
+     */
     x: number
+    /**
+     * Top edge of the rectangle
+     */
     y: number
+    /**
+     * Top edge of the rectangle
+     */
     width: number
+    /**
+     * Rectangle height
+     */
     height: number
 
+    /**
+     * Constructor
+     * @param x Left edge of the rectangle
+     * @param y Top edge of the rectangle
+     * @param width Top edge of the rectangle
+     * @param height Rectangle height
+     */
     constructor(x: number, y: number, width: number, height: number) {
         this.x = x
         this.y = y
@@ -81,6 +179,11 @@ export class Rect {
         this.height = height
     }
 
+    /**
+     * Inset all edges of the rectangle by the given amounts
+     * @param xInset Horizontal inset
+     * @param yInset Vertical inset
+     */
     inset(xInset: number, yInset: number) {
         this.x += xInset
         this.y += yInset
@@ -88,16 +191,30 @@ export class Rect {
         this.height -= yInset
     }
 
+    /**
+     * Find out whether this rectangle contains another rectangle
+     * @param rect Challenge rectangle 
+     * @returns `true` if this rectangle contains the challenge rectangle
+     */
     contains(rect: Rect): boolean {
         return this.x <= rect.x && this.y >= rect.y && this.x + this.width >= rect.x + rect.width && this.y + this.height > rect.y + rect.height
     }
 
+    /**
+     * Center of the rectangle
+     */
     get center(): Point {
         return new Point(this.x + this.width / 2, this.y + this.height / 2)
     }
 
-    scaledBy(scaleX: number, scaleY: number): Rect {
-        if (scaleY === undefined) {
+    /**
+     * Scale rectangle by the given scale factor and return a new rectangle
+     * @param scaleX Horizontal scale
+     * @param scaleY Vertical scale (optional, if not specified scaleX will be used)
+     * @returns New rectangle that is this rectangle scaled by the scale values
+     */
+    scaledBy(scaleX: number, scaleY?: number): Rect {
+        if (scaleY === undefined || scaleY == null) {
             scaleY = scaleX
         }
         return new Rect(
@@ -107,13 +224,33 @@ export class Rect {
             this.height * scaleY
         )
     }
+
+    /**
+     * @param planeWidth Width of the plane in which the rectangle should be mirrored 
+     * @returns Rectangle mirrored horizontally along the plane's vertical axis
+     */
+    mirrored(planeWidth: number): Rect {
+        return new Rect(planeWidth - this.x - this.width, this.y, this.width, this.height)
+    }
 }
 
+/**
+ * Axis
+ */
 export enum Axis {
+    /**
+     * Yaw axis
+     */
     YAW,
+    /**
+     * Pitch axis
+     */
     PITCH
 }
 
+/**
+ * Evaluates angles in relation to bearings
+ */
 export class AngleBearingEvaluation {
 
     settings: FaceCaptureSettings

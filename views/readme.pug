@@ -1,5 +1,25 @@
 html
     head 
         title Ver-ID In-Browser Live Face Detection
+        style(type="text/css").
+            body {
+                font-family: sans-serif;
+                padding: 0px;
+                margin: 0px;
+                background-color: #eee;
+            }
+            #content {
+                padding: 3em;
+                max-width: 800px;
+                margin: auto;
+                background-color: #fff;
+            }
+            pre {
+                background-color: #eee;
+                padding: 1em;
+                border-radius: 0.5em;
+                overflow: auto;
+            }
     body
-        include:markdown-it ../README.md
+        #content
+            include:markdown-it ../README.md
