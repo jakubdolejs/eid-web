@@ -4,7 +4,7 @@
  */
 
 // @ts-ignore
-import { Observable, from, of } from "https://dev.jspm.io/rxjs@6/_esm2015"
+import { Observable, from, of, throwError } from "https://dev.jspm.io/rxjs@6/_esm2015"
 // @ts-ignore
 import { map, filter, take, takeWhile, reduce, tap, mergeMap } from "https://dev.jspm.io/rxjs@6/_esm2015/operators"
 import { CircularBuffer, AngleBearingEvaluation, Angle, Rect, Axis, RectSmoothing, AngleSmoothing } from "./utils.js"
@@ -69,8 +69,12 @@ export class FaceDetection {
      */
     livenessDetectionSession(settings: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult> {
 
+        if (location.protocol != "https:") {
+            return throwError(new Error("Liveness detection is only supported on secure connections (https)"))
+        }
+
         if (!FaceDetection.isLivenessDetectionSupported()) {
-            return new Observable(subscriber => subscriber.error(new Error("Liveness detection is not supported by your browser")))
+            return throwError(new Error("Liveness detection is not supported by your browser"))
         }
 
         if (!settings) {
@@ -414,7 +418,7 @@ export class FaceDetection {
         var faceAngleSmoothing = new AngleSmoothing(3)
 
         function liveFaceCapture(): Observable<LiveFaceCapture> {
-            
+
             function transferToHeap(arr) {
                 const floatArray = Float32Array.from(arr)
                 // @ts-ignore
