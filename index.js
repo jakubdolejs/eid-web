@@ -43,7 +43,7 @@ async function detectFace(image) {
         })
         if (faces.length > 0) {
             let face = faces.reduce((previous, current) => {
-                if (previous.box[2] * previous.box[3] > current.box[2] * current.box[3]) {
+                if (previous.box[2] * previous.box[3] * previous.quality > current.box[2] * current.box[3] * current.quality) {
                     return previous
                 } else {
                     return current
