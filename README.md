@@ -130,11 +130,3 @@ faceRecognition.compareFaceTemplates(template1, template2).then((score) => {
     // Face comparison failed
 })
 ```
-
-## Demo
-
-Live demo is available at [/demo](./demo).
-
-## Documentation
-
-Documentation is available in the [docs folder](./docs/index.html).
