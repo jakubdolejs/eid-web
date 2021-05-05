@@ -50,7 +50,9 @@ app.use("/docs", express.static("docs"))
  */
  app.get("/", (req, res, next) => {
     try {
-        if (req.accepts("application/json")) {
+        if (req.accepts("text/html")) {
+            res.render("readme.pug")
+        } else if (req.accepts("application/json")) {
             getVersion().then(version => {
                 res.type("application/json").send({
                     "version": version
@@ -58,8 +60,6 @@ app.use("/docs", express.static("docs"))
             }).catch(error =>  {
                 res.status(500).type("text/plain").send("Failed to get API version")
             })
-        } else if (req.accepts("text/html")) {
-            res.render("readme.pug")
         } else {
             res.status(406).type("text/plain").send("Not acceptable")
         }
