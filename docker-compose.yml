@@ -1,34 +1,43 @@
-version: "3.1"
+version: '3.1'
+networks:
+  identity_api: {}
 services:
-    demo:
-        image: ver-id-browser-demo:latest
-        depends_on: 
-            - scanner
-            - detcv
-            - recauth
-        environment: 
-            - PORT=8080
-            - DETCV_URL=http://detcv:8080
-            - RECAUTH_URL=http://recauth:8814
-            - ID_SCANNER_URL=http://scanner:8080
-        ports:
-            - "8080:8080"
-    scanner:
-        image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/id_scanner:1.34.0
-        environment:
-            - USER=microblink
-            - LICENSEE=AppliedRecognitionTest
-            - LICENSE_KEY=sRwAAAUWYXBwbGllZHJlY29nbml0aW9udGVzdOXQmqkzGn4pkvCFJCbQ87noe1jm/lT3ZvnsnHqWiQ5JWV3MvYptu702/N7YafpnNHh67r5M3BuT2OWm8JsTk+SsoclpS0iTNNr+93MgNAwmSz4Nfp6z5NNfNSUkTN6DrQ3oq78BZ3vuzNqdcUGYQcUnPbqq3dn292N4CB2CV1e7bWO2k6/pwfqeeYnoTfJy7Aeh7dMbgwQVfBu+go6ZAIiTEdOO+OmqrgV8pCBfhbo8pOaSn0ReN2cBgJbridUqwVzU+2SJvqjPPbmNkyzHd9hNaasSndrdb1LpKscsDEJNagpKu9HsWBAzgYoNePdgd8uvRrFHMKKcfK9V
-            - PORT=8083
-            - PROXY_PORT=8080
-        ports:
-            - "8083:8080"
-    detcv:
-        image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_detcv:1.3.3
-        ports:
-            - "8084:8080"
-    recauth:
-        image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_recauth:1.3.3
-        entrypoint: [ "./fb-recauth", "--foreground" ]
-        ports:
-            - "8085:8814"
+  controller:
+    image: ver-id-browser:1.0.0
+    depends_on:
+      - detcv
+      - recauth
+    environment:
+      - PORT=8080
+      - DETCV_URL=http://detcv:8080
+      - RECAUTH_URL=http://recauth:8080
+      - >-
+        MB_LICENCE_KEY=sRwAAAYOamFrdWIubmdyb2suaW8uIIyMN5mVWPRCxk7hP6GUld0jxE0mChuDCdhvQBexDlnkf53JQFQqc4PaUXnVlcfph3WE88IeXLqnwcqrWWSZcejYXU/vb9Mf+OHCEaOvJux5OTZqQC1V1SJzUc1Ts7PhC6wCKXaAQdEv2WSxXg8ca5BA5ukrQ5qCYzEtnaihd5lNrJHAMrSROH6A1ndka23N42Y6zqZ4UEI3Qc4kkAKRThzboZnVM1hLiUjiJpRrJvhdgmK2pjkTSxS/F+DGkSNTqqHdiggbbJ0ODpIVllypfaC1Hxszl6m9w9ooAtt3+YI64IDC7vIybfapTGsqP8rnNvRw1ZE3Z2JyoYQncaSRsWQ=
+    ports:
+      - '8080:8080'
+  detcv:
+    image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_detcv:1.3.6
+    environment:
+      - PORT=8080
+      - AUTHENTICITY_MODEL_PREFIXES=WyJsaWNlbnNlIiwibGljZW5zZTAxIl0=
+    depends_on:
+      - models
+    volumes:
+      - models:/models:ro
+  recauth:
+    image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_recauth:1.3.6
+    entrypoint:
+      - ./fb-recauth
+      - '--foreground'
+      - '-p'
+      - '8080'
+  models:
+    image: >-
+      725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_models:280dc75
+    entrypoint:
+      - sleep
+      - infinity
+    volumes:
+      - models:/models
+volumes:
+  models: {}

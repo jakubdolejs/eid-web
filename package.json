@@ -1,22 +1,27 @@
 {
   "name": "ver-id-browser",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "## Installation",
+  "main": "deploy.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Jakub Dolejs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AppliedRecognition/Ver-ID-Browser.git"
+  },
+  "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@microblink/blinkid-in-browser-sdk": "^5.10.2",
-    "axios": "^0.21.1",
-    "body-parser": "^1.19.0",
-    "express": "^4.17.1",
-    "image-size": "^0.9.7",
-    "jimp": "^0.16.1",
-    "jstransformer-markdown-it": "^2.1.0",
-    "multer": "^1.4.2",
-    "pug": "^3.0.2"
+  "bugs": {
+    "url": "https://github.com/AppliedRecognition/Ver-ID-Browser/issues"
+  },
+  "homepage": "https://github.com/AppliedRecognition/Ver-ID-Browser#readme",
+  "devDependencies": {
+    "cli-spinner": "^0.2.10",
+    "inquirer": "^8.0.0",
+    "js-yaml": "^4.1.0",
+    "typedoc": "^0.20.36",
+    "typescript": "^4.2.4"
   }
 }
