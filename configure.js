@@ -174,35 +174,34 @@ const copyDirectory = async (src, dest) => {
         }
     ])
 
-    cliSpinner.text = "Generating documentation"
     cliSpinner.start()
-    await runCommand("typedoc", path.resolve(process.cwd(), "client"), "--out", "../server/docs", "src/index.ts")
-    cliSpinner.stop(true)
+    cliSpinner.text = "Installing client dependencies"
+    await runCommand("npm", path.resolve(process.cwd(), "client"), "install")
+
+    cliSpinner.text = "Generating documentation"
+    await runCommand("npx", path.resolve(process.cwd(), "client"), "typedoc", "--out", "../server/docs", "src/index.ts")
 
     cliSpinner.text = "Packaging client-side library"
-    cliSpinner.start()
     await runCommand("npx", path.resolve(process.cwd(), "client"), "webpack")
-    cliSpinner.stop(true)
 
     cliSpinner.text = "Copying client-side library"
-    cliSpinner.start()
     await copyDirectory("client/dist", "server/ver-id-browser")
-    cliSpinner.stop(true)
+
+    await fs.rm("server/dist", {"recursive": true, "force": true})
+
+    cliSpinner.text = "Installing server dependencies"
+    await runCommand("npm", path.resolve(process.cwd(), "server"), "install")
 
     cliSpinner.text = "Compiling server"
-    cliSpinner.start()
-    await runCommand("tsc", path.resolve(process.cwd(), "server/src/server"))
-    cliSpinner.stop(true)
+    await runCommand("npx", path.resolve(process.cwd(), "server/src/server"), "tsc")
+
+    await fs.rm("static/js", {"recursive":true, "force":true})
 
     cliSpinner.text = "Compiling demo script"
-    cliSpinner.start()
-    await runCommand("tsc", path.resolve(process.cwd(), "server/src/demo"))
-    cliSpinner.stop(true)
+    await runCommand("npx", path.resolve(process.cwd(), "server/src/demo"), "tsc")
 
     cliSpinner.text = "Building "+browserImageName+":"+apiVersion+" Docker image"
-    cliSpinner.start()
     await runCommand("docker", process.cwd(), "build", "-t", browserImageName+":"+apiVersion, ".")
-    cliSpinner.stop(true)
     
     const compose = {
         "version": "3.1",
@@ -297,15 +296,13 @@ const copyDirectory = async (src, dest) => {
     await fs.writeFile("docker-compose.yml", output)
 
     if (answers.launchContainers) {
+        cliSpinner.text = "Launching containers"
         try {
             await runCommand("docker", process.cwd(), "swarm", "init")
         } catch (error) {
 
         }
-        cliSpinner.text = "Launching containers"
-        cliSpinner.start()
         await runCommand("docker", process.cwd(), "stack", "up", "-c", "docker-compose.yml", "ver-id-browser")
-        cliSpinner.stop(true)
     }
 })().catch(error => {
     console.error(error)

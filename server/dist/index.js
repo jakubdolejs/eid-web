@@ -1,8 +1,9 @@
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -38,7 +39,7 @@ if (authenticityModelPrefixes.length == 0) {
 if (disableDemo) {
     console.log("Demo is disabled");
 }
-const getVersion = () => __awaiter(this, void 0, void 0, function* () {
+const getVersion = () => __awaiter(void 0, void 0, void 0, function* () {
     const packageJson = JSON.parse(yield fs.promises.readFile("package.json", { "encoding": "utf-8" }));
     return packageJson.version;
 });
@@ -98,7 +99,7 @@ app.get("/demo", (req, res) => {
 /**
  * Detect a face in an image
  */
-app.post("/detectFace", imagesFromRequest(["image"]), (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+app.post("/detectFace", imagesFromRequest(["image"]), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const face = yield detectFace(res.locals.images["image"], req.body && req.body.calculate_authenticity_score && authenticityModelPrefixes.length > 0 ? authenticityModelPrefixes.map(prefix => {
             return { "prefix": prefix, "threshold": 5 };
@@ -137,7 +138,7 @@ app.post("/detectFace", imagesFromRequest(["image"]), (req, res, next) => __awai
 /**
  * Detect an ID card in an image
  */
-app.post("/detectIdCard", imagesFromRequest(["front", "back"]), (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+app.post("/detectIdCard", imagesFromRequest(["front", "back"]), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     if (!idScannerURL) {
         res.status(405).type("text/plain").send("ID card detection is not available on this server");
         return;
@@ -168,7 +169,7 @@ app.post("/detectIdCard", imagesFromRequest(["front", "back"]), (req, res, next)
 /**
  * Compare faces
  */
-app.post("/compareFaces", express.json(), (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+app.post("/compareFaces", express.json(), (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const url = recauthURL + "/compare_face";
         if (!req.body || req.body.length != 2) {
