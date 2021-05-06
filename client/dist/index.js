@@ -19227,7 +19227,7 @@ class FaceRecognition {
      * @param faceRect Optional bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    createRecognizableFace(image, faceRect) {
+    createRecognizableFace(image, faceRect, calculateAuthenticityScore = false) {
         return __awaiter(this, void 0, void 0, function* () {
             let jpeg;
             if (image instanceof Image) {
@@ -19239,6 +19239,10 @@ class FaceRecognition {
             else {
                 throw new Error("Invalid image parameter");
             }
+            const body = { "image": jpeg };
+            if (calculateAuthenticityScore) {
+                body.calculate_authenticity_score = true;
+            }
             const response = yield fetch(this.serviceURL + "/detectFace", {
                 "method": "POST",
                 "mode": "cors",
@@ -19246,7 +19250,7 @@ class FaceRecognition {
                 "headers": {
                     "Content-Type": "application/json"
                 },
-                "body": JSON.stringify({ "image": jpeg })
+                "body": JSON.stringify(body)
             });
             if (response.status != 200) {
                 throw new Error("Failed to extract recognition template from face");
@@ -19688,7 +19692,7 @@ class IdCapture {
                                     img.src = canvas.toDataURL();
                                     return;
                                 }
-                                this.faceRecognition.createRecognizableFace(img).then(face => {
+                                this.faceRecognition.createRecognizableFace(img, null, true).then(face => {
                                     resolve({
                                         "result": combinedResult,
                                         "face": face
