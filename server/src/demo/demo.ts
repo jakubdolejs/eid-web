@@ -45,13 +45,14 @@ window.onload = () => {
                 })
                 faceRecognition.compareFaceTemplates(idCaptureResult.face.faceTemplate, liveFace.template).then((score: number) => {
                     document.querySelector("#result .score").innerHTML = String(Math.round(score*10)/10)
-                    const scoreString = String(Math.round(score*10)/10)
-                    const likelihood = Math.round(new NormalDistribution().cumulativeProbability(score)*1000)/10
+                    const scoreString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(score)
+                    const likelihood = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 2, "maximumFractionDigits": 2, "style": "percent"}).format(new NormalDistribution().cumulativeProbability(score))
+                    const scoreThresholdString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(scoreThreshold)
                     let msg: string
                     if (score > scoreThreshold) {
-                        msg = "<h1 class=\"pass\">Pass</h1><p>The face matching score "+scoreString+" indicates a likelihood of "+likelihood+"% that the person on the ID card is the same person as the one in the selfie. We recommend a threshold of "+scoreThreshold+" for a positive identification when comparing faces from identity cards.</p>"
+                        msg = "<h1 class=\"pass\">Pass</h1><p>The face matching score "+scoreString+" indicates a likelihood of "+likelihood+"% that the person on the ID card is the same person as the one in the selfie. We recommend a threshold of "+scoreThresholdString+" for a positive identification when comparing faces from identity cards.</p>"
                     } else {
-                        msg = "<h1 class=\"warning\">Warning</h1><p>The face matching score "+scoreString+" indicates that the person on the ID card is likely NOT the same person as the one in the selfie. We recommend a threshold of "+scoreThreshold+" for a positive identification when comparing faces from identity cards.</p>"
+                        msg = "<h1 class=\"warning\">Warning</h1><p>The face matching score "+scoreString+" indicates that the person on the ID card is likely NOT the same person as the one in the selfie. We recommend a threshold of "+scoreThresholdString+" for a positive identification when comparing faces from identity cards.</p>"
                     }
                     document.querySelector("#result .score").innerHTML = msg
                     showPage("result")
