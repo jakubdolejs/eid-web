@@ -367,7 +367,7 @@ export class IdCapture {
                                     img.src = canvas.toDataURL()
                                     return
                                 }
-                                this.faceRecognition.createRecognizableFace(img).then(face => {
+                                this.faceRecognition.createRecognizableFace(img, null, true).then(face => {
                                     resolve({
                                         "result": combinedResult,
                                         "face": face

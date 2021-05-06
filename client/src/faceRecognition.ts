@@ -17,6 +17,17 @@ export interface RecognizableFace {
      * Base64-encoded JPEG image
      */
     faceTemplate: string
+    /**
+     * Authenticity scores keyed by licence model prefix
+     */
+    authenticityScores?: {
+        [k: string]: number
+    }
+}
+
+interface DetectFaceRequest {
+    image: string
+    calculate_authenticity_score?: boolean
 }
 
 /**
@@ -43,7 +54,7 @@ export class FaceRecognition {
      * @param faceRect Optional bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    async createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace> {
+    async createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect, calculateAuthenticityScore: boolean = false): Promise<RecognizableFace> {
         let jpeg: string
         if (image instanceof Image) {
             jpeg = await this.cropImage(image, faceRect)
@@ -52,6 +63,10 @@ export class FaceRecognition {
         } else {
             throw new Error("Invalid image parameter")
         }
+        const body: DetectFaceRequest = {"image": jpeg}
+        if (calculateAuthenticityScore) {
+            body.calculate_authenticity_score = true
+        }
         const response: Response = await fetch(this.serviceURL+"/detectFace", {
             "method": "POST",
             "mode": "cors",
@@ -59,7 +74,7 @@ export class FaceRecognition {
             "headers": {
                 "Content-Type": "application/json"
             },
-            "body": JSON.stringify({"image": jpeg})
+            "body": JSON.stringify(body)
         })
         if (response.status != 200) {
             throw new Error("Failed to extract recognition template from face")
