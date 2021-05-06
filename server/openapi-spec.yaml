@@ -1,0 +1,437 @@
+openapi: '3.0.3'
+info:
+  description: Server to support Ver-ID in-browser face recognition
+  version: '1.0.0'
+  title: Ver-ID API Server
+  contact:
+    email: support@appliedrecognition.com
+servers:
+  - url: https://id-check.ver-id.com/
+    description: Demo
+paths:
+  '/':
+    get:
+      tags:
+        - Information
+      summary: Print information about the API
+      responses:
+        '200':
+          description: OK
+          content:
+            'text/html':
+              schema:
+                type: string
+                description: Basic API information
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: '1.0.0'
+                required: [version]
+  '/healthz':
+    get:
+      tags:
+        - Information
+      summary: Print health status of the API
+      description: The Health Check endpoint should show the status and return a status code corresponding to it status.
+      responses:
+        '200':
+          description: Means that the microservice is entirely healthy and will respond to requests with expected values, content and performance.
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [healthy]
+                default: healthy
+        '206':
+          description: |-
+            Means that the microservice will still respond to requests, but they might:
+              
+            Suffer from severe performance issues, either because the microservice is completely overloaded or has some bottleneck going on
+
+            Response might be incomplete specially when using the aggregate pattern (aggregating responses from other services), because one or more dependencies might be either too slow or entirely unavailable
+
+            The complete flow (if async) might become slower or might be completely off/paused (eg: if the microservice is expected to receive an event to proceed with the workflow but has no access to the topic)
+
+            Under the degraded state, service should NOT be restarted unless it's confirmed to be an internal issue or some configuration mismatch. This investigation will most likely be performed manually.
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [degraded]
+                default: degraded
+        '503':
+          description: |-
+            Means that the microservice is not working and might not respond to requests at all.
+            
+            Usually this means that we have a severe configuration issue that prevents the service from starting or from working properly. Kubernetes (thus GCP too) might attempt to restart the service a couple times to see if a reboot will fix the issue (eg: memory leak).
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: [unhealthy]
+                default: unhealthy
+        '406':
+          description: Request cannot accept text/plain response
+  '/demo':
+    get:
+      tags:
+        - Demo
+      summary: Demo page featuring ID capture, live face capture and face comparison
+      description: >-
+        The page guides the user to capture their ID card before it proceeds to capture the user's face. 
+        Finally, the face on the ID card is compared to the live face and the page outputs a "Pass" or a "Warning".
+      responses:
+        '200':
+          description: OK
+          content:
+            'text/html':
+              schema:
+                type: string
+        '405':
+          $ref: '#/components/responses/FeatureDisabledResponse'
+  '/detectFace':
+    post:
+      tags:
+        - Face Detection
+      summary: Detect a face in an image
+      requestBody:
+        $ref: '#/components/requestBodies/FaceDetectionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/FaceDetectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  '/detectIdCard':
+    post:
+      tags:
+        - ID Card Detection
+      summary: Detect an ID card in an image
+      requestBody:
+        $ref: '#/components/requestBodies/IDCardDetectionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/IDCardDetectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/FeatureDisabledResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  '/compareFaces':
+    post:
+      tags:
+        - Face Recognition
+      summary: Compare two face recognition templates
+      description: Returns a similarity score
+      requestBody:
+        $ref: '#/components/requestBodies/CompareFacesRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CompareFacesResponse'
+        '400':
+          description: Bad request, e.g., missing strings array or array wrong length
+          content:
+            'text/plain':
+              schema:
+                type: string
+                example: >-
+                  Specify exactly two face templates to compare
+        '406':
+          description: Request cannot accept application/json response
+        '500':
+          $ref: '#/components/responses/ServerError'
+  '/docs':
+    get:
+      tags:
+        - Documentation
+      summary: Client-side API documentation
+      responses:
+        '200':
+          description: OK
+          content:
+            'text/plain':
+              schema:
+                type: string
+
+components:
+  requestBodies:
+    FaceDetectionRequest:
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/FaceDetectionRequest'
+          examples:
+            idCard:
+              summary: Detect a face on the front of an ID card
+              value:
+                image: data:image/jpeg;base64,AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcY
+                calculate_authenticity_score: true
+            image:
+              summary: Detect a face in an image
+              value:
+                image: data:image/jpeg;base64,MDQ4PEBESExQVFhcYAQIDBAUGBwgJCgs                
+        'multipart/form-data':
+          schema:
+            $ref: '#/components/schemas/FaceImageUpload'
+          encoding:
+            image:
+              contentType: image/jpeg, image/png
+    IDCardDetectionRequest:
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/IDCardDetectionRequest'
+        'multipart/form-data':
+          schema:
+            $ref: '#/components/schemas/IDCardImageUpload'
+          encoding:
+            front:
+              contentType: image/jpeg, image/png
+            back:
+              contentType: image/jpeg, image/png
+    CompareFacesRequest:
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/CompareFacesRequest'
+  responses:
+    FaceDetectionResponse:
+      description: OK
+      content:
+        'application/json':
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Face'
+              - type: object
+                properties:
+                  authenticityScores:
+                    description: Map of authenticity scores returned by the models prefixed with the object keys
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/AuthenticityScore'
+                    example:
+                      license01: 0.983
+                      license: 0.877
+    IDCardDetectionResponse:
+      description: OK
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/ScanResult'
+    CompareFacesResponse:
+      description: OK
+      content:
+        'text/plain':
+          schema:
+            type: string
+            example: 3.45
+        'application/json':
+          schema:
+            type: object
+            properties:
+              score:
+                type: number
+                format: double
+                example: 3.45
+    FeatureDisabledResponse:
+      description: Method not allowed
+      content:
+        'text/plain':
+          schema:
+            type: string
+            description: The method is not allowed because the feature is disabled on this server.
+    BadRequest:
+      description: Bad request
+      content:
+        'text/plain':
+          schema:
+            type: string
+            description: Description of the failure, e.g., which properties are missing
+            example: Missing image
+    ServerError:
+      description: Server error
+      content:
+        'text/plain':
+          schema:
+            type: string
+            description: Error description
+            example: Unable to load server configuration
+  schemas:
+    FaceDetectionRequest:
+      type: object
+      properties:
+        image:
+          $ref: '#/components/schemas/ImageDataURL'
+        calculate_authenticity_score:
+          type: boolean
+          description: Set to `true` to calculate authenticity score (suitable for images of ID cards)
+      required:
+        - image
+    IDCardDetectionRequest:
+      type: object
+      properties:
+        front:
+          $ref: '#/components/schemas/ImageDataURL'
+        back:
+          $ref: '#/components/schemas/ImageDataURL'
+      minProperties: 1
+    FaceImageUpload:
+      type: object
+      properties:
+        image:
+          $ref: '#/components/schemas/Image'
+        calculate_authenticity_score:
+          type: boolean
+      required:
+        - image
+    IDCardImageUpload:
+      type: object
+      properties:
+        front:
+          $ref: '#/components/schemas/Image'
+        back:
+          $ref: '#/components/schemas/Image'
+        iin_safelist:
+          type: array
+          description: Array of acceptable issuer identification numbers IINs
+          items:
+            type: string
+        iin_blocklist:
+          type: array
+          description:  Array of unacceptable issuer identification numbers IINs
+          items:
+            type: string
+      minProperties: 1
+    CompareFacesRequest:
+      type: array
+      items:
+        description: Face recognition template
+        type: string
+        format: base64
+        example: ZmFjZVRlbXBsYXRlCg==
+      minItems: 2
+      example:
+        - MWZhY2UxVGVtcGxhdGVPbmUK
+        - MmZhY2UyVGVtcGxhdGVUd28K
+    ImageDataURL:
+      type: string
+      example: data:image/jpeg;base64,AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcY
+    Image:
+      type: string
+      format: binary
+    Date:
+      type: object
+      properties:
+        day:
+          type: integer
+        month:
+          type: integer
+        year:
+          type: integer
+        originalString:
+          type: string
+      required: [day, month, year]
+      example:
+        day: 21
+        month: 9
+        year: 2020
+        originalString: '2020/09/21'
+    DocumentInfo:
+      type: object
+      properties:
+        documentNumber:
+          type: string
+          example: AB123456
+        dateOfExpiry:
+          $ref: '#/components/schemas/Date'
+    IIN:
+      type: object
+      properties:
+        issuerIdentificationNumber:
+          type: string
+          example: 636012
+    AuthenticityScore:
+      type: number
+      format: double
+      minimum: 0
+      maximum: 1
+      example: 0.998
+      description: Authenticity score (0.0 = ID is fake, 1.0 = ID is authentic)
+    Face:
+      type: object
+      properties:
+        jpeg:
+          type: string
+          format: base64
+          description: Base64-encoded JPEG image of the detected face
+        faceTemplate:
+          type: string
+          format: base64
+          description: Base64-encoded face recognition template
+    Person:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Smith
+        fullName:
+          type: string
+          example: Smith,John P
+        dateOfBirth:
+          $ref: '#/components/schemas/Date'
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          example: '123 Any Street'
+        city:
+          type: string
+          example: Toronto
+        postalCode:
+          type: string
+          example: 'M5A 4A6'
+        jurisdiction:
+          type: string
+          example: ON
+      required: [street,city,postalCode,jurisdiction]
+    Document:
+      allOf:
+        - $ref: '#/components/schemas/DocumentInfo'
+        - $ref: '#/components/schemas/Person'
+    AddressedDocument:
+      allOf:
+        - $ref: '#/components/schemas/Document'
+        - type: object
+          properties:
+            dateOfIssue:
+              $ref: '#/components/schemas/Date'
+            address:
+              $ref: '#/components/schemas/Address'
+    ScanResult:
+      type: object
+      properties:
+        front:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Document'
+            - type: object
+              properties:
+                address:
+                  type: string
+                  description: Full address
+        back:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/AddressedDocument'
+            - $ref: '#/components/schemas/IIN'
+      minProperties: 1
+          

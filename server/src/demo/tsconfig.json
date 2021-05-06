@@ -1,0 +1,13 @@
+{  
+    "compilerOptions": {
+        "outDir": "../../static/js",
+        "target": "ES2015",
+        "sourceMap": true,
+        "moduleResolution": "Node",
+        "declaration": true,
+        "esModuleInterop": true
+    },  
+    "include": [  
+        "./**/*"
+    ]
+}
