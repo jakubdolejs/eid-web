@@ -1,0 +1,14 @@
+{  
+    "compilerOptions": {
+        "outDir": "./js",
+        "target": "ES2015",
+        "sourceMap": true,
+        "moduleResolution": "Node",
+        "declaration": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true
+    },  
+    "include": [  
+        "./src/**/*"
+    ]
+}
