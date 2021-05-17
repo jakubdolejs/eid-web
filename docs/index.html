@@ -1,0 +1,374 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>@appliedrecognition/ver-id-browser</title>
+	<meta name="description" content="Documentation for @appliedrecognition/ver-id-browser">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+	<script async src="assets/js/search.js" id="search-script"></script>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">@appliedrecognition/ver-id-browser</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<h1>@appliedrecognition/ver-id-browser</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#ver-id-in-browser-live-face-detection-and-id-card-capture" id="ver-id-in-browser-live-face-detection-and-id-card-capture" style="color: inherit; text-decoration: none;">
+					<h1>Ver-ID In-Browser Live Face Detection and ID Card Capture</h1>
+				</a>
+				<a href="#requirements" id="requirements" style="color: inherit; text-decoration: none;">
+					<h2>Requirements</h2>
+				</a>
+				<ul>
+					<li><a href="https://nodejs.org">NodeJS</a> 14.6 or newer</li>
+					<li><a href="https://docker.com">Docker</a></li>
+					<li><a href="https://npmjs.com">NPM</a></li>
+					<li><a href="https://aws.amazon.com/cli">AWS CLI</a></li>
+					<li><a href="https://microblink.com/products/blinkid/in-browser-sdk">BlinkID In-browser SDK licence key</a> (if you&#39;re planning to capture ID cards)</li>
+				</ul>
+				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+					<h2>Installation</h2>
+				</a>
+				<ol>
+					<li><p>Request AWS access key and secret key from Applied Recognition</p>
+					</li>
+					<li><p>Create an AWS profile with the credentials from the previous step (substitute ACME for your chosen profile name):</p>
+						<pre><code><span style="color: #001080">aws</span><span style="color: #000000"> --</span><span style="color: #001080">profile</span><span style="color: #000000"> </span><span style="color: #0070C1">ACME</span><span style="color: #000000"> </span><span style="color: #001080">configure</span>
+</code></pre>
+					</li>
+					<li><p>Log in to AWS ECR repository:</p>
+						<pre><code><span style="color: #001080">aws</span><span style="color: #000000"> --</span><span style="color: #001080">profile</span><span style="color: #000000"> </span><span style="color: #0070C1">ACME</span><span style="color: #000000"> </span><span style="color: #001080">ecr</span><span style="color: #000000"> </span><span style="color: #001080">get</span><span style="color: #000000">-</span><span style="color: #001080">login</span><span style="color: #000000">-</span><span style="color: #001080">password</span><span style="color: #000000"> | </span><span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">login</span><span style="color: #000000"> -</span><span style="color: #001080">u</span><span style="color: #000000"> </span><span style="color: #0070C1">AWS</span><span style="color: #000000"> --</span><span style="color: #001080">password</span><span style="color: #000000">-</span><span style="color: #001080">stdin</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span>
+</code></pre>
+					</li>
+					<li><p>Pull Docker images:</p>
+						<pre><code><span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/</span><span style="color: #001080">restful</span><span style="color: #000000">-servers_recauth:</span><span style="color: #098658">1.3</span><span style="color: #000000">.</span><span style="color: #098658">6</span>
+<span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/</span><span style="color: #001080">restful</span><span style="color: #000000">-servers_detcv:</span><span style="color: #098658">1.3</span><span style="color: #000000">.</span><span style="color: #098658">6</span>
+<span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/id_scanner:</span><span style="color: #098658">1.34</span><span style="color: #000000">.</span><span style="color: #098658">2</span>
+<span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/identity_api:</span><span style="color: #098658">1.9</span><span style="color: #000000">.</span><span style="color: #098658">0</span>
+</code></pre>
+					</li>
+					<li><p>In the project&#39;s root folder run:</p>
+						<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span>
+</code></pre>
+					</li>
+					<li><p>Run the configuration script and follow the prompts:</p>
+						<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">start</span>
+</code></pre>
+					</li>
+				</ol>
+				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+					<h2>Usage</h2>
+				</a>
+				<a href="#running-a-liveness-detection-session" id="running-a-liveness-detection-session" style="color: inherit; text-decoration: none;">
+					<h3>Running a liveness detection session:</h3>
+				</a>
+				<pre><code class="language-javascript"><span style="color: #008000">// URL of the server running the identity_api container</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
+
+<span style="color: #008000">// Import the face detection module</span>
+<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">FaceDetection</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
+<span style="color: #000000">    </span>
+<span style="color: #008000">// Create an instance of the FaceDetection class</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">faceDetection</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">FaceDetection</span><span style="color: #000000">(</span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
+
+<span style="color: #008000">// Check that the browser supports liveness detection</span>
+<span style="color: #AF00DB">if</span><span style="color: #000000"> (!</span><span style="color: #001080">faceDetection</span><span style="color: #000000">.</span><span style="color: #795E26">isLivenessDetectionSupported</span><span style="color: #000000">()) {</span>
+<span style="color: #000000">    </span><span style="color: #795E26">alert</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;Liveness detection is not supported by your browser&quot;</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span><span style="color: #AF00DB">return</span>
+<span style="color: #000000">}</span>
+
+<span style="color: #008000">// Create a session Observable and subscribe to it to start a liveness detection session</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">subscription</span><span style="color: #000000"> = </span><span style="color: #001080">faceDetection</span><span style="color: #000000">.</span><span style="color: #795E26">livenessDetectionSession</span><span style="color: #000000">().</span><span style="color: #795E26">subscribe</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #795E26">next</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #008000">// Session succeeded</span>
+<span style="color: #000000">        </span><span style="color: #008000">// Detected faces and images are available in the result&#039;s faceCaptures array</span>
+<span style="color: #000000">        </span><span style="color: #008000">// Obtain a face template that can be used for face recognition</span>
+<span style="color: #000000">        </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">template</span><span style="color: #000000"> = </span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">faceCaptures</span><span style="color: #000000">[</span><span style="color: #098658">0</span><span style="color: #000000">].</span><span style="color: #001080">face</span><span style="color: #000000">.</span><span style="color: #001080">template</span>
+<span style="color: #000000">        </span><span style="color: #008000">// Get the captured image cropped to the face bounding box</span>
+<span style="color: #000000">        </span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">faceCaptures</span><span style="color: #000000">[</span><span style="color: #098658">0</span><span style="color: #000000">].</span><span style="color: #001080">faceImage</span><span style="color: #000000">.</span><span style="color: #795E26">then</span><span style="color: #000000">((</span><span style="color: #001080">image</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">            </span><span style="color: #001080">document</span><span style="color: #000000">.</span><span style="color: #001080">body</span><span style="color: #000000">.</span><span style="color: #795E26">appendChild</span><span style="color: #000000">(</span><span style="color: #001080">image</span><span style="color: #000000">)</span>
+<span style="color: #000000">        })</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #795E26">error</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">error</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #008000">// Session failed</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #795E26">complete</span><span style="color: #001080">:</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #008000">// Session finished</span>
+<span style="color: #000000">        </span><span style="color: #008000">// If not result has been emitted it indicates that the session was cancelled</span>
+<span style="color: #000000">    }</span>
+<span style="color: #000000">})</span>
+<span style="color: #008000">// The session GUI displays a cancel button but if you need to otherwise </span>
+<span style="color: #008000">// cancel the session unsubscribe from the session:</span>
+<span style="color: #008000">// subscription.unsubscribe()</span>
+</code></pre>
+				<a href="#detecting-id-cards" id="detecting-id-cards" style="color: inherit; text-decoration: none;">
+					<h3>Detecting ID cards</h3>
+				</a>
+				<p>You&#39;ll need a licence key tied to your domain name for <a href="https://microblink.com/products/blinkid/in-browser-sdk">BlinkID In-browser SDK</a> to use this feature.</p>
+				<pre><code class="language-javascript"><span style="color: #008000">// URL of the server running the identity_api container</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
+
+<span style="color: #008000">// Import the ID capture module</span>
+<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">IdCapture</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSettings</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
+
+<span style="color: #008000">// Settings</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">resourcesURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/resources/&quot;</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">settings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSettings</span><span style="color: #000000">(</span><span style="color: #001080">yourLicenceKey</span><span style="color: #000000">, </span><span style="color: #001080">resourcesURL</span><span style="color: #000000">)</span>
+
+<span style="color: #008000">// Create an instance of the IdCapture class</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">idCapture</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCapture</span><span style="color: #000000">(</span><span style="color: #001080">settings</span><span style="color: #000000">, </span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
+
+<span style="color: #008000">// Capture ID card</span>
+<span style="color: #001080">idCapture</span><span style="color: #000000">.</span><span style="color: #795E26">captureIdCard</span><span style="color: #000000">().</span><span style="color: #795E26">subscribe</span><span style="color: #000000">({</span>
+<span style="color: #000000">    </span><span style="color: #795E26">next</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #AF00DB">if</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">face</span><span style="color: #000000">) {</span>
+<span style="color: #000000">            </span><span style="color: #008000">// You can use the detected face for face recognition</span>
+<span style="color: #000000">        }</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #795E26">error</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">error</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #008000">// ID capture failed</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    </span><span style="color: #795E26">complete</span><span style="color: #001080">:</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">        </span><span style="color: #008000">// ID capture finished</span>
+<span style="color: #000000">        </span><span style="color: #008000">// If not result has been emitted it indicates that the session was cancelled</span>
+<span style="color: #000000">    }</span>
+<span style="color: #000000">})</span>
+
+</code></pre>
+				<a href="#comparing-faces" id="comparing-faces" style="color: inherit; text-decoration: none;">
+					<h3>Comparing faces</h3>
+				</a>
+				<pre><code class="language-javascript"><span style="color: #008000">// URL of the server running the identity_api container</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
+
+<span style="color: #008000">// Import the face recognition module</span>
+<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">FaceRecognition</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
+
+<span style="color: #008000">// Create an instance of FaceRecognition</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">faceRecognition</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">FaceRecognition</span><span style="color: #000000">(</span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
+<span style="color: #000000">    </span>
+<span style="color: #008000">// With two face templates obtained from createRecognizableFace:</span>
+<span style="color: #001080">faceRecognition</span><span style="color: #000000">.</span><span style="color: #795E26">compareFaceTemplates</span><span style="color: #000000">(</span><span style="color: #001080">template1</span><span style="color: #000000">, </span><span style="color: #001080">template2</span><span style="color: #000000">).</span><span style="color: #795E26">then</span><span style="color: #000000">((</span><span style="color: #001080">score</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #008000">// Face comparison finished</span>
+<span style="color: #000000">    </span><span style="color: #795E26">alert</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;The two faces scored &quot;</span><span style="color: #000000">+</span><span style="color: #001080">score</span><span style="color: #000000">+</span><span style="color: #A31515">&quot; on similarity&quot;</span><span style="color: #000000">)</span>
+<span style="color: #000000">}).</span><span style="color: #795E26">catch</span><span style="color: #000000">((</span><span style="color: #001080">error</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #008000">// Face comparison failed</span>
+<span style="color: #000000">})</span>
+</code></pre>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class=" ">
+						<a href="modules.html">Exports</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-enum">
+						<a href="enums/axis.html" class="tsd-kind-icon">Axis</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/bearing.html" class="tsd-kind-icon">Bearing</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/angle.html" class="tsd-kind-icon">Angle</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/anglebearingevaluation.html" class="tsd-kind-icon">Angle<wbr>Bearing<wbr>Evaluation</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/anglesmoothing.html" class="tsd-kind-icon">Angle<wbr>Smoothing</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/circularbuffer.html" class="tsd-kind-icon">Circular<wbr>Buffer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/face.html" class="tsd-kind-icon">Face</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/facecapturesettings.html" class="tsd-kind-icon">Face<wbr>Capture<wbr>Settings</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/facedetection.html" class="tsd-kind-icon">Face<wbr>Detection</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/faceextents.html" class="tsd-kind-icon">Face<wbr>Extents</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/facerecognition.html" class="tsd-kind-icon">Face<wbr>Recognition</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/idcapture.html" class="tsd-kind-icon">Id<wbr>Capture</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/idcapturesettings.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Settings</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/livefacecapture.html" class="tsd-kind-icon">Live<wbr>Face<wbr>Capture</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/livenessdetectionsessionresult.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Result</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/normaldistribution.html" class="tsd-kind-icon">Normal<wbr>Distribution</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/point.html" class="tsd-kind-icon">Point</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/qrcodegenerator.html" class="tsd-kind-icon">QRCode<wbr>Generator</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/rect.html" class="tsd-kind-icon">Rect</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/rectsmoothing.html" class="tsd-kind-icon">Rect<wbr>Smoothing</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/smoothing.html" class="tsd-kind-icon">Smoothing</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/warning.html" class="tsd-kind-icon">Warning</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/address.html" class="tsd-kind-icon">Address</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/classinfo.html" class="tsd-kind-icon">Class<wbr>Info</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/dateddocument.html" class="tsd-kind-icon">Dated<wbr>Document</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/documentbackpage.html" class="tsd-kind-icon">Document<wbr>Back<wbr>Page</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/documentdate.html" class="tsd-kind-icon">Document<wbr>Date</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/documentfrontpage.html" class="tsd-kind-icon">Document<wbr>Front<wbr>Page</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iddocument.html" class="tsd-kind-icon">IDDocument</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idcaptureresult.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Result</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imagedocument.html" class="tsd-kind-icon">Image<wbr>Document</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imagequality.html" class="tsd-kind-icon">Image<wbr>Quality</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/passportdocument.html" class="tsd-kind-icon">Passport<wbr>Document</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/recognizableface.html" class="tsd-kind-icon">Recognizable<wbr>Face</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/size.html" class="tsd-kind-icon">Size</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#captureddocument" class="tsd-kind-icon">Captured<wbr>Document</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcapturestatus" class="tsd-kind-icon">Id<wbr>Capture<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#recognizertype" class="tsd-kind-icon">Recognizer<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#clamp" class="tsd-kind-icon">clamp</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#estimatefaceangle" class="tsd-kind-icon">estimate<wbr>Face<wbr>Angle</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

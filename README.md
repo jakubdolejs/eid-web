@@ -25,7 +25,8 @@
     ```
     docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_recauth:1.3.6
     docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_detcv:1.3.6
-    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/id_scanner:1.34.0
+    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/id_scanner:1.34.2
+    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/identity_api:1.9.0
     ```
 2. In the project's root folder run:
     
@@ -35,7 +36,7 @@
 3. Run the configuration script and follow the prompts:
 
     ```
-    node configure.js
+    npm start
     ```
 
 ## Usage
@@ -43,11 +44,14 @@
 ### Running a liveness detection session:
 
 ```javascript
+// URL of the server running the identity_api container
+const serverURL = "https://somedomain.com"
+
 // Import the face detection module
 import { FaceDetection } from "/@appliedrecognition/ver-id-browser/index.js"
     
 // Create an instance of the FaceDetection class
-const faceDetection = new FaceDetection()
+const faceDetection = new FaceDetection(serverURL)
 
 // Check that the browser supports liveness detection
 if (!faceDetection.isLivenessDetectionSupported()) {
@@ -85,6 +89,9 @@ const subscription = faceDetection.livenessDetectionSession().subscribe({
 You'll need a licence key tied to your domain name for [BlinkID In-browser SDK](https://microblink.com/products/blinkid/in-browser-sdk) to use this feature.
 
 ```javascript
+// URL of the server running the identity_api container
+const serverURL = "https://somedomain.com"
+
 // Import the ID capture module
 import { IdCapture, IdCaptureSettings } from "/@appliedrecognition/ver-id-browser/index.js"
 
@@ -93,7 +100,7 @@ const resourcesURL = "/@appliedrecognition/ver-id-browser/resources/"
 const settings = new IdCaptureSettings(yourLicenceKey, resourcesURL)
 
 // Create an instance of the IdCapture class
-const idCapture = new IdCapture(settings)
+const idCapture = new IdCapture(settings, serverURL)
 
 // Capture ID card
 idCapture.captureIdCard().subscribe({
@@ -116,11 +123,14 @@ idCapture.captureIdCard().subscribe({
 ### Comparing faces
 
 ```javascript
+// URL of the server running the identity_api container
+const serverURL = "https://somedomain.com"
+
 // Import the face recognition module
 import { FaceRecognition } from "/@appliedrecognition/ver-id-browser/index.js"
 
 // Create an instance of FaceRecognition
-const faceRecognition = new FaceRecognition()
+const faceRecognition = new FaceRecognition(serverURL)
     
 // With two face templates obtained from createRecognizableFace:
 faceRecognition.compareFaceTemplates(template1, template2).then((score) => {
