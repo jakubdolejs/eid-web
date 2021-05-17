@@ -56,7 +56,7 @@ window.onload = () => {
                     }
                     document.querySelector("#result .score").innerHTML = msg
                     showPage("result")
-                }).catch(error => {
+                }).catch((error: any) => {
                     showError("Face comparison failed")
                 })
             },
@@ -117,11 +117,8 @@ window.onload = () => {
                     showError("Failed to detect a face on the ID card");
                 }
             },
-            error: (error) => {
+            error: (error: any) => {
                 showError("ID capture failed");
-            },
-            complete: () => {
-
             }
         })
     }

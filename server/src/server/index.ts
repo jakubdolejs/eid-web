@@ -6,7 +6,7 @@ import fs from "fs"
 import jimp from "jimp"
 import imageSize from "image-size"
 import "markdown-it"
-import { Classifier, CompareFacesRequest, CompareFacesResponse, DetectFaceResponse, Face, FaceDetectionRequest, FaceDetectionResponse, RecognizerType, Rect, WaitOptions } from "./types.js"
+import { Classifier, CompareFacesRequest, CompareFacesResponse, DetectFaceResponse, Face, FaceDetectionRequest, FaceDetectionResponse, RecognizerType, Rect, WaitOptions, BlinkIDResult, USDLResult, PassportResult, BlinkIDResponse, IdCaptureResult } from "./types.js"
 import { ISizeCalculationResult } from "image-size/dist/types/interface"
 
 const detcvURL: string = process.env.DETCV_URL
@@ -95,35 +95,16 @@ app.get("/demo", (req, res) => {
  */
 app.post("/detectFace", imagesFromRequest(["image"]), async (req, res, next) => {
     try {
-        const face: Face = await detectFace(res.locals.images["image"], req.body && req.body.calculate_authenticity_score && authenticityModelPrefixes.length > 0 ? authenticityModelPrefixes.map(prefix => {
+        const response: DetectFaceResponse = await detectFace(res.locals.images["image"], req.body && req.body.calculate_authenticity_score && authenticityModelPrefixes.length > 0 ? authenticityModelPrefixes.map(prefix => {
             return {"prefix": prefix, "threshold": 5}
-        }) : null)
-        const imgSize: ISizeCalculationResult = imageSize(res.locals.images["image"])
-        if (face) {
-            const croppedJimpImage = await jimp.read(res.locals.images["image"])
-            const cropRect: Rect = {
-                "x": Math.max(face.box[0]-face.box[2]/2, 0),
-                "y": Math.max(face.box[1]-face.box[3]/2, 0),
-                "width": face.box[2],
-                "height": face.box[3]
-            }
-            cropRect.width = Math.min(imgSize.width - cropRect.x, cropRect.width)
-            cropRect.height = Math.min(imgSize.height - cropRect.y, cropRect.height)
-            const croppedImage: string = (await croppedJimpImage.crop(cropRect.x, cropRect.y, cropRect.width, cropRect.height).getBufferAsync(jimp.MIME_JPEG)).toString("base64")
-            const response: DetectFaceResponse = {
-                "jpeg": croppedImage,
-                "faceTemplate": face.template
-            }
-            if (face.classifiers) {
-                response.authenticityScores = face.classifiers
-            }
-            res.type("application/json")
-            res.set("Access-Control-Allow-Origin", "*")
-            res.send(response)
-        } else {
-            res.sendStatus(404)
-        }
+        }) : null)        
+        res.type("application/json")
+        res.set("Access-Control-Allow-Origin", "*")
+        res.send(response)
     } catch (error) {
+        if (error && error.message == "No face detected") {
+            res.status(404)
+        }
         next(error)
     }
 })
@@ -140,16 +121,26 @@ app.post("/detectIdCard", imagesFromRequest(["front","back"]), async (req, res, 
         if (res.locals.images) {
             const promises: Promise<any>[] = []
             if (res.locals.images.front) {
-                promises.push(detectIdCard(res.locals.images.front, RecognizerType.BlinkId))
+                promises.push(detectIdCard(res.locals.images.front, "BLINK_ID"))
             }
             if (res.locals.images.back) {
-                promises.push(detectIdCard(res.locals.images.back, RecognizerType.Usdl))
+                promises.push(detectIdCard(res.locals.images.back, "USDL"))
             }
             if (promises.length > 0) {
                 const results = await Promise.all(promises)
+                const response: {front?: BlinkIDResult, back?: USDLResult, passport?: PassportResult} = {}
+                for (let result of results) {
+                    if (result.data.recognizer == "BLINK_ID") {
+                        response.front = result.data.result as BlinkIDResult
+                    } else if (result.data.recognizer == "USDL") {
+                        response.back = result.data.result as USDLResult
+                    } else if (result.data.recognizer == "PASSPORT") {
+                        response.passport = result.data.result as PassportResult
+                    }
+                }
                 res.type("application/json")
                 res.set("Access-Control-Allow-Origin", "*")
-                res.send(results)
+                res.send(response)
                 return
             }
         }
@@ -203,12 +194,12 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
     res.type("text/plain").send("Error"+(typeof(error) == "string" ? ": "+error : (error && error.message ? ": "+error.message : "")))
 })
 
-async function detectFace(image: Buffer, classifiers?: Classifier[]): Promise<Face> {
+async function detectFace(image: Buffer, classifiers?: Classifier[]): Promise<DetectFaceResponse> {
     const url: string = detcvURL+"/queue_image"
     const body: FaceDetectionRequest = {
         "user":"test123456",
         "image":image.toString("base64"),
-        "wait":WaitOptions.One
+        "wait": "one"
     }
     if (classifiers) {
         body.parameters = {
@@ -228,31 +219,66 @@ async function detectFace(image: Buffer, classifiers?: Classifier[]): Promise<Fa
                     return current
                 }
             })
-            return face
+            const imgSize: ISizeCalculationResult = imageSize(image)
+            const croppedJimpImage = await jimp.read(image)
+            const cropRect: Rect = {
+                "x": Math.max(face.box[0]-face.box[2]/2, 0),
+                "y": Math.max(face.box[1]-face.box[3]/2, 0),
+                "width": face.box[2],
+                "height": face.box[3]
+            }
+            cropRect.width = Math.min(imgSize.width - cropRect.x, cropRect.width)
+            cropRect.height = Math.min(imgSize.height - cropRect.y, cropRect.height)
+            const croppedImage: string = (await croppedJimpImage.crop(cropRect.x, cropRect.y, cropRect.width, cropRect.height).getBufferAsync(jimp.MIME_JPEG)).toString("base64")
+            const response: DetectFaceResponse = {
+                "jpeg": croppedImage,
+                "faceTemplate": face.template
+            }
+            if (face.classifiers) {
+                response.authenticityScores = face.classifiers
+            }
+            return response
         }
     }
-    return null
+    throw new Error("No face detected")
  }
 
-async function detectIdCard(image: Buffer, recognizer: RecognizerType): Promise<any> {
+async function detectIdCard<T extends RecognizerType>(image: Buffer, recognizer: T): Promise<BlinkIDResponse<T>> {
     const originalImageSize: ISizeCalculationResult = imageSize(image)
-    const maxImageWidth: number = 2000
+    const maxImageWidth: number = process.env.DETECTION_IMAGE_MAX_WIDTH ? parseInt(process.env.DETECTION_IMAGE_MAX_WIDTH) : Number.POSITIVE_INFINITY 
     if (originalImageSize.width > maxImageWidth) {
         const jimpImage = await jimp.read(image)
         jimpImage.resize(maxImageWidth, jimp.AUTO, jimp.RESIZE_BICUBIC)
         image = await jimpImage.getBufferAsync(jimp.MIME_JPEG)
     }
     const url: string = idScannerURL+"/recognize/execute"
-    const result: AxiosResponse<any> = await axios.post(url, {
+    const result: AxiosResponse<BlinkIDResponse<T>> = await axios.post(url, {
         "imageBase64": image.toString("base64"),
         "recognizerType": recognizer,
-        "exportFullDocumentImage": recognizer == RecognizerType.BlinkId
+        "exportFullDocumentImage": recognizer != "USDL"
     }, {
         "maxContentLength":Infinity,
         "maxBodyLength":Infinity
     })
+    if (result.status != 200) {
+        throw new Error("ID card detection failed with HTTP status "+result.status)
+    }
     if (result && result.data && result.data.data && result.data.data.result) {
-        return result.data.data.result
+        if (recognizer == "BLINK_ID" && (result.data.data.result as BlinkIDResult).fullDocumentImageBase64) {
+            try {
+                const faceResponse: DetectFaceResponse = await detectFace(Buffer.from((result.data.data.result as BlinkIDResult).fullDocumentImageBase64, "base64"), authenticityModelPrefixes.length > 0 ? authenticityModelPrefixes.map(prefix => {
+                    return {"prefix": prefix, "threshold": 5}
+                }) : null);
+                (result.data.data.result as BlinkIDResult).face = faceResponse
+            } catch (error) {                
+            }
+        } else if (recognizer == "PASSPORT") {
+            try {
+                const faceResponse: DetectFaceResponse = await detectFace(image);
+                (result.data.data.result as PassportResult).face = faceResponse
+            }
+        }
+        return result.data
     }
     throw new Error("Failed to detect ID card in image")
 }
@@ -288,7 +314,7 @@ function imagesFromRequest(fieldNames: string[]): (req: Request, res: Response, 
                         next(error)
                     }
                 })
-            })            
+            })
         } catch (error) {
             console.error(error)
             next(error)

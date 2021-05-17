@@ -54,7 +54,7 @@ export class FaceRecognition {
      * @param faceRect Optional bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    async createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect, calculateAuthenticityScore: boolean = false): Promise<RecognizableFace> {
+    async createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace> {
         let jpeg: string
         if (image instanceof Image) {
             jpeg = await this.cropImage(image, faceRect)
@@ -63,18 +63,15 @@ export class FaceRecognition {
         } else {
             throw new Error("Invalid image parameter")
         }
-        const body: DetectFaceRequest = {"image": jpeg}
-        if (calculateAuthenticityScore) {
-            body.calculate_authenticity_score = true
-        }
-        const response: Response = await fetch(this.serviceURL+"/detectFace", {
+        const body: Buffer = Buffer.from(jpeg, "base64")
+        const response: Response = await fetch(this.serviceURL+"/detect_face", {
             "method": "POST",
             "mode": "cors",
             "cache": "no-cache",
             "headers": {
-                "Content-Type": "application/json"
+                "Content-Type": "image/jpeg"
             },
-            "body": JSON.stringify(body)
+            "body": body
         })
         if (response.status != 200) {
             throw new Error("Failed to extract recognition template from face")
@@ -131,7 +128,7 @@ export class FaceRecognition {
         if (!template1 || !template2) {
             throw new Error("Missing face templates")
         }
-        const response: Response = await fetch(this.serviceURL+"/compareFaces", {
+        const response: Response = await fetch(this.serviceURL+"/compare_faces", {
             "method": "POST",
             "mode": "cors",
             "cache": "no-cache",
@@ -141,7 +138,7 @@ export class FaceRecognition {
             },
             "body": JSON.stringify([template1, template2])
         })
-        if (response.status != 200) {
+        if (response.status >= 400) {
             throw new Error("Face comparison failed")
         }
         const score: string = await response.text()
