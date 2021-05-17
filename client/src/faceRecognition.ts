@@ -63,7 +63,7 @@ export class FaceRecognition {
         } else {
             throw new Error("Invalid image parameter")
         }
-        const body: Buffer = Buffer.from(jpeg, "base64")
+        const body: string = atob(jpeg)
         const response: Response = await fetch(this.serviceURL+"/detect_face", {
             "method": "POST",
             "mode": "cors",
