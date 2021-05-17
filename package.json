@@ -2,13 +2,14 @@
   "name": "ver-id-browser",
   "version": "1.0.0",
   "description": "## Installation",
-  "main": "deploy.js",
+  "main": "configure.js",
   "type": "module",
   "engines": {
     "node": ">=14"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node configure.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
   },
   "homepage": "https://github.com/AppliedRecognition/Ver-ID-Browser#readme",
   "devDependencies": {
+    "aws-sdk": "^2.908.0",
     "cli-spinner": "^0.2.10",
     "inquirer": "^8.0.0",
     "js-yaml": "^4.1.0",
