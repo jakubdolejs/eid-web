@@ -41,7 +41,14 @@ export interface DatedDocument {
 
 export interface ImageDocument {
     image: string
-    faces: Face[]
+    faces: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        quality: number,
+        template: string
+    }[]
     imageAnalysis: ImageQuality
     imageSize: Size
 }
@@ -60,15 +67,6 @@ export interface DocumentDate {
     year: number
     successfullyParsed?: boolean
     originalString?: string
-}
-
-export interface Face {
-    x: number
-    y: number
-    width: number
-    height: number
-    quality: number
-    template: string
 }
 
 export interface ClassInfo {
@@ -468,7 +466,7 @@ export class IdCapture {
                                     img.src = canvas.toDataURL()
                                     return
                                 }
-                                this.faceRecognition.createRecognizableFace(img, null, true).then(face => {
+                                this.faceRecognition.createRecognizableFace(img, null).then(face => {
                                     resolve({
                                         "result": combinedResult,
                                         "face": face
