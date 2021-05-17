@@ -41,7 +41,7 @@ export declare class FaceRecognition {
      * @param faceRect Optional bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect, calculateAuthenticityScore?: boolean): Promise<RecognizableFace>;
+    createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace>;
     private cropImage;
     /**
      * Compare face templates and return similarity score

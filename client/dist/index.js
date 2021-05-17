@@ -19227,7 +19227,7 @@ class FaceRecognition {
      * @param faceRect Optional bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    createRecognizableFace(image, faceRect, calculateAuthenticityScore = false) {
+    createRecognizableFace(image, faceRect) {
         return __awaiter(this, void 0, void 0, function* () {
             let jpeg;
             if (image instanceof Image) {
@@ -19239,18 +19239,15 @@ class FaceRecognition {
             else {
                 throw new Error("Invalid image parameter");
             }
-            const body = { "image": jpeg };
-            if (calculateAuthenticityScore) {
-                body.calculate_authenticity_score = true;
-            }
-            const response = yield fetch(this.serviceURL + "/detectFace", {
+            const body = atob(jpeg);
+            const response = yield fetch(this.serviceURL + "/detect_face", {
                 "method": "POST",
                 "mode": "cors",
                 "cache": "no-cache",
                 "headers": {
-                    "Content-Type": "application/json"
+                    "Content-Type": "image/jpeg"
                 },
-                "body": JSON.stringify(body)
+                "body": body
             });
             if (response.status != 200) {
                 throw new Error("Failed to extract recognition template from face");
@@ -19310,7 +19307,7 @@ class FaceRecognition {
             if (!template1 || !template2) {
                 throw new Error("Missing face templates");
             }
-            const response = yield fetch(this.serviceURL + "/compareFaces", {
+            const response = yield fetch(this.serviceURL + "/compare_faces", {
                 "method": "POST",
                 "mode": "cors",
                 "cache": "no-cache",
@@ -19320,7 +19317,7 @@ class FaceRecognition {
                 },
                 "body": JSON.stringify([template1, template2])
             });
-            if (response.status != 200) {
+            if (response.status >= 400) {
                 throw new Error("Face comparison failed");
             }
             const score = yield response.text();
@@ -19341,6 +19338,7 @@ class FaceRecognition {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Warning": () => (/* binding */ Warning),
 /* harmony export */   "IdCapture": () => (/* binding */ IdCapture),
 /* harmony export */   "IdCaptureSettings": () => (/* binding */ IdCaptureSettings)
 /* harmony export */ });
@@ -19361,6 +19359,12 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
+class Warning {
+    constructor(code, description) {
+        this.code = code;
+        this.description = description;
+    }
+}
 class IdCapture {
     constructor(settings, serviceURL) {
         this.percentLoaded = 0;
@@ -19385,11 +19389,15 @@ class IdCapture {
     unregisterLoadListener(listener) {
         this.loadListeners.delete(listener);
     }
+    /**
+     * Detect ID card in images
+     * @param images Base64-encoded images of the ID card
+     * @returns Promise
+     */
     detectIdCard(images) {
         return __awaiter(this, void 0, void 0, function* () {
             const body = images;
-            body.calculate_authenticity_score = true;
-            const response = yield fetch(this.serviceURL + "/detectIdCard", {
+            const response = yield fetch(this.serviceURL + "/", {
                 "method": "POST",
                 "mode": "cors",
                 "cache": "no-cache",
@@ -19401,28 +19409,12 @@ class IdCapture {
             if (response.status != 200) {
                 throw new Error("ID card detection failed");
             }
-            const json = yield response.json();
-            const imageSide = json.reduce(function (last, current) {
-                if (last.fullDocumentImageBase64) {
-                    return last;
-                }
-                else if (current.fullDocumentImageBase64) {
-                    return current;
-                }
-                else {
-                    return null;
-                }
-            });
-            if (imageSide) {
-                json.face = yield this.faceRecognition.createRecognizableFace(imageSide.fullDocumentImageBase64);
-            }
-            return json;
+            return yield response.json();
         });
     }
     /**
-     * @returns
-     * @experimental
-     * @alpha
+     * Capture ID card using the device camera
+     * @returns Observable
      */
     captureIdCard() {
         return new rxjs__WEBPACK_IMPORTED_MODULE_3__.Observable((subscriber) => {
@@ -19692,7 +19684,7 @@ class IdCapture {
                                     img.src = canvas.toDataURL();
                                     return;
                                 }
-                                this.faceRecognition.createRecognizableFace(img, null, true).then(face => {
+                                this.faceRecognition.createRecognizableFace(img, null).then(face => {
                                     resolve({
                                         "result": combinedResult,
                                         "face": face
@@ -20906,6 +20898,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "clamp": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_2__.clamp),
 /* harmony export */   "IdCapture": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_3__.IdCapture),
 /* harmony export */   "IdCaptureSettings": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_3__.IdCaptureSettings),
+/* harmony export */   "Warning": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_3__.Warning),
 /* harmony export */   "estimateFaceAngle": () => (/* reexport safe */ _faceAngle__WEBPACK_IMPORTED_MODULE_4__.estimateFaceAngle),
 /* harmony export */   "QRCodeGenerator": () => (/* reexport safe */ _qrCodeGenerator__WEBPACK_IMPORTED_MODULE_5__.QRCodeGenerator),
 /* harmony export */   "NormalDistribution": () => (/* reexport safe */ _normalDistribution__WEBPACK_IMPORTED_MODULE_6__.NormalDistribution)
@@ -20949,8 +20942,9 @@ var __webpack_exports__QRCodeGenerator = __webpack_exports__.QRCodeGenerator;
 var __webpack_exports__Rect = __webpack_exports__.Rect;
 var __webpack_exports__RectSmoothing = __webpack_exports__.RectSmoothing;
 var __webpack_exports__Smoothing = __webpack_exports__.Smoothing;
+var __webpack_exports__Warning = __webpack_exports__.Warning;
 var __webpack_exports__clamp = __webpack_exports__.clamp;
 var __webpack_exports__estimateFaceAngle = __webpack_exports__.estimateFaceAngle;
-export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCaptureSettings as FaceCaptureSettings, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LiveFaceCapture as LiveFaceCapture, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__QRCodeGenerator as QRCodeGenerator, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__clamp as clamp, __webpack_exports__estimateFaceAngle as estimateFaceAngle };
+export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCaptureSettings as FaceCaptureSettings, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LiveFaceCapture as LiveFaceCapture, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__QRCodeGenerator as QRCodeGenerator, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__Warning as Warning, __webpack_exports__clamp as clamp, __webpack_exports__estimateFaceAngle as estimateFaceAngle };
 
 //# sourceMappingURL=index.js.map
