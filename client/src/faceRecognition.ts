@@ -10,19 +10,29 @@ import { Rect } from "./utils"
  */
 export interface RecognizableFace {
     /**
-     * Base64-encoded JPEG image
+     * Distance of the face from the left side of the image (pixels)
      */
-    jpeg: string
+    x: number
     /**
-     * Base64-encoded JPEG image
+     * Distance of the face from the top side of the image (pixels)
      */
-    faceTemplate: string
+    y: number
     /**
-     * Authenticity scores keyed by licence model prefix
+     * Width of the face (pixels)
      */
-    authenticityScores?: {
-        [k: string]: number
-    }
+    width: number,
+    /**
+     * Height of the face (pixels)
+     */
+    height: number,
+    /**
+     * Quality of the detected face – ranges from 0 (worst) to 10 (best)
+     */
+    quality: number
+    /**
+     * Base64-encoded face recognition template
+     */
+    template: string
 }
 
 interface DetectFaceRequest {
@@ -63,8 +73,9 @@ export class FaceRecognition {
         } else {
             throw new Error("Invalid image parameter")
         }
-        const body: string = atob(jpeg)
-        const response: Response = await fetch(this.serviceURL+"/detect_face", {
+        let response: Response = await fetch("data:image/jpeg;base64,"+jpeg)
+        const body: Blob = await response.blob()
+        response = await fetch(this.serviceURL+"/detect_face", {
             "method": "POST",
             "mode": "cors",
             "cache": "no-cache",

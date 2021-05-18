@@ -55,7 +55,7 @@ export declare class FaceDetection {
      * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
      * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
      */
-    livenessDetectionSession(settings: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult>;
+    livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult>;
 }
 /**
  * Result of a liveness detection session

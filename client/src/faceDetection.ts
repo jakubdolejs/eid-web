@@ -121,7 +121,7 @@ export class FaceDetection {
      * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
      * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
      */
-    livenessDetectionSession(settings: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult> {
+    livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult> {
         const faceDetection = this
         if (location.protocol != "https:") {
             return throwError(new Error("Liveness detection is only supported on secure connections (https)"))
@@ -381,17 +381,12 @@ export class FaceDetection {
                         faceAlignmentStatus = FaceAlignmentStatus.ALIGNED
                         fixTime = now
                         alignedFaceCount += 1
-                        console.log("Captured face with bearing "+bearingIterator.value)
                         bearingIterator = bearingGenerator.next()
-                        console.log("Set next bearing to "+bearingIterator.value)
                     }
                 }
             } else {
                 faces.clear()
                 faceAlignmentStatus = FaceAlignmentStatus.FOUND
-            }
-            if (faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
-                console.log("Face aligned")
             }
             capture.faceAlignmentStatus = faceAlignmentStatus
             return capture
@@ -438,7 +433,7 @@ export class FaceDetection {
             if (capture.requestedBearing == Bearing.STRAIGHT) {
                 const bounds: Rect = capture.face ? capture.face.bounds : null
                 return from(this.faceRecognition.createRecognizableFace(capture.image, bounds).then(recognizableFace => {
-                    capture.face.template = recognizableFace.faceTemplate
+                    capture.face.template = recognizableFace.template
                     return capture
                 }))
             } else {

@@ -18884,7 +18884,7 @@ class FaceDetection {
             if (capture.requestedBearing == Bearing.STRAIGHT) {
                 const bounds = capture.face ? capture.face.bounds : null;
                 return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.from)(this.faceRecognition.createRecognizableFace(capture.image, bounds).then(recognizableFace => {
-                    capture.face.template = recognizableFace.faceTemplate;
+                    capture.face.template = recognizableFace.template;
                     return capture;
                 }));
             }
@@ -19239,8 +19239,9 @@ class FaceRecognition {
             else {
                 throw new Error("Invalid image parameter");
             }
-            const body = atob(jpeg);
-            const response = yield fetch(this.serviceURL + "/detect_face", {
+            let response = yield fetch("data:image/jpeg;base64," + jpeg);
+            const body = yield response.blob();
+            response = yield fetch(this.serviceURL + "/detect_face", {
                 "method": "POST",
                 "mode": "cors",
                 "cache": "no-cache",

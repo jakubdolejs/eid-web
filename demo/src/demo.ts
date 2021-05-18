@@ -44,7 +44,7 @@ function setup(config: DemoConfiguration) {
                     document.querySelector("#result .liveFace").innerHTML = ""
                     document.querySelector("#result .liveFace").appendChild(img)
                 })
-                faceRecognition.compareFaceTemplates(idCaptureResult.face.faceTemplate, liveFace.template).then((score: number) => {
+                faceRecognition.compareFaceTemplates(idCaptureResult.face.template, liveFace.template).then((score: number) => {
                     document.querySelector("#result .score").innerHTML = String(Math.round(score*10)/10)
                     const scoreString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(score)
                     const likelihood = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 3, "maximumFractionDigits": 3, "style": "percent"}).format(new NormalDistribution().cumulativeProbability(score))
@@ -80,10 +80,6 @@ function setup(config: DemoConfiguration) {
             next: (result: IdCaptureResult) => {
                 idCaptureResult = result
                 if (idCaptureResult.face) {
-                    const cardFaceImage = new Image()
-                    cardFaceImage.src = "data:image/jpeg;base64,"+idCaptureResult.face.jpeg
-                    document.querySelector("#result .cardFace").innerHTML = ""
-                    document.querySelector("#result .cardFace").appendChild(cardFaceImage)
                     const imageData = idCaptureResult.result.fullDocumentFrontImage.rawImage
                     const canvas = document.createElement("canvas")
                     canvas.width = imageData.width
@@ -96,6 +92,17 @@ function setup(config: DemoConfiguration) {
                         img.src = canvas.toDataURL()
                         div.appendChild(img)
                     })
+                    if (idCaptureResult.face) {
+                        const cardFaceImage = new Image()
+                        const cardFaceCanvas = document.createElement("canvas")
+                        cardFaceCanvas.width = idCaptureResult.face.width
+                        cardFaceCanvas.height = idCaptureResult.face.height
+                        const cardCanvasContext = canvas.getContext("2d")
+                        cardCanvasContext.putImageData(imageData, 0-idCaptureResult.face.x, 0-idCaptureResult.face.y)
+                        cardFaceImage.src = cardFaceCanvas.toDataURL()
+                        document.querySelector("#result .cardFace").innerHTML = ""
+                        document.querySelector("#result .cardFace").appendChild(cardFaceImage)
+                    }
                     const table = document.querySelector("#carddetails table.idcard")
                     table.innerHTML = ""
                     const tableBody = document.createElement("tbody")
