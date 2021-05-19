@@ -432,7 +432,7 @@ export class FaceDetection {
         const createFaceCapture = (capture: LiveFaceCapture): Observable<LiveFaceCapture> => {
             if (capture.requestedBearing == Bearing.STRAIGHT) {
                 const bounds: Rect = capture.face ? capture.face.bounds : null
-                return from(this.faceRecognition.createRecognizableFace(capture.image, bounds).then(recognizableFace => {
+                return from(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
                     capture.face.template = recognizableFace.template
                     return capture
                 }))

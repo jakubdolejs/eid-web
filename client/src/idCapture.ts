@@ -477,7 +477,7 @@ export class IdCapture {
                     scale = 1
                     return
                 }
-                this.faceRecognition.createRecognizableFace(img, null).then(face => {
+                this.faceRecognition.detectRecognizableFace(img, null).then(face => {
                     resolveInner({
                         "result": combinedResult,
                         "face": face
