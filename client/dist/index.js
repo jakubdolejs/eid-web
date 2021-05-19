@@ -18828,18 +18828,13 @@ class FaceDetection {
                         faceAlignmentStatus = FaceAlignmentStatus.ALIGNED;
                         fixTime = now;
                         alignedFaceCount += 1;
-                        console.log("Captured face with bearing " + bearingIterator.value);
                         bearingIterator = bearingGenerator.next();
-                        console.log("Set next bearing to " + bearingIterator.value);
                     }
                 }
             }
             else {
                 faces.clear();
                 faceAlignmentStatus = FaceAlignmentStatus.FOUND;
-            }
-            if (faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
-                console.log("Face aligned");
             }
             capture.faceAlignmentStatus = faceAlignmentStatus;
             return capture;
@@ -19344,7 +19339,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "IdCaptureSettings": () => (/* binding */ IdCaptureSettings)
 /* harmony export */ });
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/_esm5/internal/Observable.js");
-/* harmony import */ var _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @microblink/blinkid-in-browser-sdk/es/blinkid-sdk */ "./node_modules/@microblink/blinkid-in-browser-sdk/es/blinkid-sdk.js");
+/* harmony import */ var _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @microblink/blinkid-in-browser-sdk */ "./node_modules/@microblink/blinkid-in-browser-sdk/es/blinkid-sdk.js");
 /* harmony import */ var _faceRecognition__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./faceRecognition */ "./src/faceRecognition.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -19360,10 +19355,272 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
+
 class Warning {
     constructor(code, description) {
         this.code = code;
         this.description = description;
+    }
+}
+class IdCaptureUI {
+    constructor() {
+        this.promptLock = false;
+        this.cardAspectRatio = 85.6 / 53.98;
+        this.onCancel = null;
+        this.videoContainer = this.createVideoContainer();
+        document.body.appendChild(this.videoContainer);
+        this.video = this.createVideoElement();
+        this.cameraOverlayCanvas = this.createCameraOverlayCanvas();
+        this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d");
+        this.cancelButton = this.createCancelButton();
+        this.prompt = this.createPromptElement();
+        this.videoContainer.appendChild(this.video);
+        this.videoContainer.appendChild(this.cameraOverlayCanvas);
+        this.videoContainer.appendChild(this.cancelButton);
+        this.videoContainer.appendChild(this.prompt);
+        this.progressBarContainer = this.createProgressBarContainer();
+        this.progressBar = this.createProgressBarElement();
+        this.progressBarContainer.appendChild(this.progressBar);
+        this.videoContainer.appendChild(this.progressBarContainer);
+        this.cancelButton.onclick = () => {
+            if (this.onCancel) {
+                this.onCancel();
+            }
+        };
+        this.video.onplaying = () => {
+            this.drawCardOutline("white");
+        };
+    }
+    createVideoContainer() {
+        const videoContainer = document.createElement("div");
+        videoContainer.style.position = "fixed";
+        videoContainer.style.left = "0px";
+        videoContainer.style.top = "0px";
+        videoContainer.style.right = "0px";
+        videoContainer.style.bottom = "0px";
+        videoContainer.style.backgroundColor = "black";
+        return videoContainer;
+    }
+    createVideoElement() {
+        const video = document.createElement("video");
+        video.setAttribute("autoplay", "autoplay");
+        video.setAttribute("muted", "muted");
+        video.setAttribute("playsinline", "playsinline");
+        video.style.position = "absolute";
+        video.style.left = "0px";
+        video.style.top = "0px";
+        video.style.right = "0px";
+        video.style.bottom = "0px";
+        video.style.width = "100%";
+        video.style.height = "100%";
+        return video;
+    }
+    createCameraOverlayCanvas() {
+        const cameraOverlayCanvas = document.createElement("canvas");
+        cameraOverlayCanvas.style.position = "absolute";
+        cameraOverlayCanvas.style.left = "0px";
+        cameraOverlayCanvas.style.top = "0px";
+        return cameraOverlayCanvas;
+    }
+    createCancelButton() {
+        const cancelButton = document.createElement("a");
+        cancelButton.href = "javascript:void(0)";
+        cancelButton.innerText = "Cancel";
+        cancelButton.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)";
+        cancelButton.style.fontFamily = "Helvetica, Arial, sans-serif";
+        cancelButton.style.color = "white";
+        cancelButton.style.textDecoration = "none";
+        cancelButton.style.position = "absolute";
+        cancelButton.style.bottom = " 16px";
+        cancelButton.style.left = "8px";
+        cancelButton.style.right = "8px";
+        cancelButton.style.textAlign = "center";
+        return cancelButton;
+    }
+    createPromptElement() {
+        const prompt = document.createElement("div");
+        prompt.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)";
+        prompt.style.fontFamily = "Helvetica, Arial, sans-serif";
+        prompt.style.color = "white";
+        prompt.style.position = "absolute";
+        prompt.style.left = "8px";
+        prompt.style.right = "8px";
+        prompt.style.top = "16px";
+        prompt.style.textAlign = "center";
+        return prompt;
+    }
+    createProgressBarContainer() {
+        const progressBarContainer = document.createElement("div");
+        progressBarContainer.style.position = "absolute";
+        progressBarContainer.style.top = "0px";
+        progressBarContainer.style.left = "0px";
+        progressBarContainer.style.right = "0px";
+        progressBarContainer.style.bottom = "0px";
+        progressBarContainer.style.width = "50%";
+        progressBarContainer.style.height = "20px";
+        progressBarContainer.style.overflow = "hidden";
+        progressBarContainer.style.border = "2px solid white";
+        progressBarContainer.style.borderRadius = "4px";
+        progressBarContainer.style.margin = "auto";
+        return progressBarContainer;
+    }
+    createProgressBarElement() {
+        const progressBar = document.createElement("div");
+        progressBar.style.position = "absolute";
+        progressBar.style.left = "0px";
+        progressBar.style.top = "0px";
+        progressBar.style.height = "100%";
+        progressBar.style.width = "0%";
+        progressBar.style.backgroundColor = "white";
+        return progressBar;
+    }
+    drawCardOutline(strokeStyle) {
+        const scale = Math.min(this.videoContainer.clientWidth / this.video.videoWidth, this.videoContainer.clientHeight / this.video.videoHeight);
+        this.cameraOverlayCanvas.width = this.video.videoWidth * scale;
+        this.cameraOverlayCanvas.height = this.video.videoHeight * scale;
+        this.cameraOverlayCanvas.style.left = ((this.videoContainer.clientWidth - this.cameraOverlayCanvas.width) / 2) + "px";
+        this.cameraOverlayCanvas.style.top = ((this.videoContainer.clientHeight - this.cameraOverlayCanvas.height) / 2) + "px";
+        this.cameraOverlayContext.clearRect(0, 0, this.cameraOverlayCanvas.width, this.cameraOverlayCanvas.height);
+        const cardSize = { "width": 0, "height": 0 };
+        if (this.cameraOverlayCanvas.width / this.cameraOverlayCanvas.height > this.cardAspectRatio) {
+            cardSize.height = this.cameraOverlayCanvas.height * 0.85;
+            cardSize.width = cardSize.height * this.cardAspectRatio;
+        }
+        else {
+            cardSize.width = this.cameraOverlayCanvas.width * 0.85;
+            cardSize.height = cardSize.width / this.cardAspectRatio;
+        }
+        const cardRect = new _utils__WEBPACK_IMPORTED_MODULE_2__.Rect(this.cameraOverlayCanvas.width / 2 - cardSize.width / 2, this.cameraOverlayCanvas.height / 2 - cardSize.height / 2, cardSize.width, cardSize.height);
+        const cornerRadius = cardRect.width * 0.05;
+        const offset = cardRect.height * 0.25;
+        this.cameraOverlayContext.strokeStyle = strokeStyle;
+        this.cameraOverlayContext.lineWidth = 6;
+        this.cameraOverlayContext.beginPath();
+        // Top left corner
+        this.cameraOverlayContext.moveTo(cardRect.x, cardRect.y + offset);
+        this.cameraOverlayContext.arcTo(cardRect.x, cardRect.y, cardRect.x + cornerRadius, cardRect.y, cornerRadius);
+        this.cameraOverlayContext.lineTo(cardRect.x + offset, cardRect.y);
+        // Top right corner
+        this.cameraOverlayContext.moveTo(cardRect.right - offset, cardRect.y);
+        this.cameraOverlayContext.arcTo(cardRect.right, cardRect.y, cardRect.right, cardRect.y + offset, cornerRadius);
+        this.cameraOverlayContext.lineTo(cardRect.right, cardRect.y + offset);
+        // Bottom right corner
+        this.cameraOverlayContext.moveTo(cardRect.right, cardRect.bottom - offset);
+        this.cameraOverlayContext.arcTo(cardRect.right, cardRect.bottom, cardRect.right - offset, cardRect.bottom, cornerRadius);
+        this.cameraOverlayContext.lineTo(cardRect.right - offset, cardRect.bottom);
+        // Bottom left corner
+        this.cameraOverlayContext.moveTo(cardRect.x + offset, cardRect.bottom);
+        this.cameraOverlayContext.arcTo(cardRect.x, cardRect.bottom, cardRect.x, cardRect.bottom - offset, cornerRadius);
+        this.cameraOverlayContext.lineTo(cardRect.x, cardRect.bottom - offset);
+        this.cameraOverlayContext.stroke();
+    }
+    setProgress(progress) {
+        this.progressBar.style.width = progress + "%";
+    }
+    showPrompt(text, force = false) {
+        if (this.promptLock && !force) {
+            return;
+        }
+        this.promptLock = true;
+        this.prompt.innerText = text;
+        setTimeout(() => this.promptLock = false, 1000);
+    }
+    showFlipCardInstruction() {
+        this.showPrompt("Flip the card", true);
+        const style = document.createElement("style");
+        style.innerText = ".flipped { transform: rotateY(180deg) !important; transition: transform 2s; }";
+        document.head.appendChild(style);
+        const flipAnimationContainer = document.createElement("div");
+        flipAnimationContainer.style.position = "absolute";
+        flipAnimationContainer.style.top = "0px";
+        flipAnimationContainer.style.right = "0px";
+        flipAnimationContainer.style.bottom = "0px";
+        flipAnimationContainer.style.left = "0px";
+        flipAnimationContainer.style.perspective = "500px";
+        const flipAnimation = document.createElement("div");
+        flipAnimation.style.position = "absolute";
+        flipAnimation.style.top = "0px";
+        flipAnimation.style.right = "0px";
+        flipAnimation.style.bottom = "0px";
+        flipAnimation.style.left = "0px";
+        flipAnimation.style.margin = "auto";
+        flipAnimation.style.width = "172px";
+        flipAnimation.style.height = "108px";
+        flipAnimation.style.borderRadius = "6px";
+        flipAnimation.style.backgroundColor = "white";
+        flipAnimation.style.transform = "rotateY(0deg)";
+        flipAnimationContainer.appendChild(flipAnimation);
+        this.videoContainer.appendChild(flipAnimationContainer);
+        this.cameraOverlayCanvas.style.visibility = "hidden";
+        setTimeout(function () {
+            flipAnimation.className = "flipped";
+        }, 10);
+        this.flipTimeout = setTimeout(() => {
+            this.videoContainer.removeChild(flipAnimationContainer);
+            document.head.removeChild(style);
+            this.drawCardOutline("white");
+            this.cameraOverlayCanvas.style.visibility = "visible";
+            this.flipTimeout = null;
+        }, 2000);
+    }
+    removeProgressBar() {
+        if (this.progressBarContainer.parentNode) {
+            this.progressBarContainer.parentNode.removeChild(this.progressBarContainer);
+        }
+    }
+    hideCameraOverlay() {
+        this.cameraOverlayCanvas.style.visibility = "hidden";
+    }
+    cleanup() {
+        clearTimeout(this.flipTimeout);
+        if (this.videoContainer.parentNode) {
+            this.videoContainer.parentNode.removeChild(this.videoContainer);
+        }
+    }
+    createMetadataCallbacks(onFirstSide) {
+        return {
+            onQuadDetection: (quad) => {
+                switch (quad.detectionStatus) {
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.Fail:
+                        this.showPrompt("Scanning");
+                        this.drawCardOutline("white");
+                        break;
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.Success:
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.FallbackSuccess:
+                        this.showPrompt("Hold it");
+                        this.drawCardOutline("green");
+                        break;
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.CameraAtAngle:
+                        this.showPrompt("Point straight at the ID card");
+                        this.drawCardOutline("white");
+                        break;
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.CameraTooHigh:
+                        this.showPrompt("Move closer");
+                        this.drawCardOutline("white");
+                        break;
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.CameraTooNear:
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.DocumentTooCloseToEdge:
+                    case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.Partial:
+                        this.showPrompt("Move away");
+                        this.drawCardOutline("white");
+                        break;
+                }
+            },
+            onFirstSideResult: () => {
+                this.showFlipCardInstruction();
+                if (onFirstSide) {
+                    onFirstSide();
+                }
+            },
+            onDetectionFailed: () => {
+                this.drawCardOutline("white");
+            }
+        };
+    }
+    get progressListener() {
+        return (progress) => {
+            this.setProgress(progress);
+        };
     }
 }
 class IdCapture {
@@ -19389,6 +19646,91 @@ class IdCapture {
     }
     unregisterLoadListener(listener) {
         this.loadListeners.delete(listener);
+    }
+    convertToIdCaptureResult(combinedResult) {
+        return new Promise((resolveInner, rejectInner) => {
+            const imageData = combinedResult.fullDocumentFrontImage.rawImage;
+            const canvas = document.createElement("canvas");
+            const maxSize = 640;
+            let scale = Math.min(maxSize / Math.max(imageData.width, imageData.height), 1);
+            canvas.width = imageData.width;
+            canvas.height = imageData.height;
+            const ctx = canvas.getContext("2d");
+            ctx.putImageData(imageData, 0, 0);
+            const img = new Image();
+            img.onload = () => {
+                if (scale < 1) {
+                    canvas.width = imageData.width * scale;
+                    canvas.height = imageData.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    img.src = canvas.toDataURL();
+                    scale = 1;
+                    return;
+                }
+                this.faceRecognition.createRecognizableFace(img, null).then(face => {
+                    resolveInner({
+                        "result": combinedResult,
+                        "face": face
+                    });
+                }).catch(error => {
+                    resolveInner({
+                        "result": combinedResult,
+                        "face": null
+                    });
+                });
+            };
+            img.onerror = (error) => {
+                rejectInner(error);
+            };
+            img.src = canvas.toDataURL();
+        });
+    }
+    createBlinkIdCombinedRecognizer(wasmSDK) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const recognizer = yield (0,_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createBlinkIdCombinedRecognizer)(wasmSDK);
+            const recognizerSettings = yield recognizer.currentSettings();
+            recognizerSettings.returnFullDocumentImage = true;
+            yield recognizer.updateSettings(recognizerSettings);
+            return recognizer;
+        });
+    }
+    runIdCaptureSession(ui) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let recognizer;
+            let videoRecognizer;
+            let recognizerRunner;
+            try {
+                const wasmSDK = yield this.loadBlinkWasmModule;
+                this.unregisterLoadListener(ui.progressListener);
+                ui.removeProgressBar();
+                recognizer = yield this.createBlinkIdCombinedRecognizer(wasmSDK);
+                recognizerRunner = yield (0,_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createRecognizerRunner)(wasmSDK, [recognizer], true, ui.createMetadataCallbacks());
+                videoRecognizer = yield _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.VideoRecognizer.createVideoRecognizerFromCameraStream(ui.video, recognizerRunner);
+                const recognitionState = yield videoRecognizer.recognize(60000);
+                if (recognitionState == _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.RecognizerResultState.Valid) {
+                    const combinedResult = yield recognizer.getResult();
+                    ui.showPrompt("Detecting face on ID card", true);
+                    ui.hideCameraOverlay();
+                    return yield this.convertToIdCaptureResult(combinedResult);
+                }
+                else {
+                    throw new Error("Session timed out");
+                }
+            }
+            finally {
+                this.unregisterLoadListener(ui.progressListener);
+                ui.cleanup();
+                if (videoRecognizer) {
+                    videoRecognizer.releaseVideoFeed();
+                }
+                if (recognizerRunner) {
+                    recognizerRunner.delete();
+                }
+                if (recognizer) {
+                    recognizer.delete();
+                }
+            }
+        });
     }
     /**
      * Detect ID card in images
@@ -19423,312 +19765,22 @@ class IdCapture {
                 subscriber.error(new Error("Unsupported browser"));
                 return;
             }
-            const videoContainer = document.createElement("div");
-            videoContainer.style.position = "fixed";
-            videoContainer.style.left = "0px";
-            videoContainer.style.top = "0px";
-            videoContainer.style.right = "0px";
-            videoContainer.style.bottom = "0px";
-            videoContainer.style.backgroundColor = "black";
-            document.body.appendChild(videoContainer);
-            const video = document.createElement("video");
-            video.setAttribute("autoplay", "autoplay");
-            video.setAttribute("muted", "muted");
-            video.setAttribute("playsinline", "playsinline");
-            video.style.position = "absolute";
-            video.style.left = "0px";
-            video.style.top = "0px";
-            video.style.right = "0px";
-            video.style.bottom = "0px";
-            video.style.width = "100%";
-            video.style.height = "100%";
-            const cameraOverlayCanvas = document.createElement("canvas");
-            cameraOverlayCanvas.style.position = "absolute";
-            cameraOverlayCanvas.style.left = "0px";
-            cameraOverlayCanvas.style.top = "0px";
-            const cameraOverlayContext = cameraOverlayCanvas.getContext("2d");
-            const cancelButton = document.createElement("a");
-            cancelButton.href = "javascript:void(0)";
-            cancelButton.innerText = "Cancel";
-            cancelButton.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)";
-            cancelButton.style.fontFamily = "Helvetica, Arial, sans-serif";
-            cancelButton.style.color = "white";
-            cancelButton.style.textDecoration = "none";
-            cancelButton.style.position = "absolute";
-            cancelButton.style.bottom = " 16px";
-            cancelButton.style.left = "8px";
-            cancelButton.style.right = "8px";
-            cancelButton.style.textAlign = "center";
-            cancelButton.onclick = () => {
-                subscriber.complete();
-            };
-            const prompt = document.createElement("div");
-            prompt.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)";
-            prompt.style.fontFamily = "Helvetica, Arial, sans-serif";
-            prompt.style.color = "white";
-            prompt.style.position = "absolute";
-            prompt.style.left = "8px";
-            prompt.style.right = "8px";
-            prompt.style.top = "16px";
-            prompt.style.textAlign = "center";
-            videoContainer.appendChild(video);
-            videoContainer.appendChild(cameraOverlayCanvas);
-            videoContainer.appendChild(cancelButton);
-            videoContainer.appendChild(prompt);
-            const progressBarContainer = document.createElement("div");
-            progressBarContainer.style.position = "absolute";
-            progressBarContainer.style.top = "0px";
-            progressBarContainer.style.left = "0px";
-            progressBarContainer.style.right = "0px";
-            progressBarContainer.style.bottom = "0px";
-            progressBarContainer.style.width = "50%";
-            progressBarContainer.style.height = "20px";
-            progressBarContainer.style.overflow = "hidden";
-            progressBarContainer.style.border = "2px solid white";
-            progressBarContainer.style.borderRadius = "4px";
-            progressBarContainer.style.margin = "auto";
-            const progressBar = document.createElement("div");
-            progressBar.style.position = "absolute";
-            progressBar.style.left = "0px";
-            progressBar.style.top = "0px";
-            progressBar.style.height = "100%";
-            progressBar.style.width = "0%";
-            progressBar.style.backgroundColor = "white";
-            progressBarContainer.appendChild(progressBar);
-            videoContainer.appendChild(progressBarContainer);
-            let promptLock = false;
-            function updatePrompt(text, force = false) {
-                if (promptLock && !force) {
-                    return;
-                }
-                promptLock = true;
-                prompt.innerText = text;
-                setTimeout(() => promptLock = false, 1000);
-            }
-            const cardAspectRatio = 85.6 / 53.98;
-            function drawCardOutline(strokeStyle) {
-                const scale = Math.min(videoContainer.clientWidth / video.videoWidth, videoContainer.clientHeight / video.videoHeight);
-                cameraOverlayCanvas.width = video.videoWidth * scale;
-                cameraOverlayCanvas.height = video.videoHeight * scale;
-                cameraOverlayCanvas.style.left = ((videoContainer.clientWidth - cameraOverlayCanvas.width) / 2) + "px";
-                cameraOverlayCanvas.style.top = ((videoContainer.clientHeight - cameraOverlayCanvas.height) / 2) + "px";
-                cameraOverlayContext.clearRect(0, 0, cameraOverlayCanvas.width, cameraOverlayCanvas.height);
-                const cardSize = { "width": 0, "height": 0 };
-                if (cameraOverlayCanvas.width / cameraOverlayCanvas.height > cardAspectRatio) {
-                    cardSize.height = cameraOverlayCanvas.height * 0.85;
-                    cardSize.width = cardSize.height * cardAspectRatio;
-                }
-                else {
-                    cardSize.width = cameraOverlayCanvas.width * 0.85;
-                    cardSize.height = cardSize.width / cardAspectRatio;
-                }
-                const cardRect = new _utils__WEBPACK_IMPORTED_MODULE_2__.Rect(cameraOverlayCanvas.width / 2 - cardSize.width / 2, cameraOverlayCanvas.height / 2 - cardSize.height / 2, cardSize.width, cardSize.height);
-                const cornerRadius = cardRect.width * 0.05;
-                const offset = cardRect.height * 0.25;
-                cameraOverlayContext.strokeStyle = strokeStyle;
-                cameraOverlayContext.lineWidth = 6;
-                cameraOverlayContext.beginPath();
-                // Top left corner
-                cameraOverlayContext.moveTo(cardRect.x, cardRect.y + offset);
-                cameraOverlayContext.arcTo(cardRect.x, cardRect.y, cardRect.x + cornerRadius, cardRect.y, cornerRadius);
-                cameraOverlayContext.lineTo(cardRect.x + offset, cardRect.y);
-                // Top right corner
-                cameraOverlayContext.moveTo(cardRect.right - offset, cardRect.y);
-                cameraOverlayContext.arcTo(cardRect.right, cardRect.y, cardRect.right, cardRect.y + offset, cornerRadius);
-                cameraOverlayContext.lineTo(cardRect.right, cardRect.y + offset);
-                // Bottom right corner
-                cameraOverlayContext.moveTo(cardRect.right, cardRect.bottom - offset);
-                cameraOverlayContext.arcTo(cardRect.right, cardRect.bottom, cardRect.right - offset, cardRect.bottom, cornerRadius);
-                cameraOverlayContext.lineTo(cardRect.right - offset, cardRect.bottom);
-                // Bottom left corner
-                cameraOverlayContext.moveTo(cardRect.x + offset, cardRect.bottom);
-                cameraOverlayContext.arcTo(cardRect.x, cardRect.bottom, cardRect.x, cardRect.bottom - offset, cornerRadius);
-                cameraOverlayContext.lineTo(cardRect.x, cardRect.bottom - offset);
-                cameraOverlayContext.stroke();
-            }
-            video.onplaying = () => {
-                drawCardOutline("white");
-            };
-            let flipTimeout;
-            const loadListener = (progress) => {
-                progressBar.style.width = progress + "%";
-            };
-            this.registerLoadListener(loadListener);
-            let run = () => __awaiter(this, void 0, void 0, function* () {
-                function cleanup() {
-                    if (videoRecognizer) {
-                        videoRecognizer.releaseVideoFeed();
-                        videoRecognizer = null;
-                    }
-                    if (recognizerRunner) {
-                        recognizerRunner.delete();
-                        recognizerRunner = null;
-                    }
-                    if (recognizer) {
-                        recognizer.delete();
-                        recognizer = null;
-                    }
-                }
-                let recognizer;
-                let videoRecognizer;
-                let recognizerRunner;
-                try {
-                    const wasmSDK = yield this.loadBlinkWasmModule;
-                    this.unregisterLoadListener(loadListener);
-                    if (progressBarContainer.parentNode) {
-                        progressBarContainer.parentNode.removeChild(progressBarContainer);
-                    }
-                    recognizer = yield _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createBlinkIdCombinedRecognizer(wasmSDK);
-                    const recognizerSettings = yield recognizer.currentSettings();
-                    recognizerSettings.returnFullDocumentImage = true;
-                    yield recognizer.updateSettings(recognizerSettings);
-                    recognizerRunner = yield _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createRecognizerRunner(wasmSDK, [recognizer], true, {
-                        onQuadDetection: (quad) => {
-                            switch (quad.detectionStatus) {
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.Fail:
-                                    updatePrompt("Scanning");
-                                    drawCardOutline("white");
-                                    break;
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.Success:
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.FallbackSuccess:
-                                    updatePrompt("Hold it");
-                                    drawCardOutline("green");
-                                    break;
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.CameraAtAngle:
-                                    updatePrompt("Point straight at the ID card");
-                                    drawCardOutline("white");
-                                    break;
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.CameraTooHigh:
-                                    updatePrompt("Move closer");
-                                    drawCardOutline("white");
-                                    break;
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.CameraTooNear:
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.DocumentTooCloseToEdge:
-                                case _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.DetectionStatus.Partial:
-                                    updatePrompt("Move away");
-                                    drawCardOutline("white");
-                                    break;
-                            }
-                        },
-                        onFirstSideResult: () => {
-                            updatePrompt("Flip the card", true);
-                            const style = document.createElement("style");
-                            style.innerText = ".flipped { transform: rotateY(180deg) !important; transition: transform 2s; }";
-                            document.head.appendChild(style);
-                            const flipAnimationContainer = document.createElement("div");
-                            flipAnimationContainer.style.position = "absolute";
-                            flipAnimationContainer.style.top = "0px";
-                            flipAnimationContainer.style.right = "0px";
-                            flipAnimationContainer.style.bottom = "0px";
-                            flipAnimationContainer.style.left = "0px";
-                            flipAnimationContainer.style.perspective = "500px";
-                            const flipAnimation = document.createElement("div");
-                            flipAnimation.style.position = "absolute";
-                            flipAnimation.style.top = "0px";
-                            flipAnimation.style.right = "0px";
-                            flipAnimation.style.bottom = "0px";
-                            flipAnimation.style.left = "0px";
-                            flipAnimation.style.margin = "auto";
-                            flipAnimation.style.width = "172px";
-                            flipAnimation.style.height = "108px";
-                            flipAnimation.style.borderRadius = "6px";
-                            flipAnimation.style.backgroundColor = "white";
-                            flipAnimation.style.transform = "rotateY(0deg)";
-                            flipAnimationContainer.appendChild(flipAnimation);
-                            videoContainer.appendChild(flipAnimationContainer);
-                            cameraOverlayCanvas.style.visibility = "hidden";
-                            setTimeout(function () {
-                                flipAnimation.className = "flipped";
-                            }, 10);
-                            flipTimeout = setTimeout(function () {
-                                videoContainer.removeChild(flipAnimationContainer);
-                                document.head.removeChild(style);
-                                drawCardOutline("white");
-                                cameraOverlayCanvas.style.visibility = "visible";
-                                flipTimeout = null;
-                            }, 2000);
-                        },
-                        onDetectionFailed: () => {
-                            drawCardOutline("white");
-                        }
-                    });
-                    videoRecognizer = yield _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.VideoRecognizer.createVideoRecognizerFromCameraStream(video, recognizerRunner);
-                    const getResult = (state) => __awaiter(this, void 0, void 0, function* () {
-                        if (state !== _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.RecognizerResultState.Empty) {
-                            const blinkIdResult = yield recognizer.getResult();
-                            if (!subscriber.closed && blinkIdResult.state !== _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.RecognizerResultState.Empty) {
-                                return blinkIdResult;
-                            }
-                        }
-                        throw new Error("Failed to recognize ID card");
-                    });
-                    const convertToIdCaptureResult = (combinedResult) => {
-                        cleanup();
-                        updatePrompt("Detecting face on ID card", true);
-                        cameraOverlayCanvas.style.visibility = "hidden";
-                        return new Promise((resolve, reject) => {
-                            const imageData = combinedResult.fullDocumentFrontImage.rawImage;
-                            const canvas = document.createElement("canvas");
-                            const maxSize = 640;
-                            let scale = Math.min(maxSize / Math.max(imageData.width, imageData.height), 1);
-                            canvas.width = imageData.width;
-                            canvas.height = imageData.height;
-                            const ctx = canvas.getContext("2d");
-                            ctx.putImageData(imageData, 0, 0);
-                            const img = new Image();
-                            img.onload = () => {
-                                if (scale < 1) {
-                                    canvas.width = imageData.width * scale;
-                                    canvas.height = imageData.height * scale;
-                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                                    scale = 1;
-                                    img.src = canvas.toDataURL();
-                                    return;
-                                }
-                                this.faceRecognition.createRecognizableFace(img, null).then(face => {
-                                    resolve({
-                                        "result": combinedResult,
-                                        "face": face
-                                    });
-                                }).catch(error => {
-                                    resolve({
-                                        "result": combinedResult,
-                                        "face": null
-                                    });
-                                });
-                            };
-                            img.onerror = (error) => {
-                                reject(error);
-                            };
-                            img.src = canvas.toDataURL();
-                        });
-                    };
-                    const idCaptureResult = yield convertToIdCaptureResult(yield getResult(yield videoRecognizer.recognize()));
-                    return idCaptureResult;
-                }
-                finally {
-                    this.unregisterLoadListener(loadListener);
-                    cleanup();
-                }
-            });
-            run().then(result => {
+            const ui = new IdCaptureUI();
+            ui.onCancel = subscriber.complete;
+            this.registerLoadListener(ui.progressListener);
+            this.runIdCaptureSession(ui).then(result => {
                 if (!subscriber.closed) {
                     subscriber.next(result);
                     subscriber.complete();
                 }
             }).catch(error => {
-                if (progressBarContainer.parentNode) {
-                    progressBarContainer.parentNode.removeChild(progressBarContainer);
-                }
+                ui.removeProgressBar();
                 if (!subscriber.closed) {
                     subscriber.error(error);
                 }
             });
             return () => {
-                clearTimeout(flipTimeout);
-                if (videoContainer.parentNode) {
-                    videoContainer.parentNode.removeChild(videoContainer);
-                }
+                ui.cleanup();
             };
         });
     }

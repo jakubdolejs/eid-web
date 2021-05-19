@@ -87,9 +87,12 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#authenticityscores" class="tsd-kind-icon">authenticity<wbr>Scores</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#facetemplate" class="tsd-kind-icon">face<wbr>Template</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#jpeg" class="tsd-kind-icon">jpeg</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#height" class="tsd-kind-icon">height</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#quality" class="tsd-kind-icon">quality</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#template" class="tsd-kind-icon">template</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#width" class="tsd-kind-icon">width</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#x" class="tsd-kind-icon">x</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recognizableface.html#y" class="tsd-kind-icon">y</a></li>
 							</ul>
 						</section>
 					</div>
@@ -98,55 +101,92 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="authenticityscores" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> authenticity<wbr>Scores</h3>
-					<div class="tsd-signature tsd-kind-icon">authenticity<wbr>Scores<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
+					<a name="height" class="tsd-anchor"></a>
+					<h3>height</h3>
+					<div class="tsd-signature tsd-kind-icon">height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/8895c3c/client/src/faceRecognition.ts#L23">faceRecognition.ts:23</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1ad4ef/client/src/faceRecognition.ts#L27">faceRecognition.ts:27</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Authenticity scores keyed by licence model prefix</p>
-						</div>
-					</div>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter-index-signature">
-								<h5><span class="tsd-signature-symbol">[</span>k: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">number</span></h5>
-							</li>
-						</ul>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="facetemplate" class="tsd-anchor"></a>
-					<h3>face<wbr>Template</h3>
-					<div class="tsd-signature tsd-kind-icon">face<wbr>Template<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/8895c3c/client/src/faceRecognition.ts#L19">faceRecognition.ts:19</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Base64-encoded JPEG image</p>
+							<p>Height of the face (pixels)</p>
 						</div>
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="jpeg" class="tsd-anchor"></a>
-					<h3>jpeg</h3>
-					<div class="tsd-signature tsd-kind-icon">jpeg<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="quality" class="tsd-anchor"></a>
+					<h3>quality</h3>
+					<div class="tsd-signature tsd-kind-icon">quality<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/8895c3c/client/src/faceRecognition.ts#L15">faceRecognition.ts:15</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1ad4ef/client/src/faceRecognition.ts#L31">faceRecognition.ts:31</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Base64-encoded JPEG image</p>
+							<p>Quality of the detected face – ranges from 0 (worst) to 10 (best)</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="template" class="tsd-anchor"></a>
+					<h3>template</h3>
+					<div class="tsd-signature tsd-kind-icon">template<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1ad4ef/client/src/faceRecognition.ts#L35">faceRecognition.ts:35</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Base64-encoded face recognition template</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="width" class="tsd-anchor"></a>
+					<h3>width</h3>
+					<div class="tsd-signature tsd-kind-icon">width<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1ad4ef/client/src/faceRecognition.ts#L23">faceRecognition.ts:23</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Width of the face (pixels)</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="x" class="tsd-anchor"></a>
+					<h3>x</h3>
+					<div class="tsd-signature tsd-kind-icon">x<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1ad4ef/client/src/faceRecognition.ts#L15">faceRecognition.ts:15</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Distance of the face from the left side of the image (pixels)</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="y" class="tsd-anchor"></a>
+					<h3>y</h3>
+					<div class="tsd-signature tsd-kind-icon">y<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1ad4ef/client/src/faceRecognition.ts#L19">faceRecognition.ts:19</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Distance of the face from the top side of the image (pixels)</p>
 						</div>
 					</div>
 				</section>
@@ -168,13 +208,22 @@
 						<a href="recognizableface.html" class="tsd-kind-icon">Recognizable<wbr>Face</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="recognizableface.html#authenticityscores" class="tsd-kind-icon">authenticity<wbr>Scores</a>
+								<a href="recognizableface.html#height" class="tsd-kind-icon">height</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="recognizableface.html#facetemplate" class="tsd-kind-icon">face<wbr>Template</a>
+								<a href="recognizableface.html#quality" class="tsd-kind-icon">quality</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="recognizableface.html#jpeg" class="tsd-kind-icon">jpeg</a>
+								<a href="recognizableface.html#template" class="tsd-kind-icon">template</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="recognizableface.html#width" class="tsd-kind-icon">width</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="recognizableface.html#x" class="tsd-kind-icon">x</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="recognizableface.html#y" class="tsd-kind-icon">y</a>
 							</li>
 						</ul>
 					</li>

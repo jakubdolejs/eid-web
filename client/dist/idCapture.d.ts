@@ -1,7 +1,7 @@
 import { Observable } from "rxjs";
 import { RecognizableFace } from "./faceRecognition";
-import { BlinkIdCombinedRecognizerResult } from "@microblink/blinkid-in-browser-sdk/types";
 import { Size } from "./utils";
+import { BlinkIdCombinedRecognizerResult } from "@microblink/blinkid-in-browser-sdk";
 export declare type IdCaptureStatus = "pass" | "review" | "fail";
 export interface IdCaptureResponse {
     error?: any;
@@ -108,6 +108,9 @@ export declare class IdCapture {
     private onLoadProgressCallback;
     private registerLoadListener;
     private unregisterLoadListener;
+    private convertToIdCaptureResult;
+    private createBlinkIdCombinedRecognizer;
+    private runIdCaptureSession;
     /**
      * Detect ID card in images
      * @param images Base64-encoded images of the ID card

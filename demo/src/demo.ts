@@ -96,16 +96,16 @@ function setup(config: DemoConfiguration) {
                     const faceRect: Rect = new Rect(idCaptureResult.face.x, idCaptureResult.face.y, idCaptureResult.face.width, idCaptureResult.face.height)
                     faceRect.x = Math.max(0, faceRect.x)
                     faceRect.y = Math.max(0, faceRect.y)
-                    if (faceRect.x + faceRect.width > imageData.width) {
-                        faceRect.width = imageData.width - faceRect.x
+                    if (faceRect.x + faceRect.width > 100) {
+                        faceRect.width = 100 - faceRect.x
                     }
-                    if (faceRect.y + faceRect.height > imageData.height) {
-                        faceRect.height = imageData.height - faceRect.y
+                    if (faceRect.y + faceRect.height > 100) {
+                        faceRect.height = 100 - faceRect.y
                     }
-                    cardFaceCanvas.width = faceRect.width
-                    cardFaceCanvas.height = faceRect.height
-                    const cardCanvasContext = canvas.getContext("2d")
-                    cardCanvasContext.putImageData(imageData, 0-faceRect.x, 0-faceRect.y)
+                    cardFaceCanvas.width = faceRect.width / 100 * imageData.width
+                    cardFaceCanvas.height = faceRect.height / 100 * imageData.height
+                    const cardCanvasContext = cardFaceCanvas.getContext("2d")
+                    cardCanvasContext.putImageData(imageData, 0 - faceRect.x / 100 * imageData.width, 0 - faceRect.y / 100 * imageData.height)
                     cardFaceImage.src = cardFaceCanvas.toDataURL()
                     document.querySelector("#result .cardFace").innerHTML = ""
                     document.querySelector("#result .cardFace").appendChild(cardFaceImage)
