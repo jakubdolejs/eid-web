@@ -8,19 +8,19 @@ import { Rect } from "./utils";
  */
 export interface RecognizableFace {
     /**
-     * Distance of the face from the left side of the image (pixels)
+     * Distance of the face from the left side of the image (percent of image width)
      */
     x: number;
     /**
-     * Distance of the face from the top side of the image (pixels)
+     * Distance of the face from the top side of the image (percent of image height)
      */
     y: number;
     /**
-     * Width of the face (pixels)
+     * Width of the face (percent of image width)
      */
     width: number;
     /**
-     * Height of the face (pixels)
+     * Height of the face (percent of image height)
      */
     height: number;
     /**
@@ -46,9 +46,17 @@ export declare class FaceRecognition {
      */
     constructor(serviceURL?: string);
     /**
-     * Create a face that can be used for face recognition
+     * Detect a face that can be used for face recognition
+     * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
+     * @param faceRect Optional expected bounds of a face in the image
+     * @returns Promise that delivers a face that can be used for face recognition
+     */
+    detectRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace>;
+    /**
+     * Detect a face that can be used for face recognition
      * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
      * @param faceRect Optional bounds of a face in the image
+     * @deprecated Please use {@linkcode detectRecognizableFace} instead
      * @returns Promise that delivers a face that can be used for face recognition
      */
     createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace>;

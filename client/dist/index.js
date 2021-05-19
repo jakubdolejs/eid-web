@@ -18878,7 +18878,7 @@ class FaceDetection {
         const createFaceCapture = (capture) => {
             if (capture.requestedBearing == Bearing.STRAIGHT) {
                 const bounds = capture.face ? capture.face.bounds : null;
-                return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.from)(this.faceRecognition.createRecognizableFace(capture.image, bounds).then(recognizableFace => {
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.from)(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
                     capture.face.template = recognizableFace.template;
                     return capture;
                 }));
@@ -19217,19 +19217,22 @@ class FaceRecognition {
         this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : "";
     }
     /**
-     * Create a face that can be used for face recognition
+     * Detect a face that can be used for face recognition
      * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
-     * @param faceRect Optional bounds of a face in the image
+     * @param faceRect Optional expected bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    createRecognizableFace(image, faceRect) {
+    detectRecognizableFace(image, faceRect) {
         return __awaiter(this, void 0, void 0, function* () {
             let jpeg;
+            let cropRect = null;
+            let imageSize = null;
             if (image instanceof Image) {
-                jpeg = yield this.cropImage(image, faceRect);
+                [jpeg, cropRect] = yield this.cropImage(image, faceRect);
+                imageSize = { "width": image.naturalWidth, "height": image.naturalHeight };
             }
             else if (typeof (image) == "string") {
-                jpeg = image;
+                jpeg = image.replace(/^data\:image\/.+?;base64\,/i, "");
             }
             else {
                 throw new Error("Invalid image parameter");
@@ -19249,7 +19252,31 @@ class FaceRecognition {
                 throw new Error("Failed to extract recognition template from face");
             }
             const json = yield response.json();
+            if (cropRect && imageSize) {
+                const facePixelRect = {
+                    x: cropRect.x + json.x / 100 * cropRect.width,
+                    y: cropRect.y + json.y / 100 * cropRect.height,
+                    width: json.width / 100 * cropRect.width,
+                    height: json.height / 100 * cropRect.height
+                };
+                json.x = facePixelRect.x / imageSize.width * 100;
+                json.y = facePixelRect.y / imageSize.height * 100;
+                json.width = facePixelRect.width / imageSize.width * 100;
+                json.height = facePixelRect.height / imageSize.height * 100;
+            }
             return json;
+        });
+    }
+    /**
+     * Detect a face that can be used for face recognition
+     * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
+     * @param faceRect Optional bounds of a face in the image
+     * @deprecated Please use {@linkcode detectRecognizableFace} instead
+     * @returns Promise that delivers a face that can be used for face recognition
+     */
+    createRecognizableFace(image, faceRect) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.detectRecognizableFace(image, faceRect);
         });
     }
     cropImage(image, cropRect) {
@@ -19277,7 +19304,7 @@ class FaceRecognition {
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(image, 0 - cropRect.x, 0 - cropRect.y);
                     const jpeg = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/, "");
-                    resolve(jpeg);
+                    resolve([jpeg, cropRect]);
                 }
                 catch (error) {
                     reject(error);
@@ -19667,7 +19694,7 @@ class IdCapture {
                     scale = 1;
                     return;
                 }
-                this.faceRecognition.createRecognizableFace(img, null).then(face => {
+                this.faceRecognition.detectRecognizableFace(img, null).then(face => {
                     resolveInner({
                         "result": combinedResult,
                         "face": face
