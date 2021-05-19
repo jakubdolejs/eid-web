@@ -1,5 +1,4 @@
-// @ts-ignore
-import { FaceDetection, IdCapture, IdCaptureSettings, IdCaptureResult, FaceRecognition, QRCodeGenerator, NormalDistribution } from "/node_modules/@appliedrecognition/ver-id-browser/index.js"
+import { FaceDetection, IdCapture, IdCaptureSettings, IdCaptureResult, FaceRecognition, QRCodeGenerator, NormalDistribution, Rect } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 type DemoConfiguration = {licenceKey: string, serverURL: string}
 
@@ -78,8 +77,8 @@ function setup(config: DemoConfiguration) {
     (document.querySelector("#idcapture a.start") as HTMLAnchorElement).onclick = () => {
         idCapture.captureIdCard().subscribe({
             next: (result: IdCaptureResult) => {
-                idCaptureResult = result
-                if (idCaptureResult.face) {
+                if (result.face) {
+                    idCaptureResult = result
                     const imageData = idCaptureResult.result.fullDocumentFrontImage.rawImage
                     const canvas = document.createElement("canvas")
                     canvas.width = imageData.width
@@ -92,17 +91,24 @@ function setup(config: DemoConfiguration) {
                         img.src = canvas.toDataURL()
                         div.appendChild(img)
                     })
-                    if (idCaptureResult.face) {
-                        const cardFaceImage = new Image()
-                        const cardFaceCanvas = document.createElement("canvas")
-                        cardFaceCanvas.width = idCaptureResult.face.width
-                        cardFaceCanvas.height = idCaptureResult.face.height
-                        const cardCanvasContext = canvas.getContext("2d")
-                        cardCanvasContext.putImageData(imageData, 0-idCaptureResult.face.x, 0-idCaptureResult.face.y)
-                        cardFaceImage.src = cardFaceCanvas.toDataURL()
-                        document.querySelector("#result .cardFace").innerHTML = ""
-                        document.querySelector("#result .cardFace").appendChild(cardFaceImage)
+                    const cardFaceImage = new Image()
+                    const cardFaceCanvas = document.createElement("canvas")
+                    const faceRect: Rect = new Rect(idCaptureResult.face.x, idCaptureResult.face.y, idCaptureResult.face.width, idCaptureResult.face.height)
+                    faceRect.x = Math.max(0, faceRect.x)
+                    faceRect.y = Math.max(0, faceRect.y)
+                    if (faceRect.x + faceRect.width > imageData.width) {
+                        faceRect.width = imageData.width - faceRect.x
                     }
+                    if (faceRect.y + faceRect.height > imageData.height) {
+                        faceRect.height = imageData.height - faceRect.y
+                    }
+                    cardFaceCanvas.width = faceRect.width
+                    cardFaceCanvas.height = faceRect.height
+                    const cardCanvasContext = canvas.getContext("2d")
+                    cardCanvasContext.putImageData(imageData, 0-faceRect.x, 0-faceRect.y)
+                    cardFaceImage.src = cardFaceCanvas.toDataURL()
+                    document.querySelector("#result .cardFace").innerHTML = ""
+                    document.querySelector("#result .cardFace").appendChild(cardFaceImage)
                     const table = document.querySelector("#carddetails table.idcard")
                     table.innerHTML = ""
                     const tableBody = document.createElement("tbody")
