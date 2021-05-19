@@ -66,7 +66,11 @@ export class FaceRecognition {
      */
     async detectRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace> {
         let jpeg: string
+        let cropRect: Rect = null
+        let imageSize: Size = null
         if (image instanceof Image) {
+            [jpeg, cropRect] = await this.cropImage(image, faceRect)
+            imageSize = {"width": image.naturalWidth, "height": image.naturalHeight}
         } else if (typeof(image) == "string") {
             jpeg = image.replace(/^data\:image\/.+?;base64\,/i, "")
         } else {
@@ -87,11 +91,34 @@ export class FaceRecognition {
             throw new Error("Failed to extract recognition template from face")
         }
         const json: RecognizableFace = await response.json()
+        if (cropRect && imageSize) {
+            const facePixelRect = {
+                x: cropRect.x + json.x / 100 * cropRect.width,
+                y: cropRect.y + json.y / 100 * cropRect.height,
+                width: json.width / 100 * cropRect.width,
+                height: json.height / 100 * cropRect.height
+            }
+            json.x = facePixelRect.x / imageSize.width * 100
+            json.y = facePixelRect.y / imageSize.height * 100
+            json.width = facePixelRect.width / imageSize.width * 100
+            json.height = facePixelRect.height / imageSize.height * 100
+        }
         return json
     }
 
-    private cropImage(image: HTMLImageElement, cropRect?: Rect): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
+    /**
+     * Detect a face that can be used for face recognition
+     * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
+     * @param faceRect Optional bounds of a face in the image
+     * @deprecated Please use {@linkcode detectRecognizableFace} instead
+     * @returns Promise that delivers a face that can be used for face recognition
+     */
+    async createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace> {
+        return this.detectRecognizableFace(image, faceRect)
+    }
+
+    private cropImage(image: HTMLImageElement, cropRect?: Rect): Promise<[string,Rect]> {
+        return new Promise<[string,Rect]>((resolve, reject) => {
             const onImageLoaded = () => {
                 try {
                     const canvas: HTMLCanvasElement = document.createElement("canvas")
@@ -114,7 +141,7 @@ export class FaceRecognition {
                     const ctx: CanvasRenderingContext2D = canvas.getContext("2d")
                     ctx.drawImage(image, 0-cropRect.x, 0-cropRect.y)
                     const jpeg: string = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/,"")
-                    resolve(jpeg)
+                    resolve([jpeg, cropRect])
                 } catch (error) {
                     reject(error)
                 }
