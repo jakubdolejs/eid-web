@@ -95,6 +95,7 @@ body {
 }
 table.idcard {
     border-collapse: collapse;
+    width: 100%;
 }
 table.idcard tbody tr:not(:last-child) td {
     border-bottom: 1px solid #eee;
