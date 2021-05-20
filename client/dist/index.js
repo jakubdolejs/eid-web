@@ -19632,7 +19632,9 @@ class IdCapture {
                 return;
             }
             const ui = new IdCaptureUI();
-            ui.onCancel = subscriber.complete;
+            ui.onCancel = () => {
+                subscriber.complete();
+            };
             this.registerLoadListener(ui.progressListener);
             this.runIdCaptureSession(ui).then(result => {
                 if (!subscriber.closed) {

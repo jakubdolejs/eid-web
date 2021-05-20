@@ -572,7 +572,9 @@ export class IdCapture {
                 return
             }
             const ui: IdCaptureUI = new IdCaptureUI()
-            ui.onCancel = subscriber.complete
+            ui.onCancel = () => {
+                subscriber.complete()
+            }
             this.registerLoadListener(ui.progressListener)
             this.runIdCaptureSession(ui).then(result => {
                 if (!subscriber.closed) {
