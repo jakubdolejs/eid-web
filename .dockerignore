@@ -1,0 +1,12 @@
+node_modules
+demo/node_modules
+demo/js/demo.*
+client/node_modules
+client/dist
+configure.js
+docker-compose.yml
+Dockerfile
+id_api_config.json
+docs
+.vscode
+README.md
