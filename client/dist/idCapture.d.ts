@@ -1,7 +1,8 @@
 import { Observable } from "rxjs";
 import { RecognizableFace } from "./faceRecognition";
 import { Size } from "./utils";
-import { BlinkIdCombinedRecognizerResult } from "@microblink/blinkid-in-browser-sdk";
+import { BlinkIdRecognizerResult, IdBarcodeRecognizerResult, BlinkIdCombinedRecognizerResult, MetadataCallbacks, ImageOrientation } from "@microblink/blinkid-in-browser-sdk";
+declare type ProgressListener = (progress: number) => void;
 export declare type IdCaptureStatus = "pass" | "review" | "fail";
 export interface IdCaptureResponse {
     error?: any;
@@ -89,14 +90,38 @@ export interface PassportDocument extends IDDocument, ImageDocument {
     recognitionStatus: string;
 }
 export declare type CapturedDocument<T extends RecognizerType> = T extends "PASSPORT" ? PassportDocument : T extends "USDL" ? DocumentBackPage : DocumentFrontPage;
-export interface IdCaptureResult {
-    face?: RecognizableFace;
-    result: BlinkIdCombinedRecognizerResult;
+export declare enum DocumentPages {
+    FRONT = "front",
+    BACK = "back",
+    FRONT_AND_BACK = "front and back"
 }
+export declare type IdCaptureResult = {
+    face?: RecognizableFace;
+    pages: DocumentPages;
+    result: SupportedRecognizerResult;
+    capturedImage?: {
+        data: ImageData;
+        orientation: ImageOrientation;
+    };
+};
 export declare class Warning {
     readonly code: number;
     readonly description: string;
     constructor(code: number, description: string);
+}
+export declare type SupportedRecognizerResult = BlinkIdCombinedRecognizerResult | BlinkIdRecognizerResult | IdBarcodeRecognizerResult;
+export interface IIdCaptureUI {
+    setProgress(progress: number): void;
+    showPrompt(text: string, force: boolean): void;
+    showFlipCardInstruction(onDone?: () => void): void;
+    removeProgressBar(): void;
+    hideCameraOverlay(): void;
+    showCameraOverlay(): void;
+    cleanup(): void;
+    createMetadataCallbacks(onFirstSide?: () => void): MetadataCallbacks;
+    readonly progressListener: ProgressListener;
+    readonly video: HTMLVideoElement;
+    onCancel: () => void;
 }
 export declare class IdCapture {
     readonly serviceURL: string;
@@ -104,12 +129,16 @@ export declare class IdCapture {
     private readonly loadBlinkWasmModule;
     private percentLoaded;
     private loadListeners;
+    private wasmSDK;
     constructor(settings: IdCaptureSettings, serviceURL?: string);
     private onLoadProgressCallback;
     private registerLoadListener;
     private unregisterLoadListener;
-    private convertToIdCaptureResult;
     private createBlinkIdCombinedRecognizer;
+    private createBlinkIdRecognizer;
+    private createBarcodeRecognizer;
+    private imageDataToImage;
+    private convertToIdCaptureResult;
     private runIdCaptureSession;
     /**
      * Detect ID card in images
@@ -120,14 +149,24 @@ export declare class IdCapture {
         front?: string;
         back?: string;
     }): Promise<IdCaptureResponse>;
+    private emitResult;
+    private recognizerRunner;
+    private getRecognizerRunner;
+    private createRecognizers;
     /**
      * Capture ID card using the device camera
      * @returns Observable
      */
-    captureIdCard(): Observable<IdCaptureResult>;
+    captureIdCard(settings?: IdCaptureSessionSettings): Observable<IdCaptureResult>;
 }
 export declare class IdCaptureSettings {
     licenceKey: string;
     resourcesPath: string;
     constructor(licenceKey: string, resourcesPath: string);
 }
+export declare class IdCaptureSessionSettings {
+    pages: DocumentPages;
+    saveCapturedImages: boolean;
+    constructor(pages?: DocumentPages, saveCapturedImages?: boolean);
+}
+export {};

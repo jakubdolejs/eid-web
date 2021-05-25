@@ -1,11 +1,12 @@
-import { FaceDetection, IdCapture, IdCaptureSettings, FaceRecognition, QRCodeGenerator, NormalDistribution, Rect } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
+import { FaceDetection, IdCapture, IdCaptureSettings, IdCaptureSessionSettings, FaceRecognition, QRCodeGenerator, NormalDistribution, Rect, DocumentPages } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
 function setup(config) {
     const settings = new IdCaptureSettings(config.licenceKey, "/node_modules/@appliedrecognition/ver-id-browser/resources/");
     const faceDetection = new FaceDetection(config.serverURL);
     const idCapture = new IdCapture(settings, config.serverURL);
     const faceRecognition = new FaceRecognition(config.serverURL);
     const scoreThreshold = 3.0;
-    let idCaptureResult;
+    let backPageResult;
+    let frontPageResult;
     function hideAllPages() {
         document.querySelectorAll(".page").forEach(item => {
             item.style.display = "none";
@@ -36,7 +37,7 @@ function setup(config) {
                     document.querySelector("#result .liveFace").innerHTML = "";
                     document.querySelector("#result .liveFace").appendChild(img);
                 });
-                faceRecognition.compareFaceTemplates(idCaptureResult.face.template, liveFace.template).then((score) => {
+                faceRecognition.compareFaceTemplates(frontPageResult.face.template, liveFace.template).then((score) => {
                     document.querySelector("#result .score").innerHTML = String(Math.round(score * 10) / 10);
                     const scoreString = new Intl.NumberFormat("en-US", { "minimumFractionDigits": 1, "maximumFractionDigits": 1 }).format(score);
                     const likelihood = new Intl.NumberFormat("en-US", { "minimumFractionDigits": 3, "maximumFractionDigits": 3, "style": "percent" }).format(new NormalDistribution().cumulativeProbability(score));
@@ -60,73 +61,101 @@ function setup(config) {
         });
     };
     document.querySelector("#error a.retry").onclick = () => {
-        if (idCaptureResult) {
+        if (frontPageResult && backPageResult) {
             showPage("facecapture");
         }
         else {
             showPage("idcapture");
         }
     };
+    function dataURLFromImageData(imageData) {
+        const canvas = document.createElement("canvas");
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        const ctx = canvas.getContext("2d");
+        ctx.putImageData(imageData, 0, 0);
+        return canvas.toDataURL();
+    }
+    function faceImageDataURLFromImageData(imageData, face) {
+        const cardFaceCanvas = document.createElement("canvas");
+        const faceRect = new Rect(face.x, face.y, face.width, face.height);
+        faceRect.x = Math.max(0, faceRect.x);
+        faceRect.y = Math.max(0, faceRect.y);
+        if (faceRect.x + faceRect.width > 100) {
+            faceRect.width = 100 - faceRect.x;
+        }
+        if (faceRect.y + faceRect.height > 100) {
+            faceRect.height = 100 - faceRect.y;
+        }
+        cardFaceCanvas.width = faceRect.width / 100 * imageData.width;
+        cardFaceCanvas.height = faceRect.height / 100 * imageData.height;
+        const cardCanvasContext = cardFaceCanvas.getContext("2d");
+        cardCanvasContext.putImageData(imageData, 0 - faceRect.x / 100 * imageData.width, 0 - faceRect.y / 100 * imageData.height);
+        return cardFaceCanvas.toDataURL();
+    }
+    function imageDataFromIdCaptureResult(result) {
+        if (result.result.fullDocumentFrontImage) {
+            return result.result.fullDocumentFrontImage.rawImage;
+        }
+        else if (result.result.fullDocumentImage) {
+            return result.result.fullDocumentImage.rawImage;
+        }
+        return null;
+    }
     document.querySelector("#idcapture a.start").onclick = () => {
-        idCapture.captureIdCard().subscribe({
+        frontPageResult = backPageResult = null;
+        const subscription = idCapture.captureIdCard(new IdCaptureSessionSettings(DocumentPages.FRONT_AND_BACK, true)).subscribe({
             next: (result) => {
-                if (result.face) {
-                    idCaptureResult = result;
-                    const imageData = idCaptureResult.result.fullDocumentFrontImage.rawImage;
-                    const canvas = document.createElement("canvas");
-                    canvas.width = imageData.width;
-                    canvas.height = imageData.height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.putImageData(imageData, 0, 0);
-                    document.querySelectorAll(".card div").forEach(div => {
-                        div.innerHTML = "";
-                        const img = new Image();
-                        img.src = canvas.toDataURL();
-                        div.appendChild(img);
-                    });
-                    const cardFaceImage = new Image();
-                    const cardFaceCanvas = document.createElement("canvas");
-                    const faceRect = new Rect(idCaptureResult.face.x, idCaptureResult.face.y, idCaptureResult.face.width, idCaptureResult.face.height);
-                    faceRect.x = Math.max(0, faceRect.x);
-                    faceRect.y = Math.max(0, faceRect.y);
-                    if (faceRect.x + faceRect.width > 100) {
-                        faceRect.width = 100 - faceRect.x;
+                if (result.pages == DocumentPages.FRONT || result.pages == DocumentPages.FRONT_AND_BACK) {
+                    if (!result.face) {
+                        showError("Failed to detect a face on the ID card");
+                        subscription.unsubscribe();
+                        return;
                     }
-                    if (faceRect.y + faceRect.height > 100) {
-                        faceRect.height = 100 - faceRect.y;
+                    frontPageResult = result;
+                    const imageData = imageDataFromIdCaptureResult(result);
+                    if (imageData) {
+                        const dataURL = dataURLFromImageData(imageData);
+                        document.querySelectorAll(".card div").forEach(div => {
+                            div.innerHTML = "";
+                            const img = new Image();
+                            img.src = dataURL;
+                            div.appendChild(img);
+                        });
+                        const cardFaceImage = new Image();
+                        cardFaceImage.src = faceImageDataURLFromImageData(imageData, result.face);
+                        document.querySelector("#result .cardFace").innerHTML = "";
+                        document.querySelector("#result .cardFace").appendChild(cardFaceImage);
                     }
-                    cardFaceCanvas.width = faceRect.width / 100 * imageData.width;
-                    cardFaceCanvas.height = faceRect.height / 100 * imageData.height;
-                    const cardCanvasContext = cardFaceCanvas.getContext("2d");
-                    cardCanvasContext.putImageData(imageData, 0 - faceRect.x / 100 * imageData.width, 0 - faceRect.y / 100 * imageData.height);
-                    cardFaceImage.src = cardFaceCanvas.toDataURL();
-                    document.querySelector("#result .cardFace").innerHTML = "";
-                    document.querySelector("#result .cardFace").appendChild(cardFaceImage);
+                }
+                else {
+                    backPageResult = result;
                     const table = document.querySelector("#carddetails table.idcard");
                     table.innerHTML = "";
                     const tableBody = document.createElement("tbody");
                     table.appendChild(tableBody);
                     const stringProps = { "firstName": "First name", "lastName": "Last name", "documentNumber": "Document number" };
                     for (let prop in stringProps) {
-                        if (idCaptureResult.result[prop]) {
+                        if (backPageResult.result[prop]) {
                             const row = document.createElement("tr");
                             const col1 = document.createElement("td");
                             const col2 = document.createElement("td");
                             col1.innerText = stringProps[prop];
-                            col2.innerText = idCaptureResult.result[prop];
+                            col2.innerText = backPageResult.result[prop];
                             row.appendChild(col1);
                             row.appendChild(col2);
                             tableBody.appendChild(row);
                         }
                     }
-                    showPage("facecapture");
-                }
-                else {
-                    showError("Failed to detect a face on the ID card");
                 }
             },
             error: (error) => {
                 showError("ID capture failed");
+            },
+            complete: () => {
+                if (frontPageResult && backPageResult) {
+                    showPage("facecapture");
+                }
             }
         });
     };
