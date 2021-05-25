@@ -26,7 +26,7 @@ let licenceModelFiles = null;
     await runCommand("npm", path.resolve(process.cwd(), "client"), "install")
 
     cliSpinner.text = "Generating documentation"
-    await runCommand("npx", path.resolve(process.cwd(), "client"), "typedoc", "--out", "../docs", "src/index.ts")
+    await runCommand("npx", path.resolve(process.cwd(), "client"), "typedoc")
 
     cliSpinner.text = "Packaging client-side library"
     await runCommand("npx", path.resolve(process.cwd(), "client"), "webpack")

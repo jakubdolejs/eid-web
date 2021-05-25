@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>FaceExtents | @appliedrecognition/ver-id-browser</title>
+	<title>IdCaptureSessionSettings | @appliedrecognition/ver-id-browser</title>
 	<meta name="description" content="Documentation for @appliedrecognition/ver-id-browser">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,33 +55,21 @@
 					<a href="../modules.html">@appliedrecognition/ver-id-browser</a>
 				</li>
 				<li>
-					<a href="faceextents.html">FaceExtents</a>
+					<a href="idcapturesessionsettings.html">IdCaptureSessionSettings</a>
 				</li>
 			</ul>
-			<h1>Class FaceExtents</h1>
+			<h1>Class IdCaptureSessionSettings</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-comment">
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Extents of a face within a view</p>
-					</div>
-					<dl class="tsd-comment-tags">
-						<dt>remarks</dt>
-						<dd><p>Used by liveness detection session to determine the area where to show the face in relation to the containing view</p>
-						</dd>
-					</dl>
-				</div>
-			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">FaceExtents</span>
+						<span class="target">IdCaptureSessionSettings</span>
 					</li>
 				</ul>
 			</section>
@@ -92,14 +80,14 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="faceextents.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="idcapturesessionsettings.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="faceextents.html#proportionofviewheight" class="tsd-kind-icon">proportion<wbr>OfView<wbr>Height</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="faceextents.html#proportionofviewwidth" class="tsd-kind-icon">proportion<wbr>OfView<wbr>Width</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="idcapturesessionsettings.html#pages" class="tsd-kind-icon">pages</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="idcapturesessionsettings.html#savecapturedimages" class="tsd-kind-icon">save<wbr>Captured<wbr>Images</a></li>
 							</ul>
 						</section>
 					</div>
@@ -111,36 +99,25 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Face<wbr>Extents<span class="tsd-signature-symbol">(</span>proportionOfViewWidth<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, proportionOfViewHeight<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="faceextents.html" class="tsd-signature-type" data-tsd-kind="Class">FaceExtents</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>IdCapture<wbr>Session<wbr>Settings<span class="tsd-signature-symbol">(</span>pages<span class="tsd-signature-symbol">?: </span><a href="../enums/documentpages.html" class="tsd-signature-type" data-tsd-kind="Enumeration">DocumentPages</a>, saveCapturedImages<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="idcapturesessionsettings.html" class="tsd-signature-type" data-tsd-kind="Class">IdCaptureSessionSettings</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/faceDetection.ts#L645">faceDetection.ts:645</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L839">idCapture.ts:839</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Constructor</p>
-								</div>
-							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>proportionOfViewWidth: <span class="tsd-signature-type">number</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Proportion of view width</p>
-									</div>
+									<h5>pages: <a href="../enums/documentpages.html" class="tsd-signature-type" data-tsd-kind="Enumeration">DocumentPages</a><span class="tsd-signature-symbol"> = ...</span></h5>
 								</li>
 								<li>
-									<h5>proportionOfViewHeight: <span class="tsd-signature-type">number</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Proportion of view height</p>
-									</div>
+									<h5>saveCapturedImages: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="faceextents.html" class="tsd-signature-type" data-tsd-kind="Class">FaceExtents</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="idcapturesessionsettings.html" class="tsd-signature-type" data-tsd-kind="Class">IdCaptureSessionSettings</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -148,34 +125,24 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="proportionofviewheight" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> proportion<wbr>OfView<wbr>Height</h3>
-					<div class="tsd-signature tsd-kind-icon">proportion<wbr>OfView<wbr>Height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="pages" class="tsd-anchor"></a>
+					<h3>pages</h3>
+					<div class="tsd-signature tsd-kind-icon">pages<span class="tsd-signature-symbol">:</span> <a href="../enums/documentpages.html" class="tsd-signature-type" data-tsd-kind="Enumeration">DocumentPages</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/faceDetection.ts#L645">faceDetection.ts:645</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L838">idCapture.ts:838</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Proportion of view height, e.g., 0.85 is 85% of the view height</p>
-						</div>
-					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="proportionofviewwidth" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> proportion<wbr>OfView<wbr>Width</h3>
-					<div class="tsd-signature tsd-kind-icon">proportion<wbr>OfView<wbr>Width<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="savecapturedimages" class="tsd-anchor"></a>
+					<h3>save<wbr>Captured<wbr>Images</h3>
+					<div class="tsd-signature tsd-kind-icon">save<wbr>Captured<wbr>Images<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/faceDetection.ts#L641">faceDetection.ts:641</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L839">idCapture.ts:839</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Proportion of view width, e.g., 0.65 is 65% of the view width</p>
-						</div>
-					</div>
 				</section>
 			</section>
 		</div>
@@ -192,16 +159,16 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class">
-						<a href="faceextents.html" class="tsd-kind-icon">Face<wbr>Extents</a>
+						<a href="idcapturesessionsettings.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Session<wbr>Settings</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="faceextents.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="idcapturesessionsettings.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="faceextents.html#proportionofviewheight" class="tsd-kind-icon">proportion<wbr>OfView<wbr>Height</a>
+								<a href="idcapturesessionsettings.html#pages" class="tsd-kind-icon">pages</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="faceextents.html#proportionofviewwidth" class="tsd-kind-icon">proportion<wbr>OfView<wbr>Width</a>
+								<a href="idcapturesessionsettings.html#savecapturedimages" class="tsd-kind-icon">save<wbr>Captured<wbr>Images</a>
 							</li>
 						</ul>
 					</li>
