@@ -148,7 +148,7 @@ faceRecognition.compareFaceTemplates(template1, template2).then((score) => {
 ```
 
 ### Implementing your own user interface
-To create your own UI for the ID capture pass an implementation of the IdCaptureUI interface to the session's settings.
+To create your own UI for the ID capture pass an implementation of the [IdCaptureUI](https://appliedrecognition.github.io/Ver-ID-Browser/interfaces/idcaptureui.html) interface to the session's settings.
 
 ```javascript
 import { IdCaptureUI, IdCaptureSessionSettings } from "/@appliedrecognition/ver-id-browser/index.js"
@@ -165,5 +165,5 @@ sessionSettings.createUI = () => new MyIdCaptureUI()
 ```
 
 ## Documentation
-API reference documentation is available on the project's [Github page]().
+API reference documentation is available on the project's [Github page](https://appliedrecognition.github.io/Ver-ID-Browser/).
 
