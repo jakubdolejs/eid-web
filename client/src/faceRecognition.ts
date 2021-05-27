@@ -3,37 +3,8 @@
  * @packageDocumentation
  */
 
-import { Rect, Size } from "./utils"
-
-/**
- * Face that contains a template that can be used for face recognition
- */
-export interface RecognizableFace {
-    /**
-     * Distance of the face from the left side of the image (percent of image width)
-     */
-    x: number
-    /**
-     * Distance of the face from the top side of the image (percent of image height)
-     */
-    y: number
-    /**
-     * Width of the face (percent of image width)
-     */
-    width: number,
-    /**
-     * Height of the face (percent of image height)
-     */
-    height: number,
-    /**
-     * Quality of the detected face – ranges from 0 (worst) to 10 (best)
-     */
-    quality: number
-    /**
-     * Base64-encoded face recognition template
-     */
-    template: string
-}
+import { Rect } from "./utils"
+import { RecognizableFace, Size } from "./types"
 
 interface DetectFaceRequest {
     image: string

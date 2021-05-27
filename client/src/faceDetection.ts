@@ -5,36 +5,12 @@
 
 import { Observable, from, of, throwError, Subscription } from "rxjs"
 import { map, filter, take, takeWhile, tap, mergeMap, toArray } from "rxjs/operators"
-import { CircularBuffer, AngleBearingEvaluation, Angle, Rect, Axis, RectSmoothing, AngleSmoothing, Point, Size } from "./utils"
+import { CircularBuffer, AngleBearingEvaluation, Angle, Rect, RectSmoothing, AngleSmoothing, Point } from "./utils"
 import { FaceRecognition } from "./faceRecognition"
 import * as faceapi from "face-api.js/build/es6"
 import { estimateFaceAngle } from "./faceAngle"
 import { estimateFaceAngle as estimateFaceAngleNoseTip } from "./faceAngleNoseTip"
-
-/**
- * Face alignment status
- */
-export enum FaceAlignmentStatus {
-    FOUND,
-    FIXED,
-    ALIGNED,
-    MISALIGNED
-}
-
-/**
- * Bearing
- */
-export enum Bearing {
-    STRAIGHT,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
-    LEFT_UP,
-    RIGHT_UP,
-    LEFT_DOWN,
-    RIGHT_DOWN
-}
+import { Axis, Size, Bearing, FaceAlignmentStatus } from "./types"
 
 /**
  * Face detection

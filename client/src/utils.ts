@@ -1,4 +1,5 @@
-import { Bearing, FaceCaptureSettings } from "./faceDetection"
+import { FaceCaptureSettings } from "./faceDetection"
+import { Axis, Bearing } from "./types"
 
 /**
  * Circular (ring) buffer implementation
@@ -246,20 +247,6 @@ export class Rect {
     get bottom(): number {
         return this.y + this.height
     }
-}
-
-/**
- * Axis
- */
-export enum Axis {
-    /**
-     * Yaw axis
-     */
-    YAW,
-    /**
-     * Pitch axis
-     */
-    PITCH
 }
 
 /**
@@ -584,9 +571,4 @@ export function clamp(a: number, limit: number): number {
         return limit
     }
     return a
-}
-
-export interface Size {
-    width: number,
-    height: number
 }

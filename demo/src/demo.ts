@@ -56,7 +56,6 @@ function setup(config: DemoConfiguration) {
                     document.querySelector("#result .liveFace").appendChild(img)
                 })
                 faceRecognition.compareFaceTemplates(frontPageResult.face.template, liveFace.template).then((score: number) => {
-                    document.querySelector("#result .score").innerHTML = String(Math.round(score*10)/10)
                     const scoreString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(score)
                     const likelihood = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 3, "maximumFractionDigits": 3, "style": "percent"}).format(new NormalDistribution().cumulativeProbability(score))
                     const scoreThresholdString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(scoreThreshold)
@@ -122,9 +121,46 @@ function setup(config: DemoConfiguration) {
         return null
     }
 
+    function addIDCardImages(result: IdCaptureResult): void {
+        const imageData: ImageData = imageDataFromIdCaptureResult(result)
+        if (imageData) {
+            const dataURL = dataURLFromImageData(imageData)
+            document.querySelectorAll(".card div").forEach(div => {
+                div.innerHTML = ""
+                const img = new Image()
+                img.src = dataURL
+                div.appendChild(img)
+            })
+            const cardFaceImage = new Image()
+            cardFaceImage.src = faceImageDataURLFromImageData(imageData, result.face)
+            document.querySelector("#result .cardFace").innerHTML = ""
+            document.querySelector("#result .cardFace").appendChild(cardFaceImage)
+        }
+    }
+
+    function addIDCardDetails(result: IdCaptureResult): void {
+        const table = document.querySelector("#carddetails table.idcard")
+        table.innerHTML = ""
+        const tableBody = document.createElement("tbody")
+        table.appendChild(tableBody)
+        const stringProps = {"firstName": "First name", "lastName": "Last name", "documentNumber": "Document number"}
+        for (let prop in stringProps) {
+            if (result.result[prop]) {
+                const row = document.createElement("tr")
+                const col1 = document.createElement("td")
+                const col2 = document.createElement("td")
+                col1.innerText = stringProps[prop]
+                col2.innerText = result.result[prop]
+                row.appendChild(col1)
+                row.appendChild(col2)
+                tableBody.appendChild(row)
+            }
+        }
+    }
+
     (document.querySelector("#idcapture a.start") as HTMLAnchorElement).onclick = () => {
         frontPageResult = backPageResult = null
-        const subscription = idCapture.captureIdCard(new IdCaptureSessionSettings(DocumentPages.FRONT_AND_BACK, true)).subscribe({
+        const subscription = idCapture.captureIdCard(new IdCaptureSessionSettings(DocumentPages.FRONT_AND_BACK, 60000, true)).subscribe({
             next: (result: IdCaptureResult) => {
                 if (result.pages == DocumentPages.FRONT || result.pages == DocumentPages.FRONT_AND_BACK) {
                     if (!result.face) {
@@ -132,40 +168,11 @@ function setup(config: DemoConfiguration) {
                         subscription.unsubscribe()
                         return
                     }
+                    addIDCardImages(result)
                     frontPageResult = result
-                    const imageData: ImageData = imageDataFromIdCaptureResult(result)
-                    if (imageData) {
-                        const dataURL = dataURLFromImageData(imageData)
-                        document.querySelectorAll(".card div").forEach(div => {
-                            div.innerHTML = ""
-                            const img = new Image()
-                            img.src = dataURL
-                            div.appendChild(img)
-                        })
-                        const cardFaceImage = new Image()
-                        cardFaceImage.src = faceImageDataURLFromImageData(imageData, result.face)
-                        document.querySelector("#result .cardFace").innerHTML = ""
-                        document.querySelector("#result .cardFace").appendChild(cardFaceImage)
-                    }
                 } else {
-                    backPageResult = result
-                    const table = document.querySelector("#carddetails table.idcard")
-                    table.innerHTML = ""
-                    const tableBody = document.createElement("tbody")
-                    table.appendChild(tableBody)
-                    const stringProps = {"firstName": "First name", "lastName": "Last name", "documentNumber": "Document number"}
-                    for (let prop in stringProps) {
-                        if (backPageResult.result[prop]) {
-                            const row = document.createElement("tr")
-                            const col1 = document.createElement("td")
-                            const col2 = document.createElement("td")
-                            col1.innerText = stringProps[prop]
-                            col2.innerText = backPageResult.result[prop]
-                            row.appendChild(col1)
-                            row.appendChild(col2)
-                            tableBody.appendChild(row)
-                        }
-                    }
+                    addIDCardDetails(result)
+                    backPageResult = result                    
                 }
             },
             error: (error: any) => {

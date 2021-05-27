@@ -1,4 +1,5 @@
-import { Bearing, FaceCaptureSettings } from "./faceDetection";
+import { FaceCaptureSettings } from "./faceDetection";
+import { Axis, Bearing } from "./types";
 /**
  * Circular (ring) buffer implementation
  *
@@ -163,19 +164,6 @@ export declare class Rect {
     get bottom(): number;
 }
 /**
- * Axis
- */
-export declare enum Axis {
-    /**
-     * Yaw axis
-     */
-    YAW = 0,
-    /**
-     * Pitch axis
-     */
-    PITCH = 1
-}
-/**
  * Evaluates angles in relation to bearings
  */
 export declare class AngleBearingEvaluation {
@@ -229,7 +217,3 @@ export declare class AngleSmoothing {
     removeFirstSample(): void;
 }
 export declare function clamp(a: number, limit: number): number;
-export interface Size {
-    width: number;
-    height: number;
-}

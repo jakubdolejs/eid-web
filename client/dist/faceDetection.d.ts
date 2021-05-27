@@ -4,29 +4,7 @@
  */
 import { Observable } from "rxjs";
 import { Angle, Rect } from "./utils";
-/**
- * Face alignment status
- */
-export declare enum FaceAlignmentStatus {
-    FOUND = 0,
-    FIXED = 1,
-    ALIGNED = 2,
-    MISALIGNED = 3
-}
-/**
- * Bearing
- */
-export declare enum Bearing {
-    STRAIGHT = 0,
-    LEFT = 1,
-    RIGHT = 2,
-    UP = 3,
-    DOWN = 4,
-    LEFT_UP = 5,
-    RIGHT_UP = 6,
-    LEFT_DOWN = 7,
-    RIGHT_DOWN = 8
-}
+import { Bearing, FaceAlignmentStatus } from "./types";
 /**
  * Face detection
  */

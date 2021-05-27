@@ -1,7 +1,23 @@
 import { Observable, Subscriber, Subscription } from "rxjs"
 import * as BlinkIDSDK from "@microblink/blinkid-in-browser-sdk/es/blinkid-sdk"
-import { RecognizableFace, FaceRecognition } from "./faceRecognition"
-import { Size, Rect } from "./utils"
+import { FaceRecognition } from "./faceRecognition"
+import { Rect } from "./utils"
+import {
+    Size,
+    RecognizableFace,
+    DocumentPages,
+    IdCaptureResponse,
+    IdCaptureResult,
+    IdCaptureUI,
+    SupportedRecognizerResult,
+    ProgressListener,
+    SupportedRecognizer,
+    RecognizerName,
+    IdCaptureUIFactory,
+    IdCaptureEvent,
+    IdCaptureEventType,
+    IdCaptureProgressEvent
+} from "./types"
 import { 
     BlinkIdCombinedRecognizerSettings, 
     RecognizerRunner, 
@@ -9,7 +25,6 @@ import {
     WasmSDK, 
     WasmSDKLoadSettings, 
     BlinkIdRecognizerResult,
-    IdBarcodeRecognizerResult,
     BlinkIdCombinedRecognizer, 
     BlinkIdCombinedRecognizerResult, 
     createBlinkIdCombinedRecognizer, 
@@ -19,163 +34,20 @@ import {
     SuccessFrameGrabberRecognizer,
     Recognizer,
     createSuccessFrameGrabberRecognizer,
-    ImageOrientation,
     createBlinkIdRecognizer,
     BlinkIdRecognizer,
     BlinkIdRecognizerSettings,
     IdBarcodeRecognizer,
     createIdBarcodeRecognizer,
-    SuccessFrameGrabberRecognizerResult
+    SuccessFrameGrabberRecognizerResult,
+    OnScanningDone,
+    DisplayableQuad
 } from "@microblink/blinkid-in-browser-sdk"
-import { concatMap, filter, map } from "rxjs/operators"
 
-type ProgressListener = (progress: number) => void
-
-export type IdCaptureStatus = "pass" | "review" | "fail"
-
-export interface IdCaptureResponse {
-    error?: any
-    result: {
-        front?: DocumentFrontPage,
-        back?: DocumentBackPage,
-        passport?: PassportDocument
-    }
-    warnings?: Warning[]
-    status: IdCaptureStatus
-}
-export interface Address {
-    street: string
-    city: string
-    postalCode: string
-    jurisdiction: string
-}
-
-export interface IDDocument {
-    documentNumber: string
-    firstName: string
-    lastName: string
-    warnings: Set<Warning>
-    dateOfBirth: DocumentDate
-    dateOfExpiry: DocumentDate
-    recognizer: RecognizerType
-}
-
-export interface DatedDocument {
-    dateOfIssue: DocumentDate
-}
-
-export interface ImageDocument {
-    image: string
-    faces: {
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        quality: number,
-        template: string
-    }[]
-    imageAnalysis: ImageQuality
-    imageSize: Size
-}
-
-export interface ImageQuality {
-    brightness: number
-    contrast: number
-    sharpness: number
-}
-
-export type RecognizerType = "BLINK_ID" | "USDL" | "PASSPORT"
-
-export interface DocumentDate {
-    day: number
-    month: number
-    year: number
-    successfullyParsed?: boolean
-    originalString?: string
-}
-
-export interface ClassInfo {
-    country: string
-    region: string
-    type: string
-    countryName: string
-    isoAlpha3CountryCode: string
-    isoAlpha2CountryCode: string
-    isoNumericCountryCode: string
-}
-
-export interface DocumentFrontPage extends IDDocument, ImageDocument, DatedDocument {
-    classInfo: ClassInfo
-    fullName: string
-    address: string
-    authenticityScores: {[k: string]: number}
-    authenticityScore: number
-}
-
-export interface DocumentBackPage extends IDDocument, DatedDocument {
-    barcode: string
-    issuerIdentificationNumber: string
-    fullName: string
-    address: Address
-}
-
-export interface PassportDocument extends IDDocument, ImageDocument {
-    rawMRZString: string
-    issuer: string
-    nationality: string
-    mrtdVerified: boolean
-    recognitionStatus: string
-}
-
-export type CapturedDocument<T extends RecognizerType> = T extends "PASSPORT" ? PassportDocument : T extends "USDL" ? DocumentBackPage : DocumentFrontPage
-
-export enum DocumentPages {
-    FRONT = "front",
-    BACK = "back",
-    FRONT_AND_BACK = "front and back"
-}
-
-export type IdCaptureResult = {
-    face?: RecognizableFace
-    pages: DocumentPages
-    result: SupportedRecognizerResult
-    capturedImage?: {
-        data: ImageData
-        orientation: ImageOrientation
-    }
-}
-
-export class Warning {
-
-    readonly code: number
-    readonly description: string
-
-    constructor(code: number, description: string) {
-        this.code = code
-        this.description = description
-    }
-}
-
-export type SupportedRecognizerResult = BlinkIdCombinedRecognizerResult|BlinkIdRecognizerResult|IdBarcodeRecognizerResult
-
-type SupportedWrappedRecognizer = BlinkIdCombinedRecognizer|BlinkIdRecognizer|IdBarcodeRecognizer
-type SupportedRecognizer = SupportedWrappedRecognizer|SuccessFrameGrabberRecognizer<SupportedWrappedRecognizer>
-
-export interface IIdCaptureUI {
-    setProgress(progress: number): void
-    showPrompt(text: string, force: boolean): void
-    showFlipCardInstruction(onDone?: () => void): void
-    removeProgressBar():void
-    hideCameraOverlay():void    
-    showCameraOverlay():void
-    cleanup():void
-    createMetadataCallbacks(onFirstSide?: () => void): MetadataCallbacks
-    readonly progressListener: ProgressListener
-    readonly video: HTMLVideoElement
-    onCancel: () => void
-}
-
-class IdCaptureUI implements IIdCaptureUI {
+/**
+ * Ver-ID's implementation of the `IdCaptureUI` interface
+ */
+class VerIDIdCaptureUI implements IdCaptureUI {
 
     private videoContainer: HTMLDivElement
     readonly video: HTMLVideoElement
@@ -187,8 +59,8 @@ class IdCaptureUI implements IIdCaptureUI {
     private progressBar: HTMLDivElement
     private promptLock: boolean = false
     private flipTimeout: any
+    private eventListeners: {[k in IdCaptureEventType]?: (event: IdCaptureEvent) => void} = {}
     readonly cardAspectRatio: number = 85.6/53.98
-    onCancel: () => void = null
 
     constructor() {
         this.videoContainer = this.createVideoContainer()
@@ -197,22 +69,81 @@ class IdCaptureUI implements IIdCaptureUI {
         this.cameraOverlayCanvas = this.createCameraOverlayCanvas()
         this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d")
         this.cancelButton = this.createCancelButton()
-        this.prompt = this.createPromptElement()        
+        this.prompt = this.createPromptElement()
         this.videoContainer.appendChild(this.video)
         this.videoContainer.appendChild(this.cameraOverlayCanvas)
         this.videoContainer.appendChild(this.cancelButton)
         this.videoContainer.appendChild(this.prompt)
         this.progressBarContainer = this.createProgressBarContainer()
         this.progressBar = this.createProgressBarElement()
-        this.progressBarContainer.appendChild(this.progressBar)        
+        this.progressBarContainer.appendChild(this.progressBar)
         this.videoContainer.appendChild(this.progressBarContainer)
         this.cancelButton.onclick = () => {
-            if (this.onCancel) {
-                this.onCancel()
-            }
+            this.trigger({type: IdCaptureEventType.CANCEL})
         }
         this.video.onplaying = () => {
             this.drawCardOutline("white")
+        }
+    }
+
+    on<Event extends IdCaptureEvent>(eventType: IdCaptureEventType, callback: (event: Event) => void) {
+        if (callback) {
+            this.eventListeners[eventType] = callback
+        } else {
+            delete this.eventListeners[eventType]
+        }
+    }
+
+    trigger(event: IdCaptureEvent) {
+        switch (event.type) {
+            case IdCaptureEventType.CAPTURE_STARTED:
+                this.showCameraOverlay()
+                break
+            case IdCaptureEventType.CANCEL:
+                break
+            case IdCaptureEventType.CAMERA_ANGLED:
+                this.showPrompt("Point straight at the ID card")
+                this.drawCardOutline("white")
+                break
+            case IdCaptureEventType.CAMERA_TOO_CLOSE:
+                this.showPrompt("Move away")
+                this.drawCardOutline("white")
+                break
+            case IdCaptureEventType.CAMERA_TOO_FAR:
+                this.showPrompt("Move closer")
+                this.drawCardOutline("white")
+                break
+            case IdCaptureEventType.CAPTURING:
+                this.showPrompt("Scanning")
+                this.drawCardOutline("white")
+                break
+            case IdCaptureEventType.CAPTURE_ENDED:
+                this.cleanup()
+                break
+            case IdCaptureEventType.FINDING_FACE:
+                this.showPrompt("Finding face on document", true)
+                this.drawCardOutline("white")
+                break
+            case IdCaptureEventType.PAGE_CAPTURED:
+                this.showPrompt("Hold it")
+                this.drawCardOutline("green")
+                break
+            case IdCaptureEventType.NEXT_PAGE_REQUESTED:
+                this.hideCameraOverlay()
+                this.showPrompt("Flip the card", true)
+                this.showFlipCardInstruction(() => {
+                    this.trigger({type: IdCaptureEventType.CAPTURE_STARTED})
+                })
+                break
+            case IdCaptureEventType.LOADING_PROGRESSED:
+                this.setProgress((event as IdCaptureProgressEvent).progress)
+                break
+            case IdCaptureEventType.LOADED:
+                this.removeProgressBar()
+                break
+        }
+        if (this.eventListeners[event.type]) {
+            this.eventListeners[event.type](event)
         }
     }
 
@@ -347,20 +278,20 @@ class IdCaptureUI implements IIdCaptureUI {
         this.cameraOverlayContext.stroke()
     }
 
-    setProgress(progress: number) {
+    private setProgress(progress: number) {
         this.progressBar.style.width = progress+"%"
     }
 
-    showPrompt(text: string, force: boolean = false) {
+    private showPrompt(text: string, force: boolean = false) {
         if (this.promptLock && !force) {
             return
         }
         this.promptLock = true
         this.prompt.innerText = text
-        setTimeout(() => this.promptLock = false, 1000)
+        setTimeout(() => this.promptLock = false, 700)
     }
 
-    showFlipCardInstruction(onDone?: () => void) {
+    private showFlipCardInstruction(onDone?: () => void) {
         this.showPrompt("Flip the card", true)
         const style: HTMLStyleElement = document.createElement("style")
         style.innerText = ".flipped { transform: rotateY(180deg) !important; transition: transform 2s; }"
@@ -405,71 +336,24 @@ class IdCaptureUI implements IIdCaptureUI {
         }, 2000)
     }
 
-    removeProgressBar() {
+    private removeProgressBar() {
         if (this.progressBarContainer.parentNode) {
             this.progressBarContainer.parentNode.removeChild(this.progressBarContainer)
         }
     }
 
-    hideCameraOverlay() {
+    private hideCameraOverlay() {
         this.cameraOverlayCanvas.style.visibility = "hidden"
     }
     
-    showCameraOverlay() {
+    private showCameraOverlay() {
         this.cameraOverlayCanvas.style.visibility = "visible"
     }
 
-    cleanup() {
+    private cleanup() {
         clearTimeout(this.flipTimeout)
         if (this.videoContainer.parentNode) {
             this.videoContainer.parentNode.removeChild(this.videoContainer)
-        }
-    }
-
-    createMetadataCallbacks(onFirstSide?: () => void): MetadataCallbacks {
-        return {
-            onQuadDetection: (quad: any) => {
-                switch (quad.detectionStatus) {
-                    case BlinkIDSDK.DetectionStatus.Fail:
-                        this.showPrompt("Scanning")
-                        this.drawCardOutline("white")
-                        break
-                    case BlinkIDSDK.DetectionStatus.Success:
-                    case BlinkIDSDK.DetectionStatus.FallbackSuccess:
-                        this.showPrompt("Hold it")
-                        this.drawCardOutline("green")
-                        break
-                    case BlinkIDSDK.DetectionStatus.CameraAtAngle:
-                        this.showPrompt("Point straight at the ID card")
-                        this.drawCardOutline("white")
-                        break
-                    case BlinkIDSDK.DetectionStatus.CameraTooHigh:
-                        this.showPrompt("Move closer")
-                        this.drawCardOutline("white")
-                        break
-                    case BlinkIDSDK.DetectionStatus.CameraTooNear:
-                    case BlinkIDSDK.DetectionStatus.DocumentTooCloseToEdge:
-                    case BlinkIDSDK.DetectionStatus.Partial:
-                        this.showPrompt("Move away")
-                        this.drawCardOutline("white")
-                        break
-                }
-            },
-            onFirstSideResult: () => {
-                this.showFlipCardInstruction()
-                if (onFirstSide) {
-                    onFirstSide()
-                }
-            },
-            onDetectionFailed: () => {
-                this.drawCardOutline("white")
-            }
-        }
-    }
-
-    get progressListener(): ProgressListener {
-        return (progress: number) => {
-            this.setProgress(progress)
         }
     }
 }
@@ -487,10 +371,9 @@ export class IdCapture {
     private readonly loadBlinkWasmModule: Promise<WasmSDK>
     private percentLoaded: number = 0
     private loadListeners: Set<ProgressListener> = new Set()
-    private wasmSDK: WasmSDK
 
     constructor(settings: IdCaptureSettings, serviceURL?: string) {
-        this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : ""
+        this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : settings.serviceURL
         this.faceRecognition = new FaceRecognition(this.serviceURL)
         const loadSettings: WasmSDKLoadSettings = new BlinkIDSDK.WasmSDKLoadSettings(settings.licenceKey)
         loadSettings.engineLocation = location.origin+settings.resourcesPath
@@ -592,64 +475,102 @@ export class IdCapture {
         return idCaptureResult
     }
 
-    private runIdCaptureSession(videoRecognizer: VideoRecognizer, recognizers: SupportedRecognizer[]): Observable<CombinedResult> {
-        return new Observable<CombinedResult>((subscriber: Subscriber<CombinedResult>) => {
-            let emissionCount = 0
-            videoRecognizer.startRecognition(async (state: RecognizerResultState) => {
-                try {
-                    if (state == RecognizerResultState.Valid || state == RecognizerResultState.StageValid) {
-                        videoRecognizer.pauseRecognition()
-                        for (let recognizer of recognizers) {
-                            let recognizerName: string
-                            let result: SupportedRecognizerResult
-                            let successFrameResult: SuccessFrameGrabberRecognizerResult
-                            if ((recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer) {
-                                successFrameResult = await (recognizer as SuccessFrameGrabberRecognizer<any>).getResult()
-                                if (successFrameResult.state != RecognizerResultState.Empty) {
-                                    result = await (recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer.getResult() as SupportedRecognizerResult
-                                    recognizerName = (recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer.recognizerName
-                                } else {
-                                    videoRecognizer.resumeRecognition(false)
-                                    return
-                                }
-                            } else {
-                                result = await recognizer.getResult() as SupportedRecognizerResult
-                                recognizerName = recognizer.recognizerName
-                            }
-                            if (result.state == RecognizerResultState.Valid) {
-                                let pages: DocumentPages
-                                if (recognizerName == "BlinkIdRecognizer") {
-                                    pages = DocumentPages.FRONT
-                                } else if (recognizerName == "IdBarcodeRecognizer") {
-                                    pages = DocumentPages.BACK
-                                } else {
-                                    pages = DocumentPages.FRONT_AND_BACK
-                                }
-                                const combinedResult: CombinedResult = {
-                                    pages: pages,
-                                    result: result
-                                }
-                                if (successFrameResult) {
-                                    combinedResult.successFrame = successFrameResult
-                                }
-                                emissionCount ++
-                                if (!subscriber.closed) {
-                                    subscriber.next(combinedResult)
-                                    if (emissionCount == recognizers.length) {
-                                        subscriber.complete()
-                                    }
-                                }
-                                return
-                            }
+    private async getResultFromRecognizer(recognizer: SupportedRecognizer): Promise<CombinedResult> {
+        let recognizerName: RecognizerName
+        let result: SupportedRecognizerResult
+        let successFrameResult: SuccessFrameGrabberRecognizerResult
+        if ((recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer) {
+            successFrameResult = await (recognizer as SuccessFrameGrabberRecognizer<any>).getResult()
+            if (successFrameResult.state != RecognizerResultState.Empty) {
+                result = await (recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer.getResult() as SupportedRecognizerResult
+                recognizerName = (recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer.recognizerName
+            } else {
+                throw new Error("Invalid recognizer state")
+            }
+        } else {
+            result = await recognizer.getResult() as SupportedRecognizerResult
+            recognizerName = recognizer.recognizerName as RecognizerName
+        }
+        let pages: DocumentPages
+        if (recognizerName == "BlinkIdRecognizer") {
+            pages = DocumentPages.FRONT
+        } else if (recognizerName == "IdBarcodeRecognizer") {
+            pages = DocumentPages.BACK
+        } else {
+            pages = DocumentPages.FRONT_AND_BACK
+        }
+        if (result.state == RecognizerResultState.Valid) {
+            const combinedResult: CombinedResult = {
+                pages: pages,
+                result: result
+            }
+            if (successFrameResult) {
+                combinedResult.successFrame = successFrameResult
+            }
+            return combinedResult
+        } else {
+            throw new Error("Invalid recognizer state")
+        }
+    }
+
+    private getRecognizerName(recognizer: Recognizer): string {
+        if ((recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer) {
+            return (recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer.recognizerName
+        } else {
+            return recognizer.recognizerName
+        }
+    }
+
+    private removeRecognizer(recognizer: SupportedRecognizer, recognizers: SupportedRecognizer[]): SupportedRecognizer[] {
+        const recognizerName = this.getRecognizerName(recognizer)
+        return recognizers.filter(val => this.getRecognizerName(val) != recognizerName)
+    }
+
+    private getRecognitionCallback(videoRecognizer: VideoRecognizer, recognizers: SupportedRecognizer[], callback: (error: any, result?: CombinedResult) => void): OnScanningDone {
+        return async (state: RecognizerResultState) => {
+            if (state == RecognizerResultState.Valid || state == RecognizerResultState.StageValid) {
+                videoRecognizer.pauseRecognition()
+                for (let recognizer of recognizers) {
+                    try {
+                        let combinedResult = await this.getResultFromRecognizer(recognizer)
+                        if (combinedResult.result.state == RecognizerResultState.Valid) {
+                            recognizers = this.removeRecognizer(recognizer, recognizers)
+                            videoRecognizer.getRecognizerRunner().reconfigureRecognizers(recognizers, false)
+                            callback(null, combinedResult)
+                            return
                         }
-                        videoRecognizer.resumeRecognition(false)
-                    }
-                } catch (error) {
-                    if (!subscriber.closed) {
-                        subscriber.error(error)
+                    } catch (err) {
+                        if (err && err.message == "Invalid recognizer state") {
+                            videoRecognizer.resumeRecognition(false)
+                            return
+                        } else {
+                            callback(err)
+                            return
+                        }
                     }
                 }
-            })
+                videoRecognizer.resumeRecognition(false)
+            }
+        }
+    }
+
+    private runIdCaptureSession(videoRecognizer: VideoRecognizer, recognizers: SupportedRecognizer[], settings: IdCaptureSessionSettings): Observable<CombinedResult> {
+        return new Observable<CombinedResult>((subscriber: Subscriber<CombinedResult>) => {
+            let emissionCount = 0
+            videoRecognizer.startRecognition(this.getRecognitionCallback(videoRecognizer, recognizers, (error, result) => {
+                if (subscriber.closed) {
+                    return
+                }
+                if (error) {
+                    subscriber.error(error)
+                } else if (result) {
+                    emissionCount ++
+                    subscriber.next(result)
+                    if (emissionCount == recognizers.length) {
+                        subscriber.complete()
+                    }
+                }
+            }), settings.timeout)
         })
     }
 
@@ -673,15 +594,6 @@ export class IdCapture {
             throw new Error("ID card detection failed")
         }
         return response.json()
-    }
-
-    private emitResult(result: IdCaptureResult, subscriber: Subscriber<IdCaptureResult>, complete: boolean = true) {
-        if (!subscriber.closed) {
-            subscriber.next(result)
-            if (complete) {
-                subscriber.complete()
-            }
-        }
     }
 
     private recognizerRunner: RecognizerRunner
@@ -716,8 +628,42 @@ export class IdCapture {
         return recognizers
     }
 
+    private createMetadataCallbacks(ui: IdCaptureUI): MetadataCallbacks {
+        return {
+            onQuadDetection: (quad: DisplayableQuad) => {
+                switch (quad.detectionStatus) {
+                    case BlinkIDSDK.DetectionStatus.Fail:
+                        ui.trigger({type:IdCaptureEventType.CAPTURING})
+                        break
+                    case BlinkIDSDK.DetectionStatus.Success:
+                    case BlinkIDSDK.DetectionStatus.FallbackSuccess:
+                        ui.trigger({type:IdCaptureEventType.PAGE_CAPTURED})
+                        break
+                    case BlinkIDSDK.DetectionStatus.CameraAtAngle:
+                        ui.trigger({type:IdCaptureEventType.CAMERA_ANGLED})
+                        break
+                    case BlinkIDSDK.DetectionStatus.CameraTooHigh:
+                        ui.trigger({type:IdCaptureEventType.CAMERA_TOO_FAR})
+                        break
+                    case BlinkIDSDK.DetectionStatus.CameraTooNear:
+                    case BlinkIDSDK.DetectionStatus.DocumentTooCloseToEdge:
+                    case BlinkIDSDK.DetectionStatus.Partial:
+                        ui.trigger({type:IdCaptureEventType.CAMERA_TOO_CLOSE})
+                        break
+                }
+            },
+            onDetectionFailed: () => {
+                ui.trigger({type:IdCaptureEventType.CAPTURING})
+            },
+            onFirstSideResult: () => {
+                ui.trigger({type:IdCaptureEventType.NEXT_PAGE_REQUESTED})
+            }
+        }
+    }
+
     /**
      * Capture ID card using the device camera
+     * @param settings Session settings
      * @returns Observable
      */
     captureIdCard(settings?: IdCaptureSessionSettings): Observable<IdCaptureResult> {
@@ -727,10 +673,6 @@ export class IdCapture {
                 subscriber.error(new Error("Unsupported browser"))
                 return
             }
-            if (!settings) {
-                settings = new IdCaptureSessionSettings()
-            }
-            let videoRecognizer: VideoRecognizer
             function disposeVideoRecognizer() {
                 if (videoRecognizer != null) {
                     videoRecognizer.releaseVideoFeed()
@@ -743,38 +685,48 @@ export class IdCapture {
                     recognizerRunner = null
                 }
             }
+            if (!settings) {
+                settings = new IdCaptureSessionSettings()
+            }
+            let videoRecognizer: VideoRecognizer
             let recognizerRunner: RecognizerRunner
             let recognizers: SupportedRecognizer[]
-            const ui: IIdCaptureUI = new IdCaptureUI()
-            ui.onCancel = () => {
+            const ui: IdCaptureUI = settings.createUI()
+            ui.on(IdCaptureEventType.CANCEL, (event: IdCaptureEvent) => {
                 subscriber.complete()
+            })
+            const progressListener: ProgressListener = (progress: number) => {
+                const event: IdCaptureProgressEvent = {
+                    type: IdCaptureEventType.LOADING_PROGRESSED,
+                    progress: progress
+                }
+                ui.trigger(event)
             }
-            this.registerLoadListener(ui.progressListener)
+            this.registerLoadListener(progressListener)
             this.loadBlinkWasmModule.then(async (wasmSDK: WasmSDK) => {
-                ui.removeProgressBar()
+                ui.trigger({type:IdCaptureEventType.LOADED})
                 try {
                     recognizers = await this.createRecognizers(wasmSDK, settings)
                     recognizerRunner = await this.getRecognizerRunner(wasmSDK, Object.values(recognizers))
-                    await recognizerRunner.setMetadataCallbacks(ui.createMetadataCallbacks())
+                    await recognizerRunner.setMetadataCallbacks(this.createMetadataCallbacks(ui))
                     videoRecognizer = await VideoRecognizer.createVideoRecognizerFromCameraStream(ui.video, recognizerRunner)
-                    ui.showCameraOverlay()
+                    ui.trigger({type:IdCaptureEventType.CAPTURE_STARTED})
                     let emissionCount = 0
-                    sessionSubscription = this.runIdCaptureSession(videoRecognizer, recognizers).subscribe({
+                    sessionSubscription = this.runIdCaptureSession(videoRecognizer, recognizers, settings).subscribe({
                         next: async (combinedResult: CombinedResult) => {
                             try {
                                 if (combinedResult.pages != DocumentPages.BACK) {
-                                    ui.hideCameraOverlay()
-                                    ui.showPrompt("Finding face on document", true)
+                                    ui.trigger({type:IdCaptureEventType.FINDING_FACE})
                                 }
                                 const result = await this.convertToIdCaptureResult(combinedResult)
                                 if (!subscriber.closed) {
                                     subscriber.next(result)
                                 }
                                 if (emissionCount++ < recognizers.length-1) {
-                                    ui.showFlipCardInstruction(() => {
-                                        ui.showPrompt("", true)
+                                    ui.on(IdCaptureEventType.CAPTURE_STARTED, () => {
                                         videoRecognizer.resumeRecognition(false)
                                     })
+                                    ui.trigger({type: IdCaptureEventType.NEXT_PAGE_REQUESTED})
                                 } else {
                                     disposeVideoRecognizer()
                                     if (!subscriber.closed) {
@@ -806,10 +758,10 @@ export class IdCapture {
                     }
                 }
             }).catch(error => {
-                ui.removeProgressBar()
+                ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
                 subscriber.error(error)
             }).finally(() => {
-                this.unregisterLoadListener(ui.progressListener)
+                this.unregisterLoadListener(progressListener)
             })
             return async () => {
                 if (sessionSubscription) {
@@ -817,29 +769,74 @@ export class IdCapture {
                 }
                 disposeVideoRecognizer()
                 disposeRecognizerRunner()
-                this.unregisterLoadListener(ui.progressListener)
-                ui.cleanup()
+                this.unregisterLoadListener(progressListener)
+                ui.trigger({type:IdCaptureEventType.CAPTURE_ENDED})
             }
         })
     }
 }
 
+/**
+ * ID capture settings
+ */
 export class IdCaptureSettings {
+    /**
+     * Microblink licence key (must be issued for the domain name of the running application)
+     */
     licenceKey: string
+    /**
+     * Path to resources used by the ID capture
+     */
     resourcesPath: string
+    /**
+     * URL for the server accepting the supporting face detection and ID capture calls
+     */
+    serviceURL: string
 
-    constructor(licenceKey: string, resourcesPath: string) {
+    /**
+     * Construtor
+     * @param licenceKey Microblink licence key (must be issued for the domain name of the running application)
+     * @param resourcesPath Path to resources used by the ID capture
+     * @param serviceURL URL for the server accepting the supporting face detection and ID capture calls
+     */
+    constructor(licenceKey: string, resourcesPath: string, serviceURL: string = "") {
         this.licenceKey = licenceKey
         this.resourcesPath = resourcesPath
+        this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : ""
     }
 }
 
+/**
+ * ID capture session settings
+ */
 export class IdCaptureSessionSettings {
+    /**
+     * Pages to capture
+     */
     pages: DocumentPages
+    /**
+     * Indicates whether the session should save the images obtained from the camera that have been used in successful capture
+     */
     saveCapturedImages: boolean
+    /**
+     * Session timeout in milliseconds
+     */
+    timeout: number
+    /**
+     * Create ID capture UI
+     * @returns Function that creates an instance of the IdCaptureUI interface
+     */
+    createUI: IdCaptureUIFactory = () => new VerIDIdCaptureUI()
 
-    constructor(pages: DocumentPages = DocumentPages.FRONT_AND_BACK, saveCapturedImages: boolean = false) {
+    /**
+     * Constructor
+     * @param pages Pages to capture
+     * @param timeout Session timeout in milliseconds (default = infinity)
+     * @param saveCapturedImages Indicates whether the session should save the images obtained from the camera that have been used in successful capture (default = `false`)
+     */
+    constructor(pages: DocumentPages = DocumentPages.FRONT_AND_BACK, timeout: number = Number.POSITIVE_INFINITY, saveCapturedImages: boolean = false) {
         this.pages = pages
+        this.timeout = timeout
         this.saveCapturedImages = saveCapturedImages
     }
 }
