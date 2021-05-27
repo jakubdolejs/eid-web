@@ -65,6 +65,13 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>ID capture settings</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -88,6 +95,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="idcapturesettings.html#licencekey" class="tsd-kind-icon">licence<wbr>Key</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="idcapturesettings.html#resourcespath" class="tsd-kind-icon">resources<wbr>Path</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="idcapturesettings.html#serviceurl" class="tsd-kind-icon">serviceURL</a></li>
 							</ul>
 						</section>
 					</div>
@@ -99,22 +107,39 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>IdCapture<wbr>Settings<span class="tsd-signature-symbol">(</span>licenceKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, resourcesPath<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="idcapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">IdCaptureSettings</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>IdCapture<wbr>Settings<span class="tsd-signature-symbol">(</span>licenceKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, resourcesPath<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, serviceURL<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="idcapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">IdCaptureSettings</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L829">idCapture.ts:829</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1c7b2a/client/src/idCapture.ts#L794">idCapture.ts:794</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Construtor</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>licenceKey: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Microblink licence key (must be issued for the domain name of the running application)</p>
+									</div>
 								</li>
 								<li>
 									<h5>resourcesPath: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Path to resources used by the ID capture</p>
+									</div>
+								</li>
+								<li>
+									<h5>serviceURL: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;&quot;</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>URL for the server accepting the supporting face detection and ID capture calls</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="idcapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">IdCaptureSettings</a></h4>
@@ -130,9 +155,14 @@
 					<div class="tsd-signature tsd-kind-icon">licence<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L828">idCapture.ts:828</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1c7b2a/client/src/idCapture.ts#L786">idCapture.ts:786</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Microblink licence key (must be issued for the domain name of the running application)</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="resourcespath" class="tsd-anchor"></a>
@@ -140,9 +170,29 @@
 					<div class="tsd-signature tsd-kind-icon">resources<wbr>Path<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L829">idCapture.ts:829</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1c7b2a/client/src/idCapture.ts#L790">idCapture.ts:790</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Path to resources used by the ID capture</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="serviceurl" class="tsd-anchor"></a>
+					<h3>serviceURL</h3>
+					<div class="tsd-signature tsd-kind-icon">serviceURL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1c7b2a/client/src/idCapture.ts#L794">idCapture.ts:794</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>URL for the server accepting the supporting face detection and ID capture calls</p>
+						</div>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -169,6 +219,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="idcapturesettings.html#resourcespath" class="tsd-kind-icon">resources<wbr>Path</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="idcapturesettings.html#serviceurl" class="tsd-kind-icon">serviceURL</a>
 							</li>
 						</ul>
 					</li>

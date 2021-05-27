@@ -68,6 +68,7 @@
 								<li class="tsd-kind-enum"><a href="enums/bearing.html" class="tsd-kind-icon">Bearing</a></li>
 								<li class="tsd-kind-enum"><a href="enums/documentpages.html" class="tsd-kind-icon">Document<wbr>Pages</a></li>
 								<li class="tsd-kind-enum"><a href="enums/facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a></li>
+								<li class="tsd-kind-enum"><a href="enums/idcaptureeventtype.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event<wbr>Type</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
@@ -106,8 +107,8 @@
 								<li class="tsd-kind-interface"><a href="interfaces/documentdate.html" class="tsd-kind-icon">Document<wbr>Date</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/documentfrontpage.html" class="tsd-kind-icon">Document<wbr>Front<wbr>Page</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/iddocument.html" class="tsd-kind-icon">IDDocument</a></li>
-								<li class="tsd-kind-interface"><a href="interfaces/iidcaptureui.html" class="tsd-kind-icon">IId<wbr>CaptureUI</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/idcaptureui.html" class="tsd-kind-icon">Id<wbr>CaptureUI</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/imagedocument.html" class="tsd-kind-icon">Image<wbr>Document</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/imagequality.html" class="tsd-kind-icon">Image<wbr>Quality</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/passportdocument.html" class="tsd-kind-icon">Passport<wbr>Document</a></li>
@@ -119,9 +120,15 @@
 							<h3>Type aliases</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#captureddocument" class="tsd-kind-icon">Captured<wbr>Document</a></li>
+								<li class="tsd-kind-type-alias"><a href="modules.html#idcaptureevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event</a></li>
+								<li class="tsd-kind-type-alias"><a href="modules.html#idcaptureprogressevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event</a></li>
 								<li class="tsd-kind-type-alias"><a href="modules.html#idcaptureresult" class="tsd-kind-icon">Id<wbr>Capture<wbr>Result</a></li>
 								<li class="tsd-kind-type-alias"><a href="modules.html#idcapturestatus" class="tsd-kind-icon">Id<wbr>Capture<wbr>Status</a></li>
+								<li class="tsd-kind-type-alias"><a href="modules.html#idcaptureuifactory" class="tsd-kind-icon">Id<wbr>CaptureUIFactory</a></li>
+								<li class="tsd-kind-type-alias"><a href="modules.html#progresslistener" class="tsd-kind-icon">Progress<wbr>Listener</a></li>
+								<li class="tsd-kind-type-alias"><a href="modules.html#recognizername" class="tsd-kind-icon">Recognizer<wbr>Name</a></li>
 								<li class="tsd-kind-type-alias"><a href="modules.html#recognizertype" class="tsd-kind-icon">Recognizer<wbr>Type</a></li>
+								<li class="tsd-kind-type-alias"><a href="modules.html#supportedrecognizer" class="tsd-kind-icon">Supported<wbr>Recognizer</a></li>
 								<li class="tsd-kind-type-alias"><a href="modules.html#supportedrecognizerresult" class="tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result</a></li>
 							</ul>
 						</section>
@@ -143,7 +150,7 @@
 					<div class="tsd-signature tsd-kind-icon">Captured<wbr>Document&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">&quot;PASSPORT&quot;</span><span class="tsd-signature-symbol"> ? </span><a href="interfaces/passportdocument.html" class="tsd-signature-type" data-tsd-kind="Interface">PassportDocument</a><span class="tsd-signature-symbol"> : </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type">&quot;USDL&quot;</span><span class="tsd-signature-symbol"> ? </span><a href="interfaces/documentbackpage.html" class="tsd-signature-type" data-tsd-kind="Interface">DocumentBackPage</a><span class="tsd-signature-symbol"> : </span><a href="interfaces/documentfrontpage.html" class="tsd-signature-type" data-tsd-kind="Interface">DocumentFrontPage</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L130">idCapture.ts:130</a></li>
+							<li>Defined in types.ts:109</li>
 						</ul>
 					</aside>
 					<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -154,12 +161,40 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureevent" class="tsd-anchor"></a>
+					<h3>Id<wbr>Capture<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Event<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>type<span class="tsd-signature-symbol">: </span><a href="enums/idcaptureeventtype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">IdCaptureEventType</a><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in types.ts:172</li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>type<span class="tsd-signature-symbol">: </span><a href="enums/idcaptureeventtype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">IdCaptureEventType</a></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureprogressevent" class="tsd-anchor"></a>
+					<h3>Id<wbr>Capture<wbr>Progress<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event<span class="tsd-signature-symbol">:</span> <a href="modules.html#idcaptureevent" class="tsd-signature-type" data-tsd-kind="Type alias">IdCaptureEvent</a><span class="tsd-signature-symbol"> &amp; </span><span class="tsd-signature-symbol">{ </span>progress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in types.ts:176</li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
 					<a name="idcaptureresult" class="tsd-anchor"></a>
 					<h3>Id<wbr>Capture<wbr>Result</h3>
 					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Result<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>capturedImage<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageData</span><span class="tsd-signature-symbol">; </span>orientation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageOrientation</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>face<span class="tsd-signature-symbol">?: </span><a href="interfaces/recognizableface.html" class="tsd-signature-type" data-tsd-kind="Interface">RecognizableFace</a><span class="tsd-signature-symbol">; </span>pages<span class="tsd-signature-symbol">: </span><a href="enums/documentpages.html" class="tsd-signature-type" data-tsd-kind="Enumeration">DocumentPages</a><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><a href="modules.html#supportedrecognizerresult" class="tsd-signature-type" data-tsd-kind="Type alias">SupportedRecognizerResult</a><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L138">idCapture.ts:138</a></li>
+							<li>Defined in types.ts:117</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -194,7 +229,73 @@
 					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;pass&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;review&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;fail&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L34">idCapture.ts:34</a></li>
+							<li>Defined in types.ts:13</li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureuifactory" class="tsd-anchor"></a>
+					<h3>Id<wbr>CaptureUIFactory</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>CaptureUIFactory<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><a href="interfaces/idcaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">IdCaptureUI</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in types.ts:314</li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="interfaces/idcaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">IdCaptureUI</a></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-returns-title">Returns <a href="interfaces/idcaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">IdCaptureUI</a></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="progresslistener" class="tsd-anchor"></a>
+					<h3>Progress<wbr>Listener</h3>
+					<div class="tsd-signature tsd-kind-icon">Progress<wbr>Listener<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>progress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in types.ts:144</li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>progress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5>progress: <span class="tsd-signature-type">number</span></h5>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="recognizername" class="tsd-anchor"></a>
+					<h3>Recognizer<wbr>Name</h3>
+					<div class="tsd-signature tsd-kind-icon">Recognizer<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;BlinkIdCombinedRecognizer&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;BlinkIdRecognizer&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;IdBarcodeRecognizer&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in types.ts:312</li>
 						</ul>
 					</aside>
 				</section>
@@ -204,7 +305,17 @@
 					<div class="tsd-signature tsd-kind-icon">Recognizer<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;BLINK_ID&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;USDL&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;PASSPORT&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L87">idCapture.ts:87</a></li>
+							<li>Defined in types.ts:66</li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="supportedrecognizer" class="tsd-anchor"></a>
+					<h3>Supported<wbr>Recognizer</h3>
+					<div class="tsd-signature tsd-kind-icon">Supported<wbr>Recognizer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">SupportedWrappedRecognizer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">SuccessFrameGrabberRecognizer</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">SupportedWrappedRecognizer</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in types.ts:142</li>
 						</ul>
 					</aside>
 				</section>
@@ -214,7 +325,7 @@
 					<div class="tsd-signature tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BlinkIdCombinedRecognizerResult</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">BlinkIdRecognizerResult</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">IdBarcodeRecognizerResult</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/idCapture.ts#L159">idCapture.ts:159</a></li>
+							<li>Defined in types.ts:138</li>
 						</ul>
 					</aside>
 				</section>
@@ -231,7 +342,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/utils.ts#L579">utils.ts:579</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1c7b2a/client/src/utils.ts#L566">utils.ts:566</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -257,7 +368,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/20f1e33/client/src/faceAngle.ts#L22">faceAngle.ts:22</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e1c7b2a/client/src/faceAngle.ts#L22">faceAngle.ts:22</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -314,6 +425,9 @@
 					</li>
 					<li class=" tsd-kind-enum">
 						<a href="enums/facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/idcaptureeventtype.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event<wbr>Type</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/angle.html" class="tsd-kind-icon">Angle</a>
@@ -400,10 +514,10 @@
 						<a href="interfaces/iddocument.html" class="tsd-kind-icon">IDDocument</a>
 					</li>
 					<li class=" tsd-kind-interface">
-						<a href="interfaces/iidcaptureui.html" class="tsd-kind-icon">IId<wbr>CaptureUI</a>
+						<a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a>
 					</li>
 					<li class=" tsd-kind-interface">
-						<a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a>
+						<a href="interfaces/idcaptureui.html" class="tsd-kind-icon">Id<wbr>CaptureUI</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/imagedocument.html" class="tsd-kind-icon">Image<wbr>Document</a>
@@ -424,13 +538,31 @@
 						<a href="modules.html#captureddocument" class="tsd-kind-icon">Captured<wbr>Document</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcaptureevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcaptureprogressevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#idcaptureresult" class="tsd-kind-icon">Id<wbr>Capture<wbr>Result</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#idcapturestatus" class="tsd-kind-icon">Id<wbr>Capture<wbr>Status</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcaptureuifactory" class="tsd-kind-icon">Id<wbr>CaptureUIFactory</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#progresslistener" class="tsd-kind-icon">Progress<wbr>Listener</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#recognizername" class="tsd-kind-icon">Recognizer<wbr>Name</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#recognizertype" class="tsd-kind-icon">Recognizer<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#supportedrecognizer" class="tsd-kind-icon">Supported<wbr>Recognizer</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#supportedrecognizerresult" class="tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result</a>

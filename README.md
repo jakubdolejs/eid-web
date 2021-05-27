@@ -1,5 +1,7 @@
 # Ver-ID In-Browser Live Face Detection and ID Card Capture
 
+
+
 ## Requirements
 - [NodeJS](https://nodejs.org) 14.6 or newer
 - [Docker](https://docker.com)
@@ -93,19 +95,23 @@ You'll need a licence key tied to your domain name for [BlinkID In-browser SDK](
 const serverURL = "https://somedomain.com"
 
 // Import the ID capture module
-import { IdCapture, IdCaptureSettings } from "/@appliedrecognition/ver-id-browser/index.js"
+import { IdCapture, IdCaptureSettings, IdCaptureSessionSettings, DocumentPages } from "/@appliedrecognition/ver-id-browser/index.js"
 
 // Settings
 const resourcesURL = "/@appliedrecognition/ver-id-browser/resources/"
-const settings = new IdCaptureSettings(yourLicenceKey, resourcesURL)
+const settings = new IdCaptureSettings(yourLicenceKey, resourcesURL, serverURL)
+const pages = DocumentPages.FRONT_AND_BACK // Scan the front and back of an ID
+const sessionTimeout = 60000 // Session will time out after 1 minute
+const saveCapturedImages = true // Save original images before they were cropped and deskewed
+const sessionSettings = new IdCaptureSessionSettings(pages, sessionTimeout, saveCapturedImages)
 
 // Create an instance of the IdCapture class
-const idCapture = new IdCapture(settings, serverURL)
+const idCapture = new IdCapture(settings)
 
 // Capture ID card
 idCapture.captureIdCard().subscribe({
     next: (result) => {
-        if (result.face) {
+        if (result.pages != DocumentPages.BACK && result.face) {
             // You can use the detected face for face recognition
         }
     },
@@ -140,3 +146,24 @@ faceRecognition.compareFaceTemplates(template1, template2).then((score) => {
     // Face comparison failed
 })
 ```
+
+### Implementing your own user interface
+To create your own UI for the ID capture pass an implementation of the IdCaptureUI interface to the session's settings.
+
+```javascript
+import { IdCaptureUI, IdCaptureSessionSettings } from "/@appliedrecognition/ver-id-browser/index.js"
+
+// Create your class that implements the IdCaptureUI interface
+class MyIdCaptureUI implements IdCaptureUI {
+    // ...
+}
+
+// Create session settings
+const sessionSettings = new IdCaptureSessionSettings()
+// Set the createUI function to return your instance of IdCaptureUI
+sessionSettings.createUI = () => new MyIdCaptureUI()
+```
+
+## Documentation
+API reference documentation is available on the project's [Github page]().
+

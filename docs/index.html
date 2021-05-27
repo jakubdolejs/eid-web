@@ -154,19 +154,23 @@
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
 
 <span style="color: #008000">// Import the ID capture module</span>
-<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">IdCapture</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSettings</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
+<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">IdCapture</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSettings</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSessionSettings</span><span style="color: #000000">, </span><span style="color: #001080">DocumentPages</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
 
 <span style="color: #008000">// Settings</span>
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">resourcesURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/resources/&quot;</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">settings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSettings</span><span style="color: #000000">(</span><span style="color: #001080">yourLicenceKey</span><span style="color: #000000">, </span><span style="color: #001080">resourcesURL</span><span style="color: #000000">)</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">settings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSettings</span><span style="color: #000000">(</span><span style="color: #001080">yourLicenceKey</span><span style="color: #000000">, </span><span style="color: #001080">resourcesURL</span><span style="color: #000000">, </span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">pages</span><span style="color: #000000"> = </span><span style="color: #001080">DocumentPages</span><span style="color: #000000">.</span><span style="color: #0070C1">FRONT_AND_BACK</span><span style="color: #000000"> </span><span style="color: #008000">// Scan the front and back of an ID</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">sessionTimeout</span><span style="color: #000000"> = </span><span style="color: #098658">60000</span><span style="color: #000000"> </span><span style="color: #008000">// Session will time out after 1 minute</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">saveCapturedImages</span><span style="color: #000000"> = </span><span style="color: #0000FF">true</span><span style="color: #000000"> </span><span style="color: #008000">// Save original images before they were cropped and deskewed</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">sessionSettings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSessionSettings</span><span style="color: #000000">(</span><span style="color: #001080">pages</span><span style="color: #000000">, </span><span style="color: #001080">sessionTimeout</span><span style="color: #000000">, </span><span style="color: #001080">saveCapturedImages</span><span style="color: #000000">)</span>
 
 <span style="color: #008000">// Create an instance of the IdCapture class</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">idCapture</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCapture</span><span style="color: #000000">(</span><span style="color: #001080">settings</span><span style="color: #000000">, </span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">idCapture</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCapture</span><span style="color: #000000">(</span><span style="color: #001080">settings</span><span style="color: #000000">)</span>
 
 <span style="color: #008000">// Capture ID card</span>
 <span style="color: #001080">idCapture</span><span style="color: #000000">.</span><span style="color: #795E26">captureIdCard</span><span style="color: #000000">().</span><span style="color: #795E26">subscribe</span><span style="color: #000000">({</span>
 <span style="color: #000000">    </span><span style="color: #795E26">next</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #AF00DB">if</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">face</span><span style="color: #000000">) {</span>
+<span style="color: #000000">        </span><span style="color: #AF00DB">if</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">pages</span><span style="color: #000000"> != </span><span style="color: #001080">DocumentPages</span><span style="color: #000000">.</span><span style="color: #0070C1">BACK</span><span style="color: #000000"> &amp;&amp; </span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">face</span><span style="color: #000000">) {</span>
 <span style="color: #000000">            </span><span style="color: #008000">// You can use the detected face for face recognition</span>
 <span style="color: #000000">        }</span>
 <span style="color: #000000">    },</span>
@@ -200,6 +204,26 @@
 <span style="color: #000000">    </span><span style="color: #008000">// Face comparison failed</span>
 <span style="color: #000000">})</span>
 </code></pre>
+				<a href="#implementing-your-own-user-interface" id="implementing-your-own-user-interface" style="color: inherit; text-decoration: none;">
+					<h3>Implementing your own user interface</h3>
+				</a>
+				<p>To create your own UI for the ID capture pass an implementation of the IdCaptureUI interface to the session&#39;s settings.</p>
+				<pre><code class="language-javascript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">IdCaptureUI</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSessionSettings</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
+
+<span style="color: #008000">// Create your class that implements the IdCaptureUI interface</span>
+<span style="color: #0000FF">class</span><span style="color: #000000"> </span><span style="color: #267F99">MyIdCaptureUI</span><span style="color: #000000"> </span><span style="color: #0000FF">implements</span><span style="color: #000000"> </span><span style="color: #267F99">IdCaptureUI</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #008000">// ...</span>
+<span style="color: #000000">}</span>
+
+<span style="color: #008000">// Create session settings</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">sessionSettings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSessionSettings</span><span style="color: #000000">()</span>
+<span style="color: #008000">// Set the createUI function to return your instance of IdCaptureUI</span>
+<span style="color: #001080">sessionSettings</span><span style="color: #000000">.</span><span style="color: #795E26">createUI</span><span style="color: #000000"> = () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">MyIdCaptureUI</span><span style="color: #000000">()</span>
+</code></pre>
+				<a href="#documentation" id="documentation" style="color: inherit; text-decoration: none;">
+					<h2>Documentation</h2>
+				</a>
+				<p>API reference documentation is available on the project&#39;s <a href="">Github page</a>.</p>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -223,6 +247,9 @@
 					</li>
 					<li class=" tsd-kind-enum">
 						<a href="enums/facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/idcaptureeventtype.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event<wbr>Type</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/angle.html" class="tsd-kind-icon">Angle</a>
@@ -309,10 +336,10 @@
 						<a href="interfaces/iddocument.html" class="tsd-kind-icon">IDDocument</a>
 					</li>
 					<li class=" tsd-kind-interface">
-						<a href="interfaces/iidcaptureui.html" class="tsd-kind-icon">IId<wbr>CaptureUI</a>
+						<a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a>
 					</li>
 					<li class=" tsd-kind-interface">
-						<a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a>
+						<a href="interfaces/idcaptureui.html" class="tsd-kind-icon">Id<wbr>CaptureUI</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/imagedocument.html" class="tsd-kind-icon">Image<wbr>Document</a>
@@ -333,13 +360,31 @@
 						<a href="modules.html#captureddocument" class="tsd-kind-icon">Captured<wbr>Document</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcaptureevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcaptureprogressevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#idcaptureresult" class="tsd-kind-icon">Id<wbr>Capture<wbr>Result</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#idcapturestatus" class="tsd-kind-icon">Id<wbr>Capture<wbr>Status</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#idcaptureuifactory" class="tsd-kind-icon">Id<wbr>CaptureUIFactory</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#progresslistener" class="tsd-kind-icon">Progress<wbr>Listener</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#recognizername" class="tsd-kind-icon">Recognizer<wbr>Name</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#recognizertype" class="tsd-kind-icon">Recognizer<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#supportedrecognizer" class="tsd-kind-icon">Supported<wbr>Recognizer</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#supportedrecognizerresult" class="tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result</a>
