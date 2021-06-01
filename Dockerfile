@@ -13,5 +13,6 @@ RUN adduser --disabled-password app
 COPY --from=builder --chown=app:app /build/client /app/client
 COPY --from=builder --chown=app:app /build/demo /app/demo
 WORKDIR /app/demo
+RUN python -m pip install requests
 USER app
-ENTRYPOINT [ "python", "-m", "http.server" ]
+ENTRYPOINT [ "python", "bootstrap.py" ]
