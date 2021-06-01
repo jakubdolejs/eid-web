@@ -9,6 +9,7 @@ import aws from "aws-sdk"
 const cliSpinner = new Spinner("")
 const repo = "725614911995.dkr.ecr.us-east-1.amazonaws.com"
 const identityApiImageName = "identity_api"
+const demoImageName = "ver-id-browser-demo"
 const detcvImageName = "restful-servers_detcv"
 const recauthImageName = "restful-servers_recauth"
 const idScannerImageName = "id_scanner"
@@ -18,10 +19,23 @@ let licenceModelFiles = null;
 
 (async () => {
     const modelImageTags = await getModelImageTags()
+    const demoImageTags = await getAvailableDemoImageTags()
     const awsProfiles = await getAWSProfiles()
-    const answers = await inquirer.prompt(getQuestions(modelImageTags, awsProfiles))
+
+    const answers = await inquirer.prompt(getQuestions(modelImageTags, demoImageTags, awsProfiles))
 
     cliSpinner.start()
+    let demoImageTag
+    if ((demoImageTags.length == 0 && answers.buildDemoImage) || (demoImageTags.length > 0 && answers.demoVersion == "Build from Dockerfile")) {
+        cliSpinner.text = "Building Docker image of demo container"
+        await runCommand("docker", process.cwd(), "build", "-t", repo+"/"+demoImageName+":"+answers.demoImageTag, ".")
+        demoImageTag = answers.demoImageTag
+    } else if (demoImageTags.length > 0) {
+        demoImageTag = answers.demoVersion
+    } else {
+        demoImageTag = null
+    }
+
     cliSpinner.text = "Installing client dependencies"
     await runCommand("npm", path.resolve(process.cwd(), "client"), "install")
 
@@ -59,12 +73,16 @@ let licenceModelFiles = null;
     }
     
     const identityApiConfigFile = "./id_api_config.json"
+    const demoConfiguration = getDemoConfiguration(answers)
     const compose = {
         "version": "3.3",
         "configs": {
             "id_api": {
                 "file": identityApiConfigFile
             }
+        },
+        "networks": {
+            "id_api": {}
         },
         "services": {
             "identity_api": {
@@ -80,21 +98,49 @@ let licenceModelFiles = null;
                 ],
                 "ports": [
                     answers.port+":8080"
+                ],
+                "networks": [
+                    "id_api"
                 ]
             },
             "detcv": {
                 "image": repo+"/"+detcvImageName+":"+answers.restfulServersVersion,
                 "environment": [
                     "PORT=8080"
+                ],
+                "networks": [
+                    "id_api"
                 ]
             },
             "recauth": {
                 "image": repo+"/"+recauthImageName+":"+answers.restfulServersVersion,
                 "entrypoint": [
                     "./fb-recauth", "--foreground", "-p", "8080"
+                ],
+                "networks": [
+                    "id_api"
                 ]
             }
         }
+    }
+    if (demoImageTag) {
+        compose.networks.demo = {}
+        compose.services.demo = {
+            "image": repo+"/"+demoImageName+":"+demoImageTag,
+            "depends_on": [
+                "identity_api"
+            ],
+            "environment": [
+                "DEMO_CONFIG="+Buffer.from(JSON.stringify(demoConfiguration), "utf-8").toString("base64")
+            ],
+            "ports": [
+                answers.demoPort+":8080"
+            ],
+            "networks": [
+                "demo"
+            ]
+        }
+        compose.services.identity_api.networks.push("demo")
     }
     if (answers.exposeDetcvPort) {
         compose.services.detcv.ports = [
@@ -178,9 +224,48 @@ let licenceModelFiles = null;
     cliSpinner.stop(true)
 })
 
-function getQuestions(modelImageTags, awsProfiles) {
-    return [
-        {
+async function getAvailableDemoImageTags() {
+    const demoImageLines = (await runCommand("docker", process.cwd(), "images", repo+"/"+demoImageName)).split(/[\n\r]+/)
+    const tagIndex = demoImageLines.shift().split(/\s+/).indexOf("TAG")
+    return demoImageLines
+        .filter(val => val.trim().length > 0)
+        .map(val => val.split(/\s+/)[tagIndex])
+        .filter(val => val != "<none>")
+}
+
+function getQuestions(modelImageTags, demoImageTags, awsProfiles) {
+    return [{
+            "type": "confirm",
+            "name": "buildDemoImage",
+            "message": "There is no image "+repo+"/"+demoImageName+" on your Docker. Would you like to build it?",
+            "default": true,
+            "when": () => demoImageTags.length == 0
+        },{
+            "type": "input",
+            "name": "demoImageTag",
+            "message": "Demo image version/tag",
+            "when": (ans) => demoImageTags.length == 0 && ans.buildDemoImage
+        },{
+            "type": "list",
+            "name": "demoVersion",
+            "message": "Demo image version/tag",
+            "choices": () => {
+                const tags = demoImageTags
+                tags.push(new inquirer.Separator(), "Build from Dockerfile")
+                return tags
+            },
+            "when": () => demoImageTags.length > 0
+        },{
+            "type": "input",
+            "name": "demoImageTag",
+            "message": "Demo image tag",
+            "when": (ans) => demoImageTags.length > 0 && ans.demoVersion == "Build from Dockerfile"
+        },{
+            "type": "number",
+            "name": "demoPort",
+            "message": "Demo port",
+            "default": 8081
+        },{
             "type": "input",
             "name": "identityApiVersion",
             "message": "Identity API version",
@@ -210,6 +295,9 @@ function getQuestions(modelImageTags, awsProfiles) {
                 if (ans.exposeDetcvPort && input == ans.port) {
                     return "Detcv container port must differ from Server port"
                 }
+                if (ans.exposeDetcvPort && input == ans.demoPort) {
+                    return "Detcv container port must differ from Demo port"
+                }
                 return true
             }
         },{
@@ -224,8 +312,11 @@ function getQuestions(modelImageTags, awsProfiles) {
             "default": 8083,
             "when": (ans) => ans.exposeRecauthPort,
             "validate": (input, ans) => {
-                if ((ans.exposeDetcvPort && ans.detcvPort == input) || input == ans.port) {
+                if ((ans.exposeRecauthPort && ans.exposeDetcvPort && ans.detcvPort == input) || input == ans.port) {
                     return "Recauth container port must differ from Detcv and Server ports"
+                }
+                if (ans.exposeRecauthPort && input == ans.demoPort) {
+                    return "Recauth container port must differ from Demo port"
                 }
                 return true
             }
@@ -270,7 +361,7 @@ function getQuestions(modelImageTags, awsProfiles) {
             "default": 8085,
             "when": (ans) => ans.enableIdCardDetection && ans.exposeIdScannerPort,
             "validate": (input, ans) => {
-                if ((ans.exposeDetcvPort && ans.detcvPort == input) || (ans.exposeRecauthPort && ans.recauthPort == input) || input == ans.port) {
+                if ((ans.exposeDetcvPort && ans.detcvPort == input) || (ans.exposeRecauthPort && ans.recauthPort == input) || (ans.demoPort == input) || input == ans.port) {
                     return "ID scanner container port must differ from other exposed ports"
                 }
                 return true
@@ -335,15 +426,15 @@ function getQuestions(modelImageTags, awsProfiles) {
             "type": "input",
             "name": "serverHost",
             "message": "Server host name",
-            "transformer": (input, ans) => {
+            "transformer": (input, _ans) => {
                 return input.replace(/^https*\:\/\//, "")
             },
-            "default": ""
+            "default": "front-back.id-check.ver-id.com"
         },{
             "type": "confirm",
             "name": "launchContainers",
-            "message": "Launch containers in a stack?",
-            "default": true
+            "message": "Launch containers now?",
+            "default": false
         }
     ]
 }
@@ -432,11 +523,16 @@ const listObjects = (s3, params) => {
     })
 }
 
-async function writeDemoConfigFile(answers) {
-    const config = {
+function getDemoConfiguration(answers) {
+    return {
         "serverURL": "https://"+answers.serverHost,
-        "licenceKey": answers.mbBrowserLicenceKey
+        "licenceKey": answers.mbBrowserLicenceKey,
+        "port": 8080
     }
+}
+
+async function writeDemoConfigFile(answers) {
+    const config = getDemoConfiguration(answers)
     await fs.writeFile("demo/config.json", JSON.stringify(config), {"encoding":"utf-8"})
 }
 
