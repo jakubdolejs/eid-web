@@ -27,6 +27,7 @@ export declare class FaceDetection {
      * @returns `true` if liveness detection is supported by the client
      */
     static isLivenessDetectionSupported(): boolean;
+    private emitEvent;
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
      * @param settings Session settings

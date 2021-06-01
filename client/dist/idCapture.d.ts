@@ -33,6 +33,7 @@ export declare class IdCapture {
     private getRecognizerRunner;
     private createRecognizers;
     private createMetadataCallbacks;
+    private emitEvent;
     /**
      * Capture ID card using the device camera
      * @param settings Session settings

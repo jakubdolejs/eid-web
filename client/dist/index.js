@@ -18388,6 +18388,22 @@ class FaceDetection {
     static isLivenessDetectionSupported() {
         return "Promise" in window && "fetch" in window;
     }
+    emitEvent(subscriber, event) {
+        setTimeout(() => {
+            if (subscriber.closed) {
+                return;
+            }
+            if (event.type == "next") {
+                subscriber.next(event.value);
+            }
+            else if (event.type == "error") {
+                subscriber.error(event.error);
+            }
+            else if (event.type == "complete") {
+                subscriber.complete();
+            }
+        }, 0);
+    }
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
      * @param settings Session settings
@@ -18397,10 +18413,10 @@ class FaceDetection {
     livenessDetectionSession(settings, faceDetectionCallback, faceCaptureCallback) {
         const faceDetection = this;
         if (location.protocol != "https:") {
-            return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(new Error("Liveness detection is only supported on secure connections (https)"));
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(() => new Error("Liveness detection is only supported on secure connections (https)"));
         }
         if (!FaceDetection.isLivenessDetectionSupported()) {
-            return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(new Error("Liveness detection is not supported by your browser"));
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(() => new Error("Liveness detection is not supported by your browser"));
         }
         if (!settings) {
             settings = new FaceCaptureSettings();
@@ -18718,7 +18734,7 @@ class FaceDetection {
         function liveFaceCapture() {
             return new rxjs__WEBPACK_IMPORTED_MODULE_9__.Observable(subscriber => {
                 if (!navigator.mediaDevices) {
-                    subscriber.error(new Error("Unsupported browser"));
+                    faceDetection.emitEvent(subscriber, { "type": "error", "error": new Error("Unsupported browser") });
                     return;
                 }
                 let videoTrack;
@@ -18775,20 +18791,18 @@ class FaceDetection {
                                     image.width = canvas.width;
                                     image.height = canvas.height;
                                     image.src = canvas.toDataURL();
-                                    subscriber.next(new LiveFaceCapture(image, face));
+                                    faceDetection.emitEvent(subscriber, { "type": "next", "value": new LiveFaceCapture(image, face) });
                                 }
                                 setTimeout(detectSingleFace, 0);
                             }
                             catch (error) {
-                                if (!subscriber.closed) {
-                                    subscriber.error(error);
-                                }
+                                faceDetection.emitEvent(subscriber, { "type": "error", "error": error });
                             }
                         });
                         setTimeout(detectSingleFace, 0);
                     };
                 }).catch((error) => {
-                    subscriber.error(error);
+                    faceDetection.emitEvent(subscriber, { "type": "error", "error": error });
                 });
                 return () => {
                     if (videoTrack) {
@@ -18821,15 +18835,19 @@ class FaceDetection {
             }
             return result;
         }), (observable) => new rxjs__WEBPACK_IMPORTED_MODULE_9__.Observable(subscriber => {
-            const subcription = observable.subscribe((val) => {
-                subscriber.next(val);
-            }, (err) => {
-                subscriber.error(err);
-            }, () => {
-                subscriber.complete();
+            const subcription = observable.subscribe({
+                next: (val) => {
+                    faceDetection.emitEvent(subscriber, { "type": "next", "value": val });
+                },
+                error: (err) => {
+                    faceDetection.emitEvent(subscriber, { "type": "error", "error": err });
+                },
+                complete: () => {
+                    faceDetection.emitEvent(subscriber, { "type": "complete" });
+                }
             });
             cancelButton.onclick = () => {
-                subscriber.complete();
+                faceDetection.emitEvent(subscriber, { "type": "complete" });
             };
             return () => {
                 subcription.unsubscribe();
@@ -19678,17 +19696,14 @@ class IdCapture {
         return new rxjs__WEBPACK_IMPORTED_MODULE_4__.Observable((subscriber) => {
             let emissionCount = 0;
             videoRecognizer.startRecognition(this.getRecognitionCallback(videoRecognizer, recognizers, (error, result) => {
-                if (subscriber.closed) {
-                    return;
-                }
                 if (error) {
-                    subscriber.error(error);
+                    this.emitEvent(subscriber, { "type": "error", "error": error });
                 }
                 else if (result) {
                     emissionCount++;
-                    subscriber.next(result);
+                    this.emitEvent(subscriber, { "type": "next", "value": result });
                     if (emissionCount == recognizers.length) {
-                        subscriber.complete();
+                        this.emitEvent(subscriber, { "type": "complete" });
                     }
                 }
             }), settings.timeout);
@@ -19785,6 +19800,22 @@ class IdCapture {
             }
         };
     }
+    emitEvent(subscriber, event) {
+        setTimeout(() => {
+            if (subscriber.closed) {
+                return;
+            }
+            if (event.type == "next") {
+                subscriber.next(event.value);
+            }
+            else if (event.type == "error") {
+                subscriber.error(event.error);
+            }
+            else if (event.type == "complete") {
+                subscriber.complete();
+            }
+        }, 0);
+    }
     /**
      * Capture ID card using the device camera
      * @param settings Session settings
@@ -19794,7 +19825,7 @@ class IdCapture {
         let sessionSubscription;
         return new rxjs__WEBPACK_IMPORTED_MODULE_4__.Observable((subscriber) => {
             if (!_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.isBrowserSupported()) {
-                subscriber.error(new Error("Unsupported browser"));
+                this.emitEvent(subscriber, { "type": "error", "error": new Error("Unsupported browser") });
                 return;
             }
             function disposeVideoRecognizer() {
@@ -19819,7 +19850,7 @@ class IdCapture {
             let recognizers;
             const ui = settings.createUI();
             ui.on(_types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CANCEL, (event) => {
-                subscriber.complete();
+                this.emitEvent(subscriber, { "type": "complete" });
             });
             const progressListener = (progress) => {
                 const event = {
@@ -19845,9 +19876,7 @@ class IdCapture {
                                     ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.FINDING_FACE });
                                 }
                                 const result = yield this.convertToIdCaptureResult(combinedResult);
-                                if (!subscriber.closed) {
-                                    subscriber.next(result);
-                                }
+                                this.emitEvent(subscriber, { "type": "next", "value": result });
                                 if (emissionCount++ < recognizers.length - 1) {
                                     ui.on(_types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_STARTED, () => {
                                         videoRecognizer.resumeRecognition(false);
@@ -19856,22 +19885,16 @@ class IdCapture {
                                 }
                                 else {
                                     disposeVideoRecognizer();
-                                    if (!subscriber.closed) {
-                                        subscriber.complete();
-                                    }
+                                    this.emitEvent(subscriber, { "type": "complete" });
                                 }
                             }
                             catch (error) {
-                                if (!subscriber.closed) {
-                                    subscriber.error(error);
-                                }
+                                this.emitEvent(subscriber, { "type": "error", "error": error });
                             }
                         }),
                         error: (error) => {
                             disposeVideoRecognizer();
-                            if (!subscriber.closed) {
-                                subscriber.error(error);
-                            }
+                            this.emitEvent(subscriber, { "type": "error", "error": error });
                         }
                     });
                     sessionSubscription.add(() => {
@@ -19882,17 +19905,15 @@ class IdCapture {
                 }
                 catch (error) {
                     disposeRecognizerRunner();
-                    if (!subscriber.closed) {
-                        subscriber.error(error);
-                    }
+                    this.emitEvent(subscriber, { "type": "error", "error": error });
                 }
             })).catch(error => {
                 ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.LOADING_FAILED });
-                subscriber.error(error);
+                this.emitEvent(subscriber, { "type": "error", "error": error });
             }).finally(() => {
                 this.unregisterLoadListener(progressListener);
             });
-            return () => __awaiter(this, void 0, void 0, function* () {
+            return () => {
                 if (sessionSubscription) {
                     sessionSubscription.unsubscribe();
                 }
@@ -19900,7 +19921,7 @@ class IdCapture {
                 disposeRecognizerRunner();
                 this.unregisterLoadListener(progressListener);
                 ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_ENDED });
-            });
+            };
         });
     }
 }

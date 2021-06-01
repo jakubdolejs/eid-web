@@ -364,6 +364,22 @@ type CombinedResult = {
     successFrame?: SuccessFrameGrabberRecognizerResult
 }
 
+type ObservableNextEvent<T> = {
+    type: "next",
+    value: T
+}
+
+type ObservableErrorEvent = {
+    type: "error",
+    error: any
+}
+
+type ObservableCompleteEvent = {
+    type: "complete"
+}
+
+type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent
+
 export class IdCapture {
 
     readonly serviceURL: string
@@ -558,16 +574,13 @@ export class IdCapture {
         return new Observable<CombinedResult>((subscriber: Subscriber<CombinedResult>) => {
             let emissionCount = 0
             videoRecognizer.startRecognition(this.getRecognitionCallback(videoRecognizer, recognizers, (error, result) => {
-                if (subscriber.closed) {
-                    return
-                }
                 if (error) {
-                    subscriber.error(error)
+                    this.emitEvent(subscriber, {"type": "error", "error": error})
                 } else if (result) {
                     emissionCount ++
-                    subscriber.next(result)
+                    this.emitEvent(subscriber, {"type": "next", "value": result})
                     if (emissionCount == recognizers.length) {
-                        subscriber.complete()
+                        this.emitEvent(subscriber, {"type": "complete"})
                     }
                 }
             }), settings.timeout)
@@ -661,6 +674,23 @@ export class IdCapture {
         }
     }
 
+    
+
+    private emitEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void {
+        setTimeout(() => {
+            if (subscriber.closed) {
+                return
+            }
+            if (event.type == "next") {
+                subscriber.next((event as ObservableNextEvent<T>).value)
+            } else if (event.type == "error") {
+                subscriber.error((event as ObservableErrorEvent).error)
+            } else if (event.type == "complete") {
+                subscriber.complete()
+            }
+        }, 0)
+    }
+
     /**
      * Capture ID card using the device camera
      * @param settings Session settings
@@ -670,7 +700,7 @@ export class IdCapture {
         let sessionSubscription: Subscription
         return new Observable((subscriber: Subscriber<IdCaptureResult>) => {
             if (!BlinkIDSDK.isBrowserSupported()) {
-                subscriber.error(new Error("Unsupported browser"))
+                this.emitEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
                 return
             }
             function disposeVideoRecognizer() {
@@ -693,7 +723,7 @@ export class IdCapture {
             let recognizers: SupportedRecognizer[]
             const ui: IdCaptureUI = settings.createUI()
             ui.on(IdCaptureEventType.CANCEL, (event: IdCaptureEvent) => {
-                subscriber.complete()
+                this.emitEvent(subscriber, {"type": "complete"})
             })
             const progressListener: ProgressListener = (progress: number) => {
                 const event: IdCaptureProgressEvent = {
@@ -719,9 +749,7 @@ export class IdCapture {
                                     ui.trigger({type:IdCaptureEventType.FINDING_FACE})
                                 }
                                 const result = await this.convertToIdCaptureResult(combinedResult)
-                                if (!subscriber.closed) {
-                                    subscriber.next(result)
-                                }
+                                this.emitEvent(subscriber, {"type": "next", "value": result})
                                 if (emissionCount++ < recognizers.length-1) {
                                     ui.on(IdCaptureEventType.CAPTURE_STARTED, () => {
                                         videoRecognizer.resumeRecognition(false)
@@ -729,21 +757,15 @@ export class IdCapture {
                                     ui.trigger({type: IdCaptureEventType.NEXT_PAGE_REQUESTED})
                                 } else {
                                     disposeVideoRecognizer()
-                                    if (!subscriber.closed) {
-                                        subscriber.complete()
-                                    }
+                                    this.emitEvent(subscriber, {"type": "complete"})
                                 }
                             } catch (error) {
-                                if (!subscriber.closed) {
-                                    subscriber.error(error)
-                                }
+                                this.emitEvent(subscriber, {"type": "error", "error": error})
                             }
                         },
                         error: (error: any) => {
                             disposeVideoRecognizer()
-                            if (!subscriber.closed) {
-                                subscriber.error(error)
-                            }
+                            this.emitEvent(subscriber, {"type": "error", "error": error})
                         }
                     })
                     sessionSubscription.add(() => {
@@ -753,17 +775,15 @@ export class IdCapture {
                     recognizerRunner = null
                 } catch (error) {
                     disposeRecognizerRunner()
-                    if (!subscriber.closed) {
-                        subscriber.error(error)
-                    }
+                    this.emitEvent(subscriber, {"type": "error", "error": error})
                 }
             }).catch(error => {
                 ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
-                subscriber.error(error)
+                this.emitEvent(subscriber, {"type": "error", "error": error})
             }).finally(() => {
                 this.unregisterLoadListener(progressListener)
             })
-            return async () => {
+            return () => {
                 if (sessionSubscription) {
                     sessionSubscription.unsubscribe()
                 }

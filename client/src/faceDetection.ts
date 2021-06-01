@@ -3,7 +3,7 @@
  * @packageDocumentation
  */
 
-import { Observable, from, of, throwError, Subscription } from "rxjs"
+import { Observable, from, of, throwError, Subscription, Subscriber } from "rxjs"
 import { map, filter, take, takeWhile, tap, mergeMap, toArray } from "rxjs/operators"
 import { CircularBuffer, AngleBearingEvaluation, Angle, Rect, RectSmoothing, AngleSmoothing, Point } from "./utils"
 import { FaceRecognition } from "./faceRecognition"
@@ -12,6 +12,22 @@ import { estimateFaceAngle } from "./faceAngle"
 import { estimateFaceAngle as estimateFaceAngleNoseTip } from "./faceAngleNoseTip"
 import { Axis, Size, Bearing, FaceAlignmentStatus } from "./types"
 
+
+type ObservableNextEvent<T> = {
+    type: "next",
+    value: T
+}
+
+type ObservableErrorEvent = {
+    type: "error",
+    error: any
+}
+
+type ObservableCompleteEvent = {
+    type: "complete"
+}
+
+type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent
 /**
  * Face detection
  */
@@ -91,6 +107,21 @@ export class FaceDetection {
         return "Promise" in window && "fetch" in window
     }
 
+    private emitEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void {
+        setTimeout(() => {
+            if (subscriber.closed) {
+                return
+            }
+            if (event.type == "next") {
+                subscriber.next(event.value)
+            } else if (event.type == "error") {
+                subscriber.error(event.error)
+            } else if (event.type == "complete") {
+                subscriber.complete()
+            }
+        }, 0)
+    }
+
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
      * @param settings Session settings
@@ -100,11 +131,11 @@ export class FaceDetection {
     livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult> {
         const faceDetection = this
         if (location.protocol != "https:") {
-            return throwError(new Error("Liveness detection is only supported on secure connections (https)"))
+            return throwError(() => new Error("Liveness detection is only supported on secure connections (https)"))
         }
 
         if (!FaceDetection.isLivenessDetectionSupported()) {
-            return throwError(new Error("Liveness detection is not supported by your browser"))
+            return throwError(() => new Error("Liveness detection is not supported by your browser"))
         }
 
         if (!settings) {
@@ -436,7 +467,7 @@ export class FaceDetection {
         function liveFaceCapture(): Observable<LiveFaceCapture> {
             return new Observable<LiveFaceCapture>(subscriber => {
                 if (!navigator.mediaDevices) {
-                    subscriber.error(new Error("Unsupported browser"))
+                    faceDetection.emitEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
                     return
                 }
 
@@ -493,19 +524,17 @@ export class FaceDetection {
                                     image.width = canvas.width
                                     image.height = canvas.height
                                     image.src = canvas.toDataURL()
-                                    subscriber.next(new LiveFaceCapture(image, face))
+                                    faceDetection.emitEvent(subscriber, {"type": "next", "value": new LiveFaceCapture(image, face)})
                                 }
                                 setTimeout(detectSingleFace, 0)
                             } catch (error) {
-                                if (!subscriber.closed) {
-                                    subscriber.error(error)
-                                }
+                                faceDetection.emitEvent(subscriber, {"type": "error", "error": error})
                             }
                         }
                         setTimeout(detectSingleFace, 0)
                     }
                 }).catch((error) => {
-                    subscriber.error(error)
+                    faceDetection.emitEvent(subscriber, {"type": "error", "error": error})
                 })
                 return () => {
                     if (videoTrack) {
@@ -552,17 +581,19 @@ export class FaceDetection {
                 return result
             }),
             (observable: Observable<LivenessDetectionSessionResult>) => new Observable<LivenessDetectionSessionResult>(subscriber => {
-                const subcription: Subscription = observable.subscribe(
-                    (val: LivenessDetectionSessionResult) => {
-                        subscriber.next(val)
-                    },(err: any) => {
-                        subscriber.error(err)
-                    },() => {
-                        subscriber.complete()
+                const subcription: Subscription = observable.subscribe({
+                    next: (val: LivenessDetectionSessionResult) => {
+                        faceDetection.emitEvent(subscriber, {"type": "next", "value": val})
+                    },
+                    error: (err: any) => {
+                        faceDetection.emitEvent(subscriber, {"type": "error", "error": err})
+                    },
+                    complete: () => {
+                        faceDetection.emitEvent(subscriber, {"type": "complete"})
                     }
-                )
+                })
                 cancelButton.onclick = () => {
-                    subscriber.complete()
+                    faceDetection.emitEvent(subscriber, {"type": "complete"})
                 }
                 return () => {
                     subcription.unsubscribe()
