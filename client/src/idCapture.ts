@@ -1,7 +1,7 @@
 import { Observable, Subscriber, Subscription } from "rxjs"
 import * as BlinkIDSDK from "@microblink/blinkid-in-browser-sdk/es/blinkid-sdk"
 import { FaceRecognition } from "./faceRecognition"
-import { Rect } from "./utils"
+import { Rect, emitRxEvent } from "./utils"
 import {
     Size,
     RecognizableFace,
@@ -364,22 +364,6 @@ type CombinedResult = {
     successFrame?: SuccessFrameGrabberRecognizerResult
 }
 
-type ObservableNextEvent<T> = {
-    type: "next",
-    value: T
-}
-
-type ObservableErrorEvent = {
-    type: "error",
-    error: any
-}
-
-type ObservableCompleteEvent = {
-    type: "complete"
-}
-
-type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent
-
 export class IdCapture {
 
     readonly serviceURL: string
@@ -575,12 +559,12 @@ export class IdCapture {
             let emissionCount = 0
             videoRecognizer.startRecognition(this.getRecognitionCallback(videoRecognizer, recognizers, (error, result) => {
                 if (error) {
-                    this.emitEvent(subscriber, {"type": "error", "error": error})
+                    emitRxEvent(subscriber, {"type": "error", "error": error})
                 } else if (result) {
                     emissionCount ++
-                    this.emitEvent(subscriber, {"type": "next", "value": result})
+                    emitRxEvent(subscriber, {"type": "next", "value": result})
                     if (emissionCount == recognizers.length) {
-                        this.emitEvent(subscriber, {"type": "complete"})
+                        emitRxEvent(subscriber, {"type": "complete"})
                     }
                 }
             }), settings.timeout)
@@ -674,23 +658,6 @@ export class IdCapture {
         }
     }
 
-    
-
-    private emitEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void {
-        setTimeout(() => {
-            if (subscriber.closed) {
-                return
-            }
-            if (event.type == "next") {
-                subscriber.next((event as ObservableNextEvent<T>).value)
-            } else if (event.type == "error") {
-                subscriber.error((event as ObservableErrorEvent).error)
-            } else if (event.type == "complete") {
-                subscriber.complete()
-            }
-        }, 0)
-    }
-
     /**
      * Capture ID card using the device camera
      * @param settings Session settings
@@ -700,7 +667,7 @@ export class IdCapture {
         let sessionSubscription: Subscription
         return new Observable((subscriber: Subscriber<IdCaptureResult>) => {
             if (!BlinkIDSDK.isBrowserSupported()) {
-                this.emitEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
+                emitRxEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
                 return
             }
             function disposeVideoRecognizer() {
@@ -723,7 +690,7 @@ export class IdCapture {
             let recognizers: SupportedRecognizer[]
             const ui: IdCaptureUI = settings.createUI()
             ui.on(IdCaptureEventType.CANCEL, (event: IdCaptureEvent) => {
-                this.emitEvent(subscriber, {"type": "complete"})
+                emitRxEvent(subscriber, {"type": "complete"})
             })
             const progressListener: ProgressListener = (progress: number) => {
                 const event: IdCaptureProgressEvent = {
@@ -749,23 +716,25 @@ export class IdCapture {
                                     ui.trigger({type:IdCaptureEventType.FINDING_FACE})
                                 }
                                 const result = await this.convertToIdCaptureResult(combinedResult)
-                                this.emitEvent(subscriber, {"type": "next", "value": result})
+                                emitRxEvent(subscriber, {"type": "next", "value": result})
                                 if (emissionCount++ < recognizers.length-1) {
                                     ui.on(IdCaptureEventType.CAPTURE_STARTED, () => {
                                         videoRecognizer.resumeRecognition(false)
                                     })
-                                    ui.trigger({type: IdCaptureEventType.NEXT_PAGE_REQUESTED})
+                                    setTimeout(() => {
+                                        ui.trigger({type: IdCaptureEventType.NEXT_PAGE_REQUESTED})
+                                    })
                                 } else {
                                     disposeVideoRecognizer()
-                                    this.emitEvent(subscriber, {"type": "complete"})
+                                    emitRxEvent(subscriber, {"type": "complete"})
                                 }
                             } catch (error) {
-                                this.emitEvent(subscriber, {"type": "error", "error": error})
+                                emitRxEvent(subscriber, {"type": "error", "error": error})
                             }
                         },
                         error: (error: any) => {
                             disposeVideoRecognizer()
-                            this.emitEvent(subscriber, {"type": "error", "error": error})
+                            emitRxEvent(subscriber, {"type": "error", "error": error})
                         }
                     })
                     sessionSubscription.add(() => {
@@ -775,11 +744,13 @@ export class IdCapture {
                     recognizerRunner = null
                 } catch (error) {
                     disposeRecognizerRunner()
-                    this.emitEvent(subscriber, {"type": "error", "error": error})
+                    emitRxEvent(subscriber, {"type": "error", "error": error})
                 }
             }).catch(error => {
-                ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
-                this.emitEvent(subscriber, {"type": "error", "error": error})
+                setTimeout(() => {
+                    ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
+                })
+                emitRxEvent(subscriber, {"type": "error", "error": error})
             }).finally(() => {
                 this.unregisterLoadListener(progressListener)
             })
@@ -790,7 +761,9 @@ export class IdCapture {
                 disposeVideoRecognizer()
                 disposeRecognizerRunner()
                 this.unregisterLoadListener(progressListener)
-                ui.trigger({type:IdCaptureEventType.CAPTURE_ENDED})
+                setTimeout(() => {
+                    ui.trigger({type:IdCaptureEventType.CAPTURE_ENDED})
+                })
             }
         })
     }

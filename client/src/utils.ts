@@ -1,5 +1,6 @@
 import { FaceCaptureSettings } from "./faceDetection"
 import { Axis, Bearing } from "./types"
+import { Subscriber } from "rxjs"
 
 /**
  * Circular (ring) buffer implementation
@@ -204,7 +205,7 @@ export class Rect {
      * @returns `true` if this rectangle contains the challenge rectangle
      */
     contains(rect: Rect): boolean {
-        return this.x <= rect.x && this.y >= rect.y && this.x + this.width >= rect.x + rect.width && this.y + this.height > rect.y + rect.height
+        return this.x <= rect.x && this.y <= rect.y && this.right >= rect.right && this.bottom >= rect.bottom
     }
 
     /**
@@ -246,6 +247,22 @@ export class Rect {
 
     get bottom(): number {
         return this.y + this.height
+    }
+
+    equals = (other: Rect): boolean => {
+        if (this.x != other.x) {
+            return false
+        }
+        if (this.y != other.y) {
+            return false
+        }
+        if (this.width != other.width) {
+            return false
+        }
+        if (this.height != other.height) {
+            return false
+        }
+        return true
     }
 }
 
@@ -461,6 +478,35 @@ export class Smoothing {
     reset() {
         this.buffer.clear()
         this._smoothedValue = null
+    }
+}
+
+export type ObservableNextEvent<T> = {
+    type: "next",
+    value: T
+}
+
+export type ObservableErrorEvent = {
+    type: "error",
+    error: any
+}
+
+export type ObservableCompleteEvent = {
+    type: "complete"
+}
+
+type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent
+
+export function emitRxEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void {
+    if (subscriber.closed) {
+        return
+    }
+    if (event.type == "next") {
+        subscriber.next((event as ObservableNextEvent<T>).value)
+    } else if (event.type == "error") {
+        subscriber.error((event as ObservableErrorEvent).error)
+    } else if (event.type == "complete") {
+        subscriber.complete()
     }
 }
 

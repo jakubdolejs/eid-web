@@ -18281,23 +18281,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Face": () => (/* binding */ Face),
 /* harmony export */   "LiveFaceCapture": () => (/* binding */ LiveFaceCapture)
 /* harmony export */ });
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/throwError.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/from.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/of.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/Observable.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/map.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/tap.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/filter.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/mergeMap.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/take.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/takeWhile.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/toArray.js");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/Observable.js");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/throwError.js");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/from.js");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/of.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/map.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/tap.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/filter.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/mergeMap.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/take.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/takeWhile.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/toArray.js");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 /* harmony import */ var _faceRecognition__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./faceRecognition */ "./src/faceRecognition.ts");
 /* harmony import */ var face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! face-api.js/build/es6 */ "./node_modules/face-api.js/build/es6/index.js");
 /* harmony import */ var _faceAngle__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./faceAngle */ "./src/faceAngle.ts");
 /* harmony import */ var _faceAngleNoseTip__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./faceAngleNoseTip */ "./src/faceAngleNoseTip.ts");
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _faceDetectionUI__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./faceDetectionUI */ "./src/faceDetectionUI.ts");
 /**
  * Ver-ID face detection
  * @packageDocumentation
@@ -18311,6 +18312,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+
 
 
 
@@ -18388,21 +18390,91 @@ class FaceDetection {
     static isLivenessDetectionSupported() {
         return "Promise" in window && "fetch" in window;
     }
-    emitEvent(subscriber, event) {
-        setTimeout(() => {
-            if (subscriber.closed) {
+    onVideoPlay(settings, ui, subscriber) {
+        const faceDetection = this;
+        return () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = ui.video.videoWidth;
+            canvas.height = ui.video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            const detectSingleFace = () => __awaiter(this, void 0, void 0, function* () {
+                try {
+                    const _face = yield face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_2__.detectSingleFace(ui.video, new face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_2__.TinyFaceDetectorOptions({ "inputSize": 128 })).withFaceLandmarks();
+                    let face;
+                    if (_face) {
+                        face = faceDetection.faceApiFaceToVerIDFace(_face, canvas.width, settings.useFrontCamera);
+                    }
+                    if (!subscriber.closed) {
+                        ctx.drawImage(ui.video, 0, 0, canvas.width, canvas.height);
+                        const image = new Image();
+                        image.width = canvas.width;
+                        image.height = canvas.height;
+                        image.src = canvas.toDataURL();
+                        (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "next", "value": new LiveFaceCapture(image, face) });
+                    }
+                    if (!ui.video.paused && !ui.video.ended && !subscriber.closed) {
+                        setTimeout(detectSingleFace, 0);
+                    }
+                }
+                catch (error) {
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "error", "error": error });
+                }
+            });
+            setTimeout(detectSingleFace, 0);
+        };
+    }
+    liveFaceCapture(session) {
+        return new rxjs__WEBPACK_IMPORTED_MODULE_7__.Observable(subscriber => {
+            if (!navigator.mediaDevices) {
+                (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "error", "error": new Error("Unsupported browser") });
                 return;
             }
-            if (event.type == "next") {
-                subscriber.next(event.value);
+            let videoTrack;
+            const constraints = navigator.mediaDevices.getSupportedConstraints();
+            const getUserMediaOptions = {
+                "audio": false,
+                "video": true
+            };
+            if (constraints.facingMode) {
+                getUserMediaOptions.video = {
+                    "facingMode": session.settings.useFrontCamera ? "user" : "environment"
+                };
             }
-            else if (event.type == "error") {
-                subscriber.error(event.error);
+            if (constraints.width) {
+                const videoWidth = 480;
+                if (typeof (getUserMediaOptions.video) === "boolean") {
+                    getUserMediaOptions.video = {
+                        "width": videoWidth
+                    };
+                }
+                else {
+                    getUserMediaOptions.video.width = videoWidth;
+                }
             }
-            else if (event.type == "complete") {
-                subscriber.complete();
-            }
-        }, 0);
+            Promise.all(this.loadPromises).then(() => {
+                return navigator.mediaDevices.getUserMedia(getUserMediaOptions);
+            }).then((stream) => {
+                videoTrack = stream.getVideoTracks()[0];
+                session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_6__.FaceCaptureEventType.MEDIA_STREAM_AVAILABLE, "stream": stream });
+                session.ui.video.onplay = this.onVideoPlay(session.settings, session.ui, subscriber);
+            }).catch((error) => {
+                (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "error", "error": error });
+            });
+            return () => {
+                if (videoTrack) {
+                    videoTrack.stop();
+                    videoTrack = null;
+                }
+            };
+        });
+    }
+    checkLivenessSessionAvailability() {
+        if (location.protocol != "https:") {
+            throw new Error("Liveness detection is only supported on secure connections (https)");
+        }
+        if (!FaceDetection.isLivenessDetectionSupported()) {
+            throw new Error("Liveness detection is not supported by your browser");
+        }
     }
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
@@ -18411,70 +18483,233 @@ class FaceDetection {
      * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
      */
     livenessDetectionSession(settings, faceDetectionCallback, faceCaptureCallback) {
-        const faceDetection = this;
-        if (location.protocol != "https:") {
-            return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(() => new Error("Liveness detection is only supported on secure connections (https)"));
+        try {
+            this.checkLivenessSessionAvailability();
         }
-        if (!FaceDetection.isLivenessDetectionSupported()) {
-            return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(() => new Error("Liveness detection is not supported by your browser"));
+        catch (error) {
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_8__.throwError)(() => error);
         }
         if (!settings) {
             settings = new FaceCaptureSettings();
         }
-        function isFaceFixedInImageSize(actualFaceBounds, expectedFaceBounds) {
-            return true;
-            // const maxRect: Rect = new Rect(expectedFaceBounds.x, expectedFaceBounds.y, expectedFaceBounds.width, expectedFaceBounds.height)
-            // maxRect.inset(0-expectedFaceBounds.width*0.3, 0-expectedFaceBounds.height*0.3)
-            // const minRect: Rect = new Rect(expectedFaceBounds.x, expectedFaceBounds.y, expectedFaceBounds.width, expectedFaceBounds.height)
-            // minRect.inset(expectedFaceBounds.width * 0.4, expectedFaceBounds.height * 0.4)
-            // return actualFaceBounds.contains(minRect) && maxRect.contains(actualFaceBounds)
-        }
-        const cameraOverlayCanvas = document.createElement("canvas");
-        cameraOverlayCanvas.style.position = "absolute";
-        cameraOverlayCanvas.style.left = "0px";
-        cameraOverlayCanvas.style.top = "0px";
-        const cameraOverlayContext = cameraOverlayCanvas.getContext("2d");
-        const videoContainer = document.createElement("div");
-        videoContainer.style.position = "fixed";
-        videoContainer.style.left = "0px";
-        videoContainer.style.top = "0px";
-        videoContainer.style.right = "0px";
-        videoContainer.style.bottom = "0px";
-        videoContainer.style.backgroundColor = "black";
-        document.body.appendChild(videoContainer);
-        const video = document.createElement("video");
-        video.setAttribute("autoplay", "autoplay");
-        video.setAttribute("muted", "muted");
-        video.setAttribute("playsinline", "playsinline");
-        video.style.position = "absolute";
-        video.style.left = "0px";
-        video.style.top = "0px";
-        video.style.right = "0px";
-        video.style.bottom = "0px";
-        video.style.width = "100%";
-        video.style.height = "100%";
-        const cancelButton = document.createElement("a");
-        cancelButton.href = "javascript:void(0)";
-        cancelButton.innerText = "Cancel";
-        cancelButton.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)";
-        cancelButton.style.fontFamily = "Helvetica, Arial, sans-serif";
-        cancelButton.style.color = "white";
-        cancelButton.style.textDecoration = "none";
-        cancelButton.style.position = "absolute";
-        cancelButton.style.bottom = " 16px";
-        cancelButton.style.left = "8px";
-        cancelButton.style.right = "8px";
-        cancelButton.style.textAlign = "center";
-        videoContainer.appendChild(video);
-        videoContainer.appendChild(cameraOverlayCanvas);
-        videoContainer.appendChild(cancelButton);
-        let previousBearing = _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.STRAIGHT;
+        const session = new LivenessDetectionSession(settings, this.faceRecognition);
+        return (this.liveFaceCapture(session).pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.map)((capture) => {
+            capture.requestedBearing = session.bearingIterator.value;
+            return capture;
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.map)(session.detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.map)(session.detectFaceAlignment), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.tap)((capture) => {
+            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_6__.FaceCaptureEventType.FACE_CAPTURED, "capture": capture });
+            if (faceDetectionCallback) {
+                faceDetectionCallback(capture);
+            }
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.filter)((capture) => {
+            return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED;
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.mergeMap)(session.createFaceCapture), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.tap)((faceCapture) => {
+            if (faceCaptureCallback) {
+                faceCaptureCallback(faceCapture);
+            }
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.take)(settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_14__.takeWhile)(() => {
+            return new Date().getTime() < session.startTime + settings.maxDuration * 1000;
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_15__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.map)(session.resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.map)((result) => {
+            if (result.faceCaptures.length < settings.faceCaptureCount) {
+                throw new Error("Session timed out");
+            }
+            return result;
+        }), (observable) => new rxjs__WEBPACK_IMPORTED_MODULE_7__.Observable(subscriber => {
+            const subcription = observable.subscribe({
+                next: (val) => {
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "next", "value": val });
+                },
+                error: (err) => {
+                    session.close();
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "error", "error": err });
+                },
+                complete: () => {
+                    session.close();
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "complete" });
+                }
+            });
+            session.ui.on(_faceDetectionUI__WEBPACK_IMPORTED_MODULE_6__.FaceCaptureEventType.CANCEL, () => {
+                (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "complete" });
+            });
+            return () => {
+                subcription.unsubscribe();
+                session.close();
+            };
+        })));
+    }
+}
+class LivenessDetectionSession {
+    constructor(settings, faceRecognition) {
+        this.faceBuffer = new _utils__WEBPACK_IMPORTED_MODULE_0__.CircularBuffer(3);
+        this.faceDetected = false;
+        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FOUND;
+        this.fixTime = null;
+        this.alignedFaceCount = 0;
+        this.angleHistory = [];
+        this.previousBearing = _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.STRAIGHT;
+        this.closed = false;
+        this.startTime = new Date().getTime();
+        this.faceBoundsSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_0__.RectSmoothing(3);
+        this.faceAngleSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_0__.AngleSmoothing(3);
+        this.hasFaceBeenAligned = false;
+        this.isFaceFixedInImageSize = (actualFaceBounds, expectedFaceBounds, imageSize) => {
+            if (this.hasFaceBeenAligned) {
+                return true;
+            }
+            const maxRect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(0, 0, imageSize.width, imageSize.height);
+            const minRect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(expectedFaceBounds.x * 1.4, expectedFaceBounds.y * 1.4, expectedFaceBounds.width * 0.6, expectedFaceBounds.height * 0.6);
+            this.hasFaceBeenAligned = actualFaceBounds.contains(minRect) && maxRect.contains(actualFaceBounds);
+            return this.hasFaceBeenAligned;
+        };
+        this.detectFacePresence = (capture) => {
+            if (capture.face) {
+                this.faceBuffer.enqueue(capture.face);
+                this.faceBoundsSmoothing.addSample(capture.face.bounds);
+                this.faceAngleSmoothing.addSample(capture.face.angle);
+                if (this.faceBuffer.isFull) {
+                    this.faceDetected = true;
+                }
+            }
+            else if (this.alignedFaceCount >= this.settings.faceCaptureFaceCount) {
+                this.faceDetected = false;
+            }
+            else {
+                this.faceBuffer.dequeue();
+                if (this.faceDetected && this.faceBuffer.isEmpty) {
+                    throw new Error("Face lost");
+                }
+                this.faceDetected = false;
+                this.faceBoundsSmoothing.removeFirstSample();
+                this.faceAngleSmoothing.removeFirstSample();
+                const lastFace = this.faceBuffer.lastElement;
+                if (lastFace != null) {
+                    const requestedAngle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value).screenAngle;
+                    const detectedAngle = lastFace.angle.screenAngle;
+                    const deg45 = 45 * (Math.PI / 180);
+                    const inset = Math.min(capture.image.width, capture.image.height) * 0.05;
+                    const rect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(0, 0, capture.image.width, capture.image.height);
+                    rect.inset(inset, inset);
+                    if (rect.contains(lastFace.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45) {
+                        throw new Error("Face moved too far");
+                    }
+                }
+            }
+            capture.faceBounds = this.faceBoundsSmoothing.smoothedValue;
+            capture.faceAngle = this.faceAngleSmoothing.smoothedValue;
+            capture.isFacePresent = this.faceDetected;
+            return capture;
+        };
+        this.detectFaceAlignment = (capture) => {
+            if (capture.isFacePresent) {
+                const face = this.faceBuffer.lastElement;
+                if (face != null) {
+                    const now = new Date().getTime() / 1000;
+                    if (this.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED) {
+                        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FIXED;
+                        this.fixTime = now;
+                    }
+                    this.faces.enqueue(face);
+                    const imageSize = capture.image;
+                    if (this.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FOUND && this.isFaceFixedInImageSize(face.bounds, this.settings.expectedFaceRect(imageSize), imageSize)) {
+                        this.fixTime = now;
+                        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FIXED;
+                    }
+                    else if (this.fixTime && now - this.fixTime > this.settings.pauseDuration && this.faces.isFull) {
+                        for (let i = 0; i < this.faces.length; i++) {
+                            const f = this.faces.get(i);
+                            if (!this.angleBearingEvaluation.angleMatchesBearing(f.angle, this.bearingIterator.value)) {
+                                this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.MISALIGNED;
+                                capture.faceAlignmentStatus = this.faceAlignmentStatus;
+                                capture.offsetAngleFromBearing = this.angleBearingEvaluation.offsetFromAngleToBearing(capture.faceAngle ? capture.faceAngle : new _utils__WEBPACK_IMPORTED_MODULE_0__.Angle(), this.bearingIterator.value);
+                                return capture;
+                            }
+                        }
+                        this.faces.clear();
+                        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED;
+                        this.fixTime = now;
+                        this.alignedFaceCount += 1;
+                        this.bearingIterator = this.bearingGenerator.next();
+                    }
+                }
+            }
+            else {
+                this.faces.clear();
+                this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FOUND;
+            }
+            capture.faceAlignmentStatus = this.faceAlignmentStatus;
+            return capture;
+        };
+        this.detectSpoofAttempt = (capture) => {
+            const face = this.faceBuffer.lastElement;
+            if (!capture.isFacePresent || !face) {
+                this.angleHistory = [];
+                return capture;
+            }
+            if (capture.faceAlignmentStatus != _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED) {
+                this.angleHistory.push(face.angle);
+                return capture;
+            }
+            if (this.previousBearing != this.bearingIterator.value) {
+                const previousAngle = this.angleBearingEvaluation.angleForBearing(this.previousBearing);
+                const currentAngle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value);
+                const startYaw = Math.min(previousAngle.yaw, currentAngle.yaw);
+                const endYaw = Math.max(previousAngle.yaw, currentAngle.yaw);
+                const yawTolerance = this.angleBearingEvaluation.thresholdAngleToleranceForAxis(_types__WEBPACK_IMPORTED_MODULE_5__.Axis.YAW);
+                let movedTooFast = this.angleHistory.length > 1;
+                let movedOpposite = false;
+                for (let angle of this.angleHistory) {
+                    if (angle.yaw > startYaw - yawTolerance && angle.yaw < endYaw + yawTolerance) {
+                        movedTooFast = false;
+                    }
+                    if (!this.angleBearingEvaluation.isAngleBetweenBearings(angle, this.previousBearing, this.bearingIterator.value)) {
+                        movedOpposite = true;
+                    }
+                }
+                if (movedTooFast) {
+                    throw new Error("Moved too fast");
+                }
+                if (movedOpposite) {
+                    throw new Error("Moved opposite");
+                }
+            }
+            this.angleHistory = [];
+            return capture;
+        };
+        this.createFaceCapture = (capture) => {
+            if (capture.requestedBearing == _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.STRAIGHT) {
+                const bounds = capture.face ? capture.face.bounds : null;
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_16__.from)(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
+                    capture.face.template = recognizableFace.template;
+                    return capture;
+                }));
+            }
+            else {
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_17__.of)(capture);
+            }
+        };
+        this.resultFromCaptures = (captures) => {
+            return new LivenessDetectionSessionResult(new Date(this.startTime), captures);
+        };
+        this.close = () => {
+            if (!this.closed) {
+                this.closed = true;
+                setTimeout(() => {
+                    this.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_6__.FaceCaptureEventType.CLOSE });
+                });
+            }
+        };
+        this.settings = settings;
+        this.ui = settings.createUI();
+        this.faceRecognition = faceRecognition;
+        this.faces = new _utils__WEBPACK_IMPORTED_MODULE_0__.CircularBuffer(settings.faceCaptureFaceCount);
+        this.angleBearingEvaluation = new _utils__WEBPACK_IMPORTED_MODULE_0__.AngleBearingEvaluation(settings, 5, 5);
+        const session = this;
         function* nextCaptureBearing() {
             let lastBearing = _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.STRAIGHT;
             yield lastBearing;
             for (let i = 1; i < settings.faceCaptureCount; i++) {
-                previousBearing = lastBearing;
-                let availableBearings = settings.bearings.filter(bearing => bearing != lastBearing && angleBearingEvaluation.angleForBearing(bearing).yaw != angleBearingEvaluation.angleForBearing(lastBearing).yaw);
+                session.previousBearing = lastBearing;
+                let availableBearings = settings.bearings.filter(bearing => bearing != lastBearing && session.angleBearingEvaluation.angleForBearing(bearing).yaw != session.angleBearingEvaluation.angleForBearing(lastBearing).yaw);
                 if (availableBearings.length == 0) {
                     availableBearings = settings.bearings.filter(bearing => bearing != lastBearing);
                 }
@@ -18489,373 +18724,8 @@ class FaceDetection {
                 }
             }
         }
-        const drawDetectedFace = (capture) => {
-            const scale = Math.min(videoContainer.clientWidth / capture.image.width, videoContainer.clientHeight / capture.image.height);
-            cameraOverlayCanvas.width = capture.image.width * scale;
-            cameraOverlayCanvas.height = capture.image.height * scale;
-            cameraOverlayCanvas.style.left = ((videoContainer.clientWidth - cameraOverlayCanvas.width) / 2) + "px";
-            cameraOverlayCanvas.style.top = ((videoContainer.clientHeight - cameraOverlayCanvas.height) / 2) + "px";
-            cameraOverlayContext.clearRect(0, 0, cameraOverlayCanvas.width, cameraOverlayCanvas.height);
-            let ovalColor;
-            let textColor;
-            if (capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED || capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FIXED) {
-                ovalColor = "green";
-                textColor = "white";
-            }
-            else {
-                ovalColor = "white";
-                textColor = "black";
-            }
-            cameraOverlayContext.strokeStyle = ovalColor;
-            cameraOverlayContext.lineCap = "round";
-            cameraOverlayContext.lineJoin = "round";
-            let faceRect;
-            if (capture.faceBounds) {
-                faceRect = capture.faceBounds.scaledBy(scale);
-                if (settings.useFrontCamera) {
-                    faceRect = faceRect.mirrored(capture.image.width * scale);
-                }
-                cameraOverlayContext.lineWidth = 0.038 * faceRect.width;
-                cameraOverlayContext.beginPath();
-                cameraOverlayContext.ellipse(faceRect.x + faceRect.width / 2, faceRect.y + faceRect.height / 2, faceRect.width / 2, faceRect.height / 2, 0, 0, Math.PI * 2);
-                if (capture.offsetAngleFromBearing) {
-                    const angle = Math.atan2(capture.offsetAngleFromBearing.pitch, capture.offsetAngleFromBearing.yaw);
-                    const distance = Math.hypot(capture.offsetAngleFromBearing.yaw, 0 - capture.offsetAngleFromBearing.pitch) * 2 * 1.7;
-                    const arrowLength = faceRect.width / 5;
-                    const arrowStemLength = Math.min(Math.max(arrowLength * distance, arrowLength * 0.75), arrowLength * 1.7);
-                    const arrowAngle = 40 * (Math.PI / 180);
-                    const arrowTipX = faceRect.center.x + Math.cos(angle) * arrowLength / 2;
-                    const arrowTipY = faceRect.center.y + Math.sin(angle) * arrowLength / 2;
-                    const arrowPoint1X = arrowTipX + Math.cos(angle + Math.PI - arrowAngle) * arrowLength * 0.6;
-                    const arrowPoint1Y = arrowTipY + Math.sin(angle + Math.PI - arrowAngle) * arrowLength * 0.6;
-                    const arrowPoint2X = arrowTipX + Math.cos(angle + Math.PI + arrowAngle) * arrowLength * 0.6;
-                    const arrowPoint2Y = arrowTipY + Math.sin(angle + Math.PI + arrowAngle) * arrowLength * 0.6;
-                    const arrowStartX = arrowTipX + Math.cos(angle + Math.PI) * arrowStemLength;
-                    const arrowStartY = arrowTipY + Math.sin(angle + Math.PI) * arrowStemLength;
-                    cameraOverlayContext.moveTo(arrowPoint1X, arrowPoint1Y);
-                    cameraOverlayContext.lineTo(arrowTipX, arrowTipY);
-                    cameraOverlayContext.lineTo(arrowPoint2X, arrowPoint2Y);
-                    cameraOverlayContext.moveTo(arrowTipX, arrowTipY);
-                    cameraOverlayContext.lineTo(arrowStartX, arrowStartY);
-                }
-                cameraOverlayContext.stroke();
-            }
-            else {
-                faceRect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(0, 0, 0, 0);
-                if (cameraOverlayCanvas.width > cameraOverlayCanvas.height) {
-                    faceRect.height = cameraOverlayCanvas.height * settings.expectedFaceExtents.proportionOfViewHeight;
-                    faceRect.width = faceRect.height / 1.25;
-                }
-                else {
-                    faceRect.width = cameraOverlayCanvas.width * settings.expectedFaceExtents.proportionOfViewWidth;
-                    faceRect.height = faceRect.width * 1.25;
-                }
-                faceRect.x = cameraOverlayCanvas.width / 2 - faceRect.width / 2;
-                faceRect.y = cameraOverlayCanvas.height / 2 - faceRect.height / 2;
-                cameraOverlayContext.lineWidth = 0.038 * faceRect.width;
-                cameraOverlayContext.beginPath();
-                cameraOverlayContext.ellipse(faceRect.x + faceRect.width / 2, faceRect.y + faceRect.height / 2, faceRect.width / 2, faceRect.height / 2, 0, 0, Math.PI * 2);
-                cameraOverlayContext.stroke();
-            }
-            let prompt;
-            switch (capture.faceAlignmentStatus) {
-                case _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FIXED:
-                case _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED:
-                    prompt = "Great, hold it";
-                    break;
-                case _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.MISALIGNED:
-                    prompt = "Slowly turn to follow the arrow";
-                    break;
-                default:
-                    prompt = "Align your face with the oval";
-            }
-            const textSize = 24;
-            const textY = Math.max(faceRect.y - cameraOverlayContext.lineWidth * 2, textSize);
-            cameraOverlayContext.font = textSize + "px Helvetica, Arial, sans-serif";
-            cameraOverlayContext.textAlign = "center";
-            const textWidth = cameraOverlayContext.measureText(prompt).width;
-            const cornerRadius = 8;
-            const textRect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(cameraOverlayCanvas.width / 2 - textWidth / 2 - cornerRadius, textY - textSize, textWidth + cornerRadius * 2, textSize + cornerRadius);
-            cameraOverlayContext.beginPath();
-            cameraOverlayContext.moveTo(textRect.x + cornerRadius, textRect.y);
-            cameraOverlayContext.lineTo(textRect.x + textRect.width - cornerRadius, textRect.y);
-            cameraOverlayContext.quadraticCurveTo(textRect.x + textRect.width, textRect.y, textRect.x + textRect.width, textRect.y + cornerRadius);
-            cameraOverlayContext.lineTo(textRect.x + textRect.width, textRect.y + textRect.height - cornerRadius);
-            cameraOverlayContext.quadraticCurveTo(textRect.x + textRect.width, textRect.y + textRect.height, textRect.x + textRect.width - cornerRadius, textRect.y + textRect.height);
-            cameraOverlayContext.lineTo(textRect.x + cornerRadius, textRect.y + textRect.height);
-            cameraOverlayContext.quadraticCurveTo(textRect.x, textRect.y + textRect.height, textRect.x, textRect.y + textRect.height - cornerRadius);
-            cameraOverlayContext.lineTo(textRect.x, textRect.y + cornerRadius);
-            cameraOverlayContext.quadraticCurveTo(textRect.x, textRect.y, textRect.x + cornerRadius, textRect.y);
-            cameraOverlayContext.closePath();
-            cameraOverlayContext.fillStyle = ovalColor;
-            cameraOverlayContext.fill();
-            cameraOverlayContext.fillStyle = textColor;
-            cameraOverlayContext.fillText(prompt, cameraOverlayCanvas.width / 2, textY);
-        };
-        const detectFacePresence = (capture) => {
-            if (capture.face) {
-                faceBuffer.enqueue(capture.face);
-                faceBoundsSmoothing.addSample(capture.face.bounds);
-                faceAngleSmoothing.addSample(capture.face.angle);
-                if (faceBuffer.isFull) {
-                    faceDetected = true;
-                }
-            }
-            else if (alignedFaceCount >= settings.faceCaptureFaceCount) {
-                faceDetected = false;
-            }
-            else {
-                faceBuffer.dequeue();
-                if (faceDetected && faceBuffer.isEmpty) {
-                    throw new Error("Face lost");
-                }
-                faceDetected = false;
-                faceBoundsSmoothing.removeFirstSample();
-                faceAngleSmoothing.removeFirstSample();
-                const lastFace = faceBuffer.lastElement;
-                if (lastFace != null) {
-                    const requestedAngle = angleBearingEvaluation.angleForBearing(bearingIterator.value).screenAngle;
-                    const detectedAngle = lastFace.angle.screenAngle;
-                    const deg45 = 45 * (Math.PI / 180);
-                    const inset = Math.min(capture.image.width, capture.image.height) * 0.05;
-                    const rect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(0, 0, capture.image.width, capture.image.height);
-                    rect.inset(inset, inset);
-                    if (rect.contains(lastFace.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45) {
-                        throw new Error("Face moved too far");
-                    }
-                }
-            }
-            capture.faceBounds = faceBoundsSmoothing.smoothedValue;
-            capture.faceAngle = faceAngleSmoothing.smoothedValue;
-            capture.isFacePresent = faceDetected;
-            return capture;
-        };
-        const detectFaceAlignment = (capture) => {
-            if (capture.isFacePresent) {
-                const face = faceBuffer.lastElement;
-                if (face != null) {
-                    const now = new Date().getTime() / 1000;
-                    if (faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED) {
-                        faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FIXED;
-                        fixTime = now;
-                    }
-                    faces.enqueue(face);
-                    if (faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FOUND && isFaceFixedInImageSize(face.bounds, new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(0, 0, capture.image.width, capture.image.height))) {
-                        fixTime = now;
-                        faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FIXED;
-                    }
-                    else if (fixTime && now - fixTime > settings.pauseDuration && faces.isFull) {
-                        for (let i = 0; i < faces.length; i++) {
-                            const f = faces.get(i);
-                            if (!angleBearingEvaluation.angleMatchesBearing(f.angle, bearingIterator.value)) {
-                                faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.MISALIGNED;
-                                capture.faceAlignmentStatus = faceAlignmentStatus;
-                                capture.offsetAngleFromBearing = angleBearingEvaluation.offsetFromAngleToBearing(capture.faceAngle ? capture.faceAngle : new _utils__WEBPACK_IMPORTED_MODULE_0__.Angle(), bearingIterator.value);
-                                return capture;
-                            }
-                        }
-                        faces.clear();
-                        faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED;
-                        fixTime = now;
-                        alignedFaceCount += 1;
-                        bearingIterator = bearingGenerator.next();
-                    }
-                }
-            }
-            else {
-                faces.clear();
-                faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FOUND;
-            }
-            capture.faceAlignmentStatus = faceAlignmentStatus;
-            return capture;
-        };
-        const detectSpoofAttempt = (capture) => {
-            const face = faceBuffer.lastElement;
-            if (!capture.isFacePresent || !face) {
-                angleHistory = [];
-                return capture;
-            }
-            if (capture.faceAlignmentStatus != _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED) {
-                angleHistory.push(face.angle);
-                return capture;
-            }
-            if (previousBearing != bearingIterator.value) {
-                const previousAngle = angleBearingEvaluation.angleForBearing(previousBearing);
-                const currentAngle = angleBearingEvaluation.angleForBearing(bearingIterator.value);
-                const startYaw = Math.min(previousAngle.yaw, currentAngle.yaw);
-                const endYaw = Math.max(previousAngle.yaw, currentAngle.yaw);
-                const yawTolerance = angleBearingEvaluation.thresholdAngleToleranceForAxis(_types__WEBPACK_IMPORTED_MODULE_5__.Axis.YAW);
-                let movedTooFast = angleHistory.length > 1;
-                let movedOpposite = false;
-                for (let angle of angleHistory) {
-                    if (angle.yaw > startYaw - yawTolerance && angle.yaw < endYaw + yawTolerance) {
-                        movedTooFast = false;
-                    }
-                    if (!angleBearingEvaluation.isAngleBetweenBearings(angle, previousBearing, bearingIterator.value)) {
-                        movedOpposite = true;
-                    }
-                }
-                if (movedTooFast) {
-                    throw new Error("Moved too fast");
-                }
-                if (movedOpposite) {
-                    throw new Error("Moved opposite");
-                }
-            }
-            angleHistory = [];
-            return capture;
-        };
-        const createFaceCapture = (capture) => {
-            if (capture.requestedBearing == _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.STRAIGHT) {
-                const bounds = capture.face ? capture.face.bounds : null;
-                return (0,rxjs__WEBPACK_IMPORTED_MODULE_7__.from)(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
-                    capture.face.template = recognizableFace.template;
-                    return capture;
-                }));
-            }
-            else {
-                return (0,rxjs__WEBPACK_IMPORTED_MODULE_8__.of)(capture);
-            }
-        };
-        const resultFromCaptures = (captures) => {
-            return new LivenessDetectionSessionResult(new Date(startTime), captures);
-        };
-        const faceBuffer = new _utils__WEBPACK_IMPORTED_MODULE_0__.CircularBuffer(3);
-        const faces = new _utils__WEBPACK_IMPORTED_MODULE_0__.CircularBuffer(settings.faceCaptureFaceCount);
-        let faceDetected = false;
-        let faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.FOUND;
-        let fixTime = null;
-        let alignedFaceCount = 0;
-        let angleHistory = [];
-        const startTime = new Date().getTime();
-        const angleBearingEvaluation = new _utils__WEBPACK_IMPORTED_MODULE_0__.AngleBearingEvaluation(settings, 5, 5);
-        const faceBoundsSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_0__.RectSmoothing(3);
-        const faceAngleSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_0__.AngleSmoothing(3);
-        function liveFaceCapture() {
-            return new rxjs__WEBPACK_IMPORTED_MODULE_9__.Observable(subscriber => {
-                if (!navigator.mediaDevices) {
-                    faceDetection.emitEvent(subscriber, { "type": "error", "error": new Error("Unsupported browser") });
-                    return;
-                }
-                let videoTrack;
-                const constraints = navigator.mediaDevices.getSupportedConstraints();
-                const getUserMediaOptions = {
-                    "audio": false,
-                    "video": true
-                };
-                if (constraints.facingMode) {
-                    getUserMediaOptions.video = {
-                        "facingMode": settings.useFrontCamera ? "user" : "environment"
-                    };
-                }
-                if (constraints.width) {
-                    const videoWidth = 480;
-                    if (typeof (getUserMediaOptions.video) === "boolean") {
-                        getUserMediaOptions.video = {
-                            "width": videoWidth
-                        };
-                    }
-                    else {
-                        getUserMediaOptions.video.width = videoWidth;
-                    }
-                }
-                Promise.all(faceDetection.loadPromises).then(() => {
-                    return navigator.mediaDevices.getUserMedia(getUserMediaOptions);
-                }).then((stream) => {
-                    videoTrack = stream.getVideoTracks()[0];
-                    if (settings.useFrontCamera) {
-                        video.style.transform = "scaleX(-1)";
-                    }
-                    if ("srcObject" in video) {
-                        video.srcObject = stream;
-                    }
-                    else {
-                        // @ts-ignore
-                        video.src = URL.createObjectURL(stream);
-                    }
-                    video.onplay = () => {
-                        const canvas = document.createElement("canvas");
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        const ctx = canvas.getContext("2d");
-                        const detectSingleFace = () => __awaiter(this, void 0, void 0, function* () {
-                            try {
-                                const _face = yield face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_2__.detectSingleFace(video, new face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_2__.TinyFaceDetectorOptions({ "inputSize": 128 })).withFaceLandmarks();
-                                let face;
-                                if (_face) {
-                                    face = faceDetection.faceApiFaceToVerIDFace(_face, canvas.width, settings.useFrontCamera);
-                                }
-                                if (!subscriber.closed) {
-                                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                                    const image = new Image();
-                                    image.width = canvas.width;
-                                    image.height = canvas.height;
-                                    image.src = canvas.toDataURL();
-                                    faceDetection.emitEvent(subscriber, { "type": "next", "value": new LiveFaceCapture(image, face) });
-                                }
-                                setTimeout(detectSingleFace, 0);
-                            }
-                            catch (error) {
-                                faceDetection.emitEvent(subscriber, { "type": "error", "error": error });
-                            }
-                        });
-                        setTimeout(detectSingleFace, 0);
-                    };
-                }).catch((error) => {
-                    faceDetection.emitEvent(subscriber, { "type": "error", "error": error });
-                });
-                return () => {
-                    if (videoTrack) {
-                        videoTrack.stop();
-                        videoTrack = null;
-                    }
-                };
-            });
-        }
-        let bearingGenerator = nextCaptureBearing();
-        let bearingIterator = bearingGenerator.next();
-        return (liveFaceCapture().pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.map)((capture) => {
-            capture.requestedBearing = bearingIterator.value;
-            return capture;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.map)(detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.map)(detectFaceAlignment), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.tap)(drawDetectedFace), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.tap)((capture) => {
-            if (faceDetectionCallback) {
-                faceDetectionCallback(capture);
-            }
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.filter)((capture) => {
-            return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_5__.FaceAlignmentStatus.ALIGNED;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.mergeMap)(createFaceCapture), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.tap)((faceCapture) => {
-            if (faceCaptureCallback) {
-                faceCaptureCallback(faceCapture);
-            }
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_14__.take)(settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_15__.takeWhile)(() => {
-            return new Date().getTime() < startTime + settings.maxDuration * 1000;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_16__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.map)(resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.map)((result) => {
-            if (result.faceCaptures.length < settings.faceCaptureCount) {
-                throw new Error("Session timed out");
-            }
-            return result;
-        }), (observable) => new rxjs__WEBPACK_IMPORTED_MODULE_9__.Observable(subscriber => {
-            const subcription = observable.subscribe({
-                next: (val) => {
-                    faceDetection.emitEvent(subscriber, { "type": "next", "value": val });
-                },
-                error: (err) => {
-                    faceDetection.emitEvent(subscriber, { "type": "error", "error": err });
-                },
-                complete: () => {
-                    faceDetection.emitEvent(subscriber, { "type": "complete" });
-                }
-            });
-            cancelButton.onclick = () => {
-                faceDetection.emitEvent(subscriber, { "type": "complete" });
-            };
-            return () => {
-                subcription.unsubscribe();
-                if (videoContainer.parentNode) {
-                    videoContainer.parentNode.removeChild(videoContainer);
-                }
-            };
-        })));
+        this.bearingGenerator = nextCaptureBearing();
+        this.bearingIterator = this.bearingGenerator.next();
     }
 }
 /**
@@ -18947,6 +18817,21 @@ class FaceCaptureSettings {
          * @defaultValue `[Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]`
          */
         this.bearings = [_types__WEBPACK_IMPORTED_MODULE_5__.Bearing.STRAIGHT, _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.LEFT, _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.RIGHT, _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.LEFT_UP, _types__WEBPACK_IMPORTED_MODULE_5__.Bearing.RIGHT_UP];
+        this.createUI = () => new _faceDetectionUI__WEBPACK_IMPORTED_MODULE_6__.VerIDFaceCaptureUI(this);
+        this.expectedFaceRect = (imageSize) => {
+            const faceRect = new _utils__WEBPACK_IMPORTED_MODULE_0__.Rect(0, 0, 0, 0);
+            if (imageSize.width > imageSize.height) {
+                faceRect.height = imageSize.height * this.expectedFaceExtents.proportionOfViewHeight;
+                faceRect.width = faceRect.height / 1.25;
+            }
+            else {
+                faceRect.width = imageSize.width * this.expectedFaceExtents.proportionOfViewWidth;
+                faceRect.height = faceRect.width * 1.25;
+            }
+            faceRect.x = imageSize.width / 2 - faceRect.width / 2;
+            faceRect.y = imageSize.height / 2 - faceRect.height / 2;
+            return faceRect;
+        };
     }
 }
 /**
@@ -19005,6 +18890,234 @@ class LiveFaceCapture {
                 this.image.onerror = reject;
             }
         });
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/faceDetectionUI.ts":
+/*!********************************!*\
+  !*** ./src/faceDetectionUI.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "FaceCaptureEventType": () => (/* binding */ FaceCaptureEventType),
+/* harmony export */   "VerIDFaceCaptureUI": () => (/* binding */ VerIDFaceCaptureUI)
+/* harmony export */ });
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+
+
+var FaceCaptureEventType;
+(function (FaceCaptureEventType) {
+    FaceCaptureEventType["FACE_CAPTURED"] = "face captured";
+    FaceCaptureEventType["CLOSE"] = "close";
+    FaceCaptureEventType["CANCEL"] = "cancel";
+    FaceCaptureEventType["MEDIA_STREAM_AVAILABLE"] = "media stream available";
+})(FaceCaptureEventType || (FaceCaptureEventType = {}));
+class VerIDFaceCaptureUI {
+    constructor(settings) {
+        this.eventListeners = {};
+        this.hasFaceBeenAligned = false;
+        this.drawDetectedFace = (capture) => {
+            const scale = Math.min(this.videoContainer.clientWidth / capture.image.width, this.videoContainer.clientHeight / capture.image.height);
+            this.cameraOverlayCanvas.width = capture.image.width * scale;
+            this.cameraOverlayCanvas.height = capture.image.height * scale;
+            this.cameraOverlayCanvas.style.left = ((this.videoContainer.clientWidth - this.cameraOverlayCanvas.width) / 2) + "px";
+            this.cameraOverlayCanvas.style.top = ((this.videoContainer.clientHeight - this.cameraOverlayCanvas.height) / 2) + "px";
+            this.cameraOverlayContext.clearRect(0, 0, this.cameraOverlayCanvas.width, this.cameraOverlayCanvas.height);
+            let ovalColor;
+            let textColor;
+            if (capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_0__.FaceAlignmentStatus.ALIGNED || capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_0__.FaceAlignmentStatus.FIXED) {
+                this.hasFaceBeenAligned = true;
+                ovalColor = "green";
+                textColor = "white";
+            }
+            else {
+                ovalColor = "white";
+                textColor = "black";
+            }
+            this.cameraOverlayContext.strokeStyle = ovalColor;
+            this.cameraOverlayContext.lineCap = "round";
+            this.cameraOverlayContext.lineJoin = "round";
+            let faceRect;
+            let cutoutRect;
+            if (capture.faceBounds) {
+                cutoutRect = capture.faceBounds.scaledBy(scale);
+                if (this.settings.useFrontCamera) {
+                    cutoutRect = cutoutRect.mirrored(capture.image.width * scale);
+                }
+                if (this.hasFaceBeenAligned) {
+                    faceRect = cutoutRect;
+                }
+                else {
+                    faceRect = this.settings.expectedFaceRect({ "width": this.cameraOverlayCanvas.width, "height": this.cameraOverlayCanvas.height });
+                }
+                if (capture.offsetAngleFromBearing) {
+                    const angle = Math.atan2(capture.offsetAngleFromBearing.pitch, capture.offsetAngleFromBearing.yaw);
+                    const distance = Math.hypot(capture.offsetAngleFromBearing.yaw, 0 - capture.offsetAngleFromBearing.pitch) * 2 * 1.7;
+                    const arrowLength = faceRect.width / 5;
+                    const arrowStemLength = Math.min(Math.max(arrowLength * distance, arrowLength * 0.75), arrowLength * 1.7);
+                    const arrowAngle = 40 * (Math.PI / 180);
+                    const arrowTipX = faceRect.center.x + Math.cos(angle) * arrowLength / 2;
+                    const arrowTipY = faceRect.center.y + Math.sin(angle) * arrowLength / 2;
+                    const arrowPoint1X = arrowTipX + Math.cos(angle + Math.PI - arrowAngle) * arrowLength * 0.6;
+                    const arrowPoint1Y = arrowTipY + Math.sin(angle + Math.PI - arrowAngle) * arrowLength * 0.6;
+                    const arrowPoint2X = arrowTipX + Math.cos(angle + Math.PI + arrowAngle) * arrowLength * 0.6;
+                    const arrowPoint2Y = arrowTipY + Math.sin(angle + Math.PI + arrowAngle) * arrowLength * 0.6;
+                    const arrowStartX = arrowTipX + Math.cos(angle + Math.PI) * arrowStemLength;
+                    const arrowStartY = arrowTipY + Math.sin(angle + Math.PI) * arrowStemLength;
+                    this.cameraOverlayContext.lineWidth = 0.038 * faceRect.width;
+                    this.cameraOverlayContext.beginPath();
+                    this.cameraOverlayContext.moveTo(arrowPoint1X, arrowPoint1Y);
+                    this.cameraOverlayContext.lineTo(arrowTipX, arrowTipY);
+                    this.cameraOverlayContext.lineTo(arrowPoint2X, arrowPoint2Y);
+                    this.cameraOverlayContext.moveTo(arrowTipX, arrowTipY);
+                    this.cameraOverlayContext.lineTo(arrowStartX, arrowStartY);
+                    this.cameraOverlayContext.stroke();
+                }
+            }
+            else {
+                faceRect = cutoutRect = this.settings.expectedFaceRect({ "width": this.cameraOverlayCanvas.width, "height": this.cameraOverlayCanvas.height });
+            }
+            if (!this.hasFaceBeenAligned) {
+                const cutoutPath = new Path2D();
+                cutoutPath.rect(0, 0, this.cameraOverlayCanvas.width, this.cameraOverlayCanvas.height);
+                cutoutPath.ellipse(cutoutRect.center.x, cutoutRect.center.y, cutoutRect.width / 2, cutoutRect.height / 2, 0, 0, Math.PI * 2, true);
+                this.cameraOverlayContext.beginPath();
+                this.cameraOverlayContext.fillStyle = "#00000099";
+                this.cameraOverlayContext.fill(cutoutPath, "evenodd");
+                this.cameraOverlayContext.fillStyle = "transparent";
+            }
+            this.cameraOverlayContext.lineWidth = 0.038 * faceRect.width;
+            this.cameraOverlayContext.beginPath();
+            this.cameraOverlayContext.ellipse(faceRect.x + faceRect.width / 2, faceRect.y + faceRect.height / 2, faceRect.width / 2, faceRect.height / 2, 0, 0, Math.PI * 2);
+            this.cameraOverlayContext.stroke();
+            let prompt;
+            switch (capture.faceAlignmentStatus) {
+                case _types__WEBPACK_IMPORTED_MODULE_0__.FaceAlignmentStatus.FIXED:
+                case _types__WEBPACK_IMPORTED_MODULE_0__.FaceAlignmentStatus.ALIGNED:
+                    prompt = "Great, hold it";
+                    break;
+                case _types__WEBPACK_IMPORTED_MODULE_0__.FaceAlignmentStatus.MISALIGNED:
+                    prompt = "Slowly turn to follow the arrow";
+                    break;
+                default:
+                    prompt = "Align your face with the oval";
+            }
+            const textSize = 24;
+            const textY = Math.max(faceRect.y - this.cameraOverlayContext.lineWidth * 2, textSize);
+            this.cameraOverlayContext.font = textSize + "px Helvetica, Arial, sans-serif";
+            this.cameraOverlayContext.textAlign = "center";
+            const textWidth = this.cameraOverlayContext.measureText(prompt).width;
+            const cornerRadius = 8;
+            const textRect = new _utils__WEBPACK_IMPORTED_MODULE_1__.Rect(this.cameraOverlayCanvas.width / 2 - textWidth / 2 - cornerRadius, textY - textSize, textWidth + cornerRadius * 2, textSize + cornerRadius);
+            this.cameraOverlayContext.beginPath();
+            this.cameraOverlayContext.moveTo(textRect.x + cornerRadius, textRect.y);
+            this.cameraOverlayContext.lineTo(textRect.x + textRect.width - cornerRadius, textRect.y);
+            this.cameraOverlayContext.quadraticCurveTo(textRect.x + textRect.width, textRect.y, textRect.x + textRect.width, textRect.y + cornerRadius);
+            this.cameraOverlayContext.lineTo(textRect.x + textRect.width, textRect.y + textRect.height - cornerRadius);
+            this.cameraOverlayContext.quadraticCurveTo(textRect.x + textRect.width, textRect.y + textRect.height, textRect.x + textRect.width - cornerRadius, textRect.y + textRect.height);
+            this.cameraOverlayContext.lineTo(textRect.x + cornerRadius, textRect.y + textRect.height);
+            this.cameraOverlayContext.quadraticCurveTo(textRect.x, textRect.y + textRect.height, textRect.x, textRect.y + textRect.height - cornerRadius);
+            this.cameraOverlayContext.lineTo(textRect.x, textRect.y + cornerRadius);
+            this.cameraOverlayContext.quadraticCurveTo(textRect.x, textRect.y, textRect.x + cornerRadius, textRect.y);
+            this.cameraOverlayContext.closePath();
+            this.cameraOverlayContext.fillStyle = ovalColor;
+            this.cameraOverlayContext.fill();
+            this.cameraOverlayContext.fillStyle = textColor;
+            this.cameraOverlayContext.fillText(prompt, this.cameraOverlayCanvas.width / 2, textY);
+        };
+        this.cleanup = () => {
+            if (this.videoContainer.parentElement) {
+                this.videoContainer.parentElement.removeChild(this.videoContainer);
+            }
+        };
+        this.settings = settings;
+        this.cameraOverlayCanvas = document.createElement("canvas");
+        this.cameraOverlayCanvas.style.position = "absolute";
+        this.cameraOverlayCanvas.style.left = "0px";
+        this.cameraOverlayCanvas.style.top = "0px";
+        this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d");
+        this.videoContainer = document.createElement("div");
+        this.videoContainer.style.position = "fixed";
+        this.videoContainer.style.left = "0px";
+        this.videoContainer.style.top = "0px";
+        this.videoContainer.style.right = "0px";
+        this.videoContainer.style.bottom = "0px";
+        this.videoContainer.style.backgroundColor = "black";
+        document.body.appendChild(this.videoContainer);
+        this.video = document.createElement("video");
+        this.video.setAttribute("autoplay", "autoplay");
+        this.video.setAttribute("muted", "muted");
+        this.video.setAttribute("playsinline", "playsinline");
+        this.video.style.position = "absolute";
+        this.video.style.left = "0px";
+        this.video.style.top = "0px";
+        this.video.style.right = "0px";
+        this.video.style.bottom = "0px";
+        this.video.style.width = "100%";
+        this.video.style.height = "100%";
+        if (settings.useFrontCamera) {
+            this.video.style.transform = "scaleX(-1)";
+        }
+        this.cancelButton = document.createElement("a");
+        this.cancelButton.href = "javascript:void(0)";
+        this.cancelButton.innerText = "Cancel";
+        this.cancelButton.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)";
+        this.cancelButton.style.fontFamily = "Helvetica, Arial, sans-serif";
+        this.cancelButton.style.color = "white";
+        this.cancelButton.style.textDecoration = "none";
+        this.cancelButton.style.position = "absolute";
+        this.cancelButton.style.bottom = " 16px";
+        this.cancelButton.style.left = "8px";
+        this.cancelButton.style.right = "8px";
+        this.cancelButton.style.textAlign = "center";
+        this.cancelButton.onclick = () => {
+            this.trigger({ "type": FaceCaptureEventType.CANCEL });
+        };
+        this.videoContainer.appendChild(this.video);
+        this.videoContainer.appendChild(this.cameraOverlayCanvas);
+        this.videoContainer.appendChild(this.cancelButton);
+    }
+    trigger(event) {
+        switch (event.type) {
+            case FaceCaptureEventType.MEDIA_STREAM_AVAILABLE:
+                this.setVideoStream(event.stream);
+                break;
+            case FaceCaptureEventType.FACE_CAPTURED:
+                this.drawDetectedFace(event.capture);
+                break;
+            case FaceCaptureEventType.CLOSE:
+                this.cleanup();
+                break;
+            case FaceCaptureEventType.CANCEL:
+                break;
+        }
+        if (this.eventListeners[event.type]) {
+            this.eventListeners[event.type](event);
+        }
+    }
+    on(eventType, callback) {
+        if (callback) {
+            this.eventListeners[eventType] = callback;
+        }
+        else {
+            delete this.eventListeners[eventType];
+        }
+    }
+    setVideoStream(stream) {
+        if ("srcObject" in this.video) {
+            this.video.srcObject = stream;
+        }
+        else {
+            // @ts-ignore
+            this.video.src = URL.createObjectURL(stream);
+        }
     }
 }
 
@@ -19697,13 +19810,13 @@ class IdCapture {
             let emissionCount = 0;
             videoRecognizer.startRecognition(this.getRecognitionCallback(videoRecognizer, recognizers, (error, result) => {
                 if (error) {
-                    this.emitEvent(subscriber, { "type": "error", "error": error });
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
                 }
                 else if (result) {
                     emissionCount++;
-                    this.emitEvent(subscriber, { "type": "next", "value": result });
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "next", "value": result });
                     if (emissionCount == recognizers.length) {
-                        this.emitEvent(subscriber, { "type": "complete" });
+                        (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "complete" });
                     }
                 }
             }), settings.timeout);
@@ -19800,22 +19913,6 @@ class IdCapture {
             }
         };
     }
-    emitEvent(subscriber, event) {
-        setTimeout(() => {
-            if (subscriber.closed) {
-                return;
-            }
-            if (event.type == "next") {
-                subscriber.next(event.value);
-            }
-            else if (event.type == "error") {
-                subscriber.error(event.error);
-            }
-            else if (event.type == "complete") {
-                subscriber.complete();
-            }
-        }, 0);
-    }
     /**
      * Capture ID card using the device camera
      * @param settings Session settings
@@ -19825,7 +19922,7 @@ class IdCapture {
         let sessionSubscription;
         return new rxjs__WEBPACK_IMPORTED_MODULE_4__.Observable((subscriber) => {
             if (!_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.isBrowserSupported()) {
-                this.emitEvent(subscriber, { "type": "error", "error": new Error("Unsupported browser") });
+                (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": new Error("Unsupported browser") });
                 return;
             }
             function disposeVideoRecognizer() {
@@ -19850,7 +19947,7 @@ class IdCapture {
             let recognizers;
             const ui = settings.createUI();
             ui.on(_types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CANCEL, (event) => {
-                this.emitEvent(subscriber, { "type": "complete" });
+                (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "complete" });
             });
             const progressListener = (progress) => {
                 const event = {
@@ -19876,25 +19973,27 @@ class IdCapture {
                                     ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.FINDING_FACE });
                                 }
                                 const result = yield this.convertToIdCaptureResult(combinedResult);
-                                this.emitEvent(subscriber, { "type": "next", "value": result });
+                                (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "next", "value": result });
                                 if (emissionCount++ < recognizers.length - 1) {
                                     ui.on(_types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_STARTED, () => {
                                         videoRecognizer.resumeRecognition(false);
                                     });
-                                    ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.NEXT_PAGE_REQUESTED });
+                                    setTimeout(() => {
+                                        ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.NEXT_PAGE_REQUESTED });
+                                    });
                                 }
                                 else {
                                     disposeVideoRecognizer();
-                                    this.emitEvent(subscriber, { "type": "complete" });
+                                    (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "complete" });
                                 }
                             }
                             catch (error) {
-                                this.emitEvent(subscriber, { "type": "error", "error": error });
+                                (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
                             }
                         }),
                         error: (error) => {
                             disposeVideoRecognizer();
-                            this.emitEvent(subscriber, { "type": "error", "error": error });
+                            (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
                         }
                     });
                     sessionSubscription.add(() => {
@@ -19905,11 +20004,13 @@ class IdCapture {
                 }
                 catch (error) {
                     disposeRecognizerRunner();
-                    this.emitEvent(subscriber, { "type": "error", "error": error });
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
                 }
             })).catch(error => {
-                ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.LOADING_FAILED });
-                this.emitEvent(subscriber, { "type": "error", "error": error });
+                setTimeout(() => {
+                    ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.LOADING_FAILED });
+                });
+                (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
             }).finally(() => {
                 this.unregisterLoadListener(progressListener);
             });
@@ -19920,7 +20021,9 @@ class IdCapture {
                 disposeVideoRecognizer();
                 disposeRecognizerRunner();
                 this.unregisterLoadListener(progressListener);
-                ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_ENDED });
+                setTimeout(() => {
+                    ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_ENDED });
+                });
             };
         });
     }
@@ -20371,6 +20474,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Rect": () => (/* binding */ Rect),
 /* harmony export */   "AngleBearingEvaluation": () => (/* binding */ AngleBearingEvaluation),
 /* harmony export */   "Smoothing": () => (/* binding */ Smoothing),
+/* harmony export */   "emitRxEvent": () => (/* binding */ emitRxEvent),
 /* harmony export */   "RectSmoothing": () => (/* binding */ RectSmoothing),
 /* harmony export */   "AngleSmoothing": () => (/* binding */ AngleSmoothing),
 /* harmony export */   "clamp": () => (/* binding */ clamp)
@@ -20513,6 +20617,21 @@ class Rect {
      * @param height Rectangle height
      */
     constructor(x, y, width, height) {
+        this.equals = (other) => {
+            if (this.x != other.x) {
+                return false;
+            }
+            if (this.y != other.y) {
+                return false;
+            }
+            if (this.width != other.width) {
+                return false;
+            }
+            if (this.height != other.height) {
+                return false;
+            }
+            return true;
+        };
         this.x = x;
         this.y = y;
         this.width = width;
@@ -20535,7 +20654,7 @@ class Rect {
      * @returns `true` if this rectangle contains the challenge rectangle
      */
     contains(rect) {
-        return this.x <= rect.x && this.y >= rect.y && this.x + this.width >= rect.x + rect.width && this.y + this.height > rect.y + rect.height;
+        return this.x <= rect.x && this.y <= rect.y && this.right >= rect.right && this.bottom >= rect.bottom;
     }
     /**
      * Center of the rectangle
@@ -20760,6 +20879,20 @@ class Smoothing {
     reset() {
         this.buffer.clear();
         this._smoothedValue = null;
+    }
+}
+function emitRxEvent(subscriber, event) {
+    if (subscriber.closed) {
+        return;
+    }
+    if (event.type == "next") {
+        subscriber.next(event.value);
+    }
+    else if (event.type == "error") {
+        subscriber.error(event.error);
+    }
+    else if (event.type == "complete") {
+        subscriber.complete();
     }
 }
 class RectSmoothing {
@@ -21237,6 +21370,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "RectSmoothing": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.RectSmoothing),
 /* harmony export */   "Smoothing": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.Smoothing),
 /* harmony export */   "clamp": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.clamp),
+/* harmony export */   "emitRxEvent": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.emitRxEvent),
 /* harmony export */   "IdCapture": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCapture),
 /* harmony export */   "IdCaptureSessionSettings": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCaptureSessionSettings),
 /* harmony export */   "IdCaptureSettings": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCaptureSettings),
@@ -21290,7 +21424,8 @@ var __webpack_exports__RectSmoothing = __webpack_exports__.RectSmoothing;
 var __webpack_exports__Smoothing = __webpack_exports__.Smoothing;
 var __webpack_exports__Warning = __webpack_exports__.Warning;
 var __webpack_exports__clamp = __webpack_exports__.clamp;
+var __webpack_exports__emitRxEvent = __webpack_exports__.emitRxEvent;
 var __webpack_exports__estimateFaceAngle = __webpack_exports__.estimateFaceAngle;
-export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCaptureSettings as FaceCaptureSettings, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LiveFaceCapture as LiveFaceCapture, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__QRCodeGenerator as QRCodeGenerator, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__Warning as Warning, __webpack_exports__clamp as clamp, __webpack_exports__estimateFaceAngle as estimateFaceAngle };
+export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCaptureSettings as FaceCaptureSettings, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LiveFaceCapture as LiveFaceCapture, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__QRCodeGenerator as QRCodeGenerator, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__Warning as Warning, __webpack_exports__clamp as clamp, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle };
 
 //# sourceMappingURL=index.js.map

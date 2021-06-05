@@ -5,29 +5,14 @@
 
 import { Observable, from, of, throwError, Subscription, Subscriber } from "rxjs"
 import { map, filter, take, takeWhile, tap, mergeMap, toArray } from "rxjs/operators"
-import { CircularBuffer, AngleBearingEvaluation, Angle, Rect, RectSmoothing, AngleSmoothing, Point } from "./utils"
+import { CircularBuffer, AngleBearingEvaluation, Angle, Rect, RectSmoothing, AngleSmoothing, Point, emitRxEvent } from "./utils"
 import { FaceRecognition } from "./faceRecognition"
 import * as faceapi from "face-api.js/build/es6"
 import { estimateFaceAngle } from "./faceAngle"
 import { estimateFaceAngle as estimateFaceAngleNoseTip } from "./faceAngleNoseTip"
 import { Axis, Size, Bearing, FaceAlignmentStatus } from "./types"
+import { FaceCaptureEventType, FaceCaptureUI, VerIDFaceCaptureUI } from "./faceDetectionUI"
 
-
-type ObservableNextEvent<T> = {
-    type: "next",
-    value: T
-}
-
-type ObservableErrorEvent = {
-    type: "error",
-    error: any
-}
-
-type ObservableCompleteEvent = {
-    type: "complete"
-}
-
-type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent
 /**
  * Face detection
  */
@@ -107,19 +92,93 @@ export class FaceDetection {
         return "Promise" in window && "fetch" in window
     }
 
-    private emitEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void {
-        setTimeout(() => {
-            if (subscriber.closed) {
+    private onVideoPlay(settings: FaceCaptureSettings, ui: FaceCaptureUI, subscriber: Subscriber<LiveFaceCapture>): () => void {
+        const faceDetection = this
+        return () => {
+            const canvas: HTMLCanvasElement = document.createElement("canvas")
+            canvas.width = ui.video.videoWidth
+            canvas.height = ui.video.videoHeight
+            const ctx: CanvasRenderingContext2D = canvas.getContext("2d")
+            
+            const detectSingleFace: () => void = async () => {
+                try {
+                    const _face = await faceapi.detectSingleFace(ui.video, new faceapi.TinyFaceDetectorOptions({"inputSize": 128})).withFaceLandmarks()
+                    let face: Face
+                    if (_face) {
+                        face = faceDetection.faceApiFaceToVerIDFace(_face, canvas.width, settings.useFrontCamera)
+                    }
+                    if (!subscriber.closed) {
+                        ctx.drawImage(ui.video, 0, 0, canvas.width, canvas.height)
+                        const image: HTMLImageElement = new Image()
+                        image.width = canvas.width
+                        image.height = canvas.height
+                        image.src = canvas.toDataURL()
+                        emitRxEvent(subscriber, {"type": "next", "value": new LiveFaceCapture(image, face)})
+                    }
+                    if (!ui.video.paused && !ui.video.ended && !subscriber.closed) {
+                        setTimeout(detectSingleFace, 0)
+                    }
+                } catch (error) {
+                    emitRxEvent(subscriber, {"type": "error", "error": error})
+                }
+            }
+            setTimeout(detectSingleFace, 0)
+        }
+    }
+
+    private liveFaceCapture(session: LivenessDetectionSession): Observable<LiveFaceCapture> {
+        return new Observable<LiveFaceCapture>(subscriber => {
+            if (!navigator.mediaDevices) {
+                emitRxEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
                 return
             }
-            if (event.type == "next") {
-                subscriber.next(event.value)
-            } else if (event.type == "error") {
-                subscriber.error(event.error)
-            } else if (event.type == "complete") {
-                subscriber.complete()
+
+            let videoTrack: MediaStreamTrack
+            const constraints: MediaTrackSupportedConstraints = navigator.mediaDevices.getSupportedConstraints();
+            const getUserMediaOptions: MediaStreamConstraints = {
+                "audio": false,
+                "video": true
             }
-        }, 0)
+            if (constraints.facingMode) {
+                getUserMediaOptions.video = {
+                    "facingMode": session.settings.useFrontCamera ? "user" : "environment"
+                }
+            }
+            if (constraints.width) {
+                const videoWidth: number = 480
+                if (typeof(getUserMediaOptions.video) === "boolean") {
+                    getUserMediaOptions.video = {
+                        "width": videoWidth
+                    }
+                } else {
+                    getUserMediaOptions.video.width = videoWidth
+                }
+            }
+            Promise.all(this.loadPromises).then(() => {
+                return navigator.mediaDevices.getUserMedia(getUserMediaOptions)
+            }).then((stream: MediaStream) => {
+                videoTrack = stream.getVideoTracks()[0];
+                session.ui.trigger({"type": FaceCaptureEventType.MEDIA_STREAM_AVAILABLE, "stream": stream})
+                session.ui.video.onplay = this.onVideoPlay(session.settings, session.ui, subscriber)
+            }).catch((error) => {
+                emitRxEvent(subscriber, {"type": "error", "error": error})
+            })
+            return () => {
+                if (videoTrack) {
+                    videoTrack.stop()
+                    videoTrack = null
+                }
+            }
+        })
+    }
+
+    private checkLivenessSessionAvailability() {
+        if (location.protocol != "https:") {
+            throw new Error("Liveness detection is only supported on secure connections (https)")
+        }
+        if (!FaceDetection.isLivenessDetectionSupported()) {
+            throw new Error("Liveness detection is not supported by your browser")
+        }
     }
 
     /**
@@ -129,80 +188,110 @@ export class FaceDetection {
      * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
      */
     livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult> {
-        const faceDetection = this
-        if (location.protocol != "https:") {
-            return throwError(() => new Error("Liveness detection is only supported on secure connections (https)"))
+        try {
+            this.checkLivenessSessionAvailability()
+        } catch (error) {
+            return throwError(() => error)
         }
-
-        if (!FaceDetection.isLivenessDetectionSupported()) {
-            return throwError(() => new Error("Liveness detection is not supported by your browser"))
-        }
-
         if (!settings) {
             settings = new FaceCaptureSettings()
         }
+        const session = new LivenessDetectionSession(settings, this.faceRecognition)
 
-        function isFaceFixedInImageSize(actualFaceBounds: Rect, expectedFaceBounds: Rect): boolean {
-            return true
-            // const maxRect: Rect = new Rect(expectedFaceBounds.x, expectedFaceBounds.y, expectedFaceBounds.width, expectedFaceBounds.height)
-            // maxRect.inset(0-expectedFaceBounds.width*0.3, 0-expectedFaceBounds.height*0.3)
-            // const minRect: Rect = new Rect(expectedFaceBounds.x, expectedFaceBounds.y, expectedFaceBounds.width, expectedFaceBounds.height)
-            // minRect.inset(expectedFaceBounds.width * 0.4, expectedFaceBounds.height * 0.4)
-            // return actualFaceBounds.contains(minRect) && maxRect.contains(actualFaceBounds)
-        }
+        return <Observable<LivenessDetectionSessionResult>>(this.liveFaceCapture(session).pipe(
+            map((capture: LiveFaceCapture): LiveFaceCapture => {
+                capture.requestedBearing = session.bearingIterator.value
+                return capture
+            }),
+            map(session.detectFacePresence),
+            map(session.detectFaceAlignment),
+            tap((capture: LiveFaceCapture) => {
+                session.ui.trigger({"type": FaceCaptureEventType.FACE_CAPTURED, "capture": capture})
+                if (faceDetectionCallback) {
+                    faceDetectionCallback(capture)
+                }
+            }),
+            filter((capture: LiveFaceCapture) => {
+                return capture.face && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED
+            }),
+            mergeMap(session.createFaceCapture),
+            tap((faceCapture: LiveFaceCapture) => {
+                if (faceCaptureCallback) {
+                    faceCaptureCallback(faceCapture)
+                }
+            }),
+            take(settings.faceCaptureCount),
+            takeWhile(() => {
+                return new Date().getTime() < session.startTime + settings.maxDuration * 1000
+            }),
+            toArray(),
+            map(session.resultFromCaptures),
+            map((result: LivenessDetectionSessionResult) => {
+                if (result.faceCaptures.length < settings.faceCaptureCount) {
+                    throw new Error("Session timed out")
+                }
+                return result
+            }),
+            (observable: Observable<LivenessDetectionSessionResult>) => new Observable<LivenessDetectionSessionResult>(subscriber => {
+                const subcription: Subscription = observable.subscribe({
+                    next: (val: LivenessDetectionSessionResult) => {
+                        emitRxEvent(subscriber, {"type": "next", "value": val})
+                    },
+                    error: (err: any) => {
+                        session.close()
+                        emitRxEvent(subscriber, {"type": "error", "error": err})
+                    },
+                    complete: () => {
+                        session.close()
+                        emitRxEvent(subscriber, {"type": "complete"})
+                    }
+                })
+                session.ui.on(FaceCaptureEventType.CANCEL, () => {
+                    emitRxEvent(subscriber, {"type": "complete"})
+                })
+                return () => {
+                    subcription.unsubscribe()
+                    session.close()
+                }
+            })
+        ))
+    }
+}
 
-        const cameraOverlayCanvas: HTMLCanvasElement = document.createElement("canvas")
-        cameraOverlayCanvas.style.position = "absolute"
-        cameraOverlayCanvas.style.left = "0px"
-        cameraOverlayCanvas.style.top = "0px"
-        const cameraOverlayContext: CanvasRenderingContext2D = cameraOverlayCanvas.getContext("2d")
+class LivenessDetectionSession {
+    readonly ui: FaceCaptureUI
+    readonly faceBuffer: CircularBuffer<Face> = new CircularBuffer<Face>(3)
+    readonly faces: CircularBuffer<Face>
+    private faceDetected: boolean = false
+    private faceAlignmentStatus: FaceAlignmentStatus = FaceAlignmentStatus.FOUND
+    private fixTime: number = null
+    private alignedFaceCount: number = 0
+    private angleHistory: Angle[] = []
+    private bearingGenerator: Generator
+    bearingIterator: IteratorResult<unknown, any>
+    private previousBearing: Bearing = Bearing.STRAIGHT
+    private closed = false
+    readonly startTime: number = new Date().getTime()
+    readonly angleBearingEvaluation: AngleBearingEvaluation
+    readonly faceBoundsSmoothing: RectSmoothing = new RectSmoothing(3)
+    readonly faceAngleSmoothing: AngleSmoothing = new AngleSmoothing(3)
+    readonly settings: FaceCaptureSettings
+    readonly faceRecognition: FaceRecognition
+    private hasFaceBeenAligned = false
 
-        const videoContainer: HTMLDivElement = document.createElement("div")
-        videoContainer.style.position = "fixed"
-        videoContainer.style.left = "0px"
-        videoContainer.style.top = "0px"
-        videoContainer.style.right = "0px"
-        videoContainer.style.bottom = "0px"
-        videoContainer.style.backgroundColor = "black"
-        document.body.appendChild(videoContainer)
-
-        const video: HTMLVideoElement = document.createElement("video")
-        video.setAttribute("autoplay", "autoplay")
-        video.setAttribute("muted", "muted")
-        video.setAttribute("playsinline", "playsinline")
-        video.style.position = "absolute"
-        video.style.left = "0px"
-        video.style.top = "0px"
-        video.style.right = "0px"
-        video.style.bottom = "0px"
-        video.style.width = "100%"
-        video.style.height = "100%"
-
-        const cancelButton: HTMLAnchorElement = document.createElement("a")
-        cancelButton.href = "javascript:void(0)"
-        cancelButton.innerText = "Cancel"
-        cancelButton.style.textShadow = "0px 1px 5px rgba(0, 0, 0, 0.5)"
-        cancelButton.style.fontFamily = "Helvetica, Arial, sans-serif"
-        cancelButton.style.color = "white"
-        cancelButton.style.textDecoration = "none"
-        cancelButton.style.position = "absolute"
-        cancelButton.style.bottom = " 16px"
-        cancelButton.style.left = "8px"
-        cancelButton.style.right = "8px"
-        cancelButton.style.textAlign = "center"
-        
-        videoContainer.appendChild(video)
-        videoContainer.appendChild(cameraOverlayCanvas)
-        videoContainer.appendChild(cancelButton)
-
-        let previousBearing: Bearing = Bearing.STRAIGHT
-
+    constructor(settings: FaceCaptureSettings, faceRecognition: FaceRecognition) {
+        this.settings = settings
+        this.ui = settings.createUI()
+        this.faceRecognition = faceRecognition
+        this.faces =  new CircularBuffer<Face>(settings.faceCaptureFaceCount)
+        this.angleBearingEvaluation = new AngleBearingEvaluation(settings, 5, 5)
+        const session = this
         function* nextCaptureBearing(): Generator {
             let lastBearing: Bearing = Bearing.STRAIGHT
             yield lastBearing
             for (let i=1; i<settings.faceCaptureCount; i++) {
-                previousBearing = lastBearing
-                let availableBearings = settings.bearings.filter(bearing => bearing != lastBearing && angleBearingEvaluation.angleForBearing(bearing).yaw != angleBearingEvaluation.angleForBearing(lastBearing).yaw)
+                session.previousBearing = lastBearing
+                let availableBearings = settings.bearings.filter(bearing => bearing != lastBearing && session.angleBearingEvaluation.angleForBearing(bearing).yaw != session.angleBearingEvaluation.angleForBearing(lastBearing).yaw)
                 if (availableBearings.length == 0) {
                     availableBearings = settings.bearings.filter(bearing => bearing != lastBearing)
                 }
@@ -216,393 +305,156 @@ export class FaceDetection {
                 }
             }
         }
+        this.bearingGenerator =  nextCaptureBearing()
+        this.bearingIterator = this.bearingGenerator.next()
+    }
 
-        const drawDetectedFace = (capture: LiveFaceCapture): void => {
-            const scale = Math.min(videoContainer.clientWidth / capture.image.width, videoContainer.clientHeight / capture.image.height)
-            cameraOverlayCanvas.width = capture.image.width * scale
-            cameraOverlayCanvas.height = capture.image.height * scale
-            cameraOverlayCanvas.style.left = ((videoContainer.clientWidth - cameraOverlayCanvas.width) / 2)+"px"
-            cameraOverlayCanvas.style.top = ((videoContainer.clientHeight - cameraOverlayCanvas.height) / 2)+"px"
-            cameraOverlayContext.clearRect(0, 0, cameraOverlayCanvas.width, cameraOverlayCanvas.height)
-            let ovalColor: string
-            let textColor: string
-            if (capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED || capture.faceAlignmentStatus == FaceAlignmentStatus.FIXED) {
-                ovalColor = "green"
-                textColor = "white"
-            } else {
-                ovalColor = "white"
-                textColor = "black"
-            }
-            cameraOverlayContext.strokeStyle = ovalColor
-            cameraOverlayContext.lineCap = "round"
-            cameraOverlayContext.lineJoin = "round"
-            let faceRect: Rect
-            if (capture.faceBounds) {
-                faceRect = capture.faceBounds.scaledBy(scale)
-                if (settings.useFrontCamera) {
-                    faceRect = faceRect.mirrored(capture.image.width * scale)
-                }
-                cameraOverlayContext.lineWidth = 0.038 * faceRect.width
-                cameraOverlayContext.beginPath()
-                cameraOverlayContext.ellipse(faceRect.x + faceRect.width / 2, faceRect.y + faceRect.height / 2, faceRect.width /2, faceRect.height / 2, 0, 0, Math.PI * 2)
-                if (capture.offsetAngleFromBearing) {
-                    const angle: number = Math.atan2(capture.offsetAngleFromBearing.pitch, capture.offsetAngleFromBearing.yaw)
-                    const distance: number = Math.hypot(capture.offsetAngleFromBearing.yaw, 0 - capture.offsetAngleFromBearing.pitch) * 2 * 1.7
-                    const arrowLength: number = faceRect.width / 5
-                    const arrowStemLength: number = Math.min(Math.max(arrowLength * distance, arrowLength * 0.75), arrowLength * 1.7)
-                    const arrowAngle: number = 40 * (Math.PI/180)
-                    const arrowTipX: number = faceRect.center.x + Math.cos(angle) * arrowLength / 2
-                    const arrowTipY: number = faceRect.center.y + Math.sin(angle) * arrowLength / 2
-                    const arrowPoint1X: number = arrowTipX + Math.cos(angle + Math.PI - arrowAngle) * arrowLength * 0.6
-                    const arrowPoint1Y: number = arrowTipY + Math.sin(angle + Math.PI - arrowAngle) * arrowLength * 0.6
-                    const arrowPoint2X: number = arrowTipX + Math.cos(angle + Math.PI + arrowAngle) * arrowLength * 0.6
-                    const arrowPoint2Y: number = arrowTipY + Math.sin(angle + Math.PI + arrowAngle) * arrowLength * 0.6
-                    const arrowStartX: number = arrowTipX + Math.cos(angle + Math.PI) * arrowStemLength
-                    const arrowStartY: number = arrowTipY + Math.sin(angle + Math.PI) * arrowStemLength
-
-                    cameraOverlayContext.moveTo(arrowPoint1X, arrowPoint1Y)
-                    cameraOverlayContext.lineTo(arrowTipX, arrowTipY)
-                    cameraOverlayContext.lineTo(arrowPoint2X, arrowPoint2Y)
-                    cameraOverlayContext.moveTo(arrowTipX, arrowTipY)
-                    cameraOverlayContext.lineTo(arrowStartX, arrowStartY)
-                }
-                cameraOverlayContext.stroke()
-            } else {
-                faceRect = new Rect(0, 0, 0, 0)
-                if (cameraOverlayCanvas.width > cameraOverlayCanvas.height) {
-                    faceRect.height = cameraOverlayCanvas.height * settings.expectedFaceExtents.proportionOfViewHeight
-                    faceRect.width = faceRect.height / 1.25
-                } else {
-                    faceRect.width = cameraOverlayCanvas.width * settings.expectedFaceExtents.proportionOfViewWidth
-                    faceRect.height = faceRect.width * 1.25
-                }
-                faceRect.x = cameraOverlayCanvas.width / 2 - faceRect.width / 2
-                faceRect.y = cameraOverlayCanvas.height / 2 - faceRect.height / 2
-                cameraOverlayContext.lineWidth = 0.038 * faceRect.width
-                cameraOverlayContext.beginPath()
-                cameraOverlayContext.ellipse(faceRect.x + faceRect.width / 2, faceRect.y + faceRect.height / 2, faceRect.width /2, faceRect.height / 2, 0, 0, Math.PI * 2)
-                cameraOverlayContext.stroke()
-            }
-            let prompt: string
-            switch (capture.faceAlignmentStatus) {
-                case FaceAlignmentStatus.FIXED:
-                case FaceAlignmentStatus.ALIGNED:
-                    prompt = "Great, hold it"
-                    break
-                case FaceAlignmentStatus.MISALIGNED:
-                    prompt = "Slowly turn to follow the arrow"
-                    break
-                default:
-                    prompt = "Align your face with the oval"
-            }
-            const textSize: number = 24
-            const textY: number = Math.max(faceRect.y - cameraOverlayContext.lineWidth * 2, textSize)
-            cameraOverlayContext.font = textSize+"px Helvetica, Arial, sans-serif"
-            cameraOverlayContext.textAlign = "center"
-            const textWidth: number = cameraOverlayContext.measureText(prompt).width
-            const cornerRadius: number = 8
-            const textRect: Rect = new Rect(
-                cameraOverlayCanvas.width / 2 - textWidth / 2 - cornerRadius,
-                textY - textSize,
-                textWidth + cornerRadius * 2,
-                textSize + cornerRadius
-            )
-            cameraOverlayContext.beginPath()
-            cameraOverlayContext.moveTo(textRect.x + cornerRadius, textRect.y)
-            cameraOverlayContext.lineTo(textRect.x + textRect.width - cornerRadius, textRect.y)
-            cameraOverlayContext.quadraticCurveTo(textRect.x + textRect.width, textRect.y, textRect.x + textRect.width, textRect.y + cornerRadius)
-            cameraOverlayContext.lineTo(textRect.x + textRect.width, textRect.y + textRect.height - cornerRadius)
-            cameraOverlayContext.quadraticCurveTo(textRect.x + textRect.width, textRect.y + textRect.height, textRect.x + textRect.width - cornerRadius, textRect.y + textRect.height)
-            cameraOverlayContext.lineTo(textRect.x + cornerRadius, textRect.y + textRect.height)
-            cameraOverlayContext.quadraticCurveTo(textRect.x, textRect.y + textRect.height, textRect.x, textRect.y + textRect.height - cornerRadius)
-            cameraOverlayContext.lineTo(textRect.x, textRect.y + cornerRadius)
-            cameraOverlayContext.quadraticCurveTo(textRect.x, textRect.y, textRect.x + cornerRadius, textRect.y)
-            cameraOverlayContext.closePath()
-            cameraOverlayContext.fillStyle = ovalColor
-            cameraOverlayContext.fill()
-            cameraOverlayContext.fillStyle = textColor
-            cameraOverlayContext.fillText(prompt, cameraOverlayCanvas.width / 2, textY)
+    isFaceFixedInImageSize = (actualFaceBounds: Rect, expectedFaceBounds: Rect, imageSize: Size): boolean => {
+        if (this.hasFaceBeenAligned) {
+            return true
         }
+        const maxRect: Rect = new Rect(0, 0, imageSize.width, imageSize.height)
+        const minRect: Rect = new Rect(expectedFaceBounds.x * 1.4, expectedFaceBounds.y * 1.4, expectedFaceBounds.width * 0.6, expectedFaceBounds.height * 0.6)
+        this.hasFaceBeenAligned = actualFaceBounds.contains(minRect) && maxRect.contains(actualFaceBounds)
+        return this.hasFaceBeenAligned
+    }
 
-        const detectFacePresence = (capture: LiveFaceCapture): LiveFaceCapture => {
-            if (capture.face) {
-                faceBuffer.enqueue(capture.face)
-                faceBoundsSmoothing.addSample(capture.face.bounds)
-                faceAngleSmoothing.addSample(capture.face.angle)
-                if (faceBuffer.isFull) {
-                    faceDetected = true
-                }
-            } else if (alignedFaceCount >= settings.faceCaptureFaceCount) {
-                faceDetected = false
-            } else {
-                faceBuffer.dequeue()
-                if (faceDetected && faceBuffer.isEmpty) {
-                    throw new Error("Face lost")
-                }
-                faceDetected = false
-                faceBoundsSmoothing.removeFirstSample()
-                faceAngleSmoothing.removeFirstSample()
-                const lastFace: Face = faceBuffer.lastElement
-                if (lastFace != null) {
-                    const requestedAngle: number = angleBearingEvaluation.angleForBearing(bearingIterator.value).screenAngle
-                    const detectedAngle: number = lastFace.angle.screenAngle
-                    const deg45: number = 45 * (Math.PI/180)
-                    const inset: number = Math.min(capture.image.width, capture.image.height) * 0.05
-                    const rect: Rect = new Rect(0, 0, capture.image.width, capture.image.height)
-                    rect.inset(inset, inset)
-                    if (rect.contains(lastFace.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45) {
-                        throw new Error("Face moved too far")
-                    }
+    detectFacePresence = (capture: LiveFaceCapture): LiveFaceCapture => {
+        if (capture.face) {
+            this.faceBuffer.enqueue(capture.face)
+            this.faceBoundsSmoothing.addSample(capture.face.bounds)
+            this.faceAngleSmoothing.addSample(capture.face.angle)
+            if (this.faceBuffer.isFull) {
+                this.faceDetected = true
+            }
+        } else if (this.alignedFaceCount >= this.settings.faceCaptureFaceCount) {
+            this.faceDetected = false
+        } else {
+            this.faceBuffer.dequeue()
+            if (this.faceDetected && this.faceBuffer.isEmpty) {
+                throw new Error("Face lost")
+            }
+            this.faceDetected = false
+            this.faceBoundsSmoothing.removeFirstSample()
+            this.faceAngleSmoothing.removeFirstSample()
+            const lastFace: Face = this.faceBuffer.lastElement
+            if (lastFace != null) {
+                const requestedAngle: number = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value).screenAngle
+                const detectedAngle: number = lastFace.angle.screenAngle
+                const deg45: number = 45 * (Math.PI/180)
+                const inset: number = Math.min(capture.image.width, capture.image.height) * 0.05
+                const rect: Rect = new Rect(0, 0, capture.image.width, capture.image.height)
+                rect.inset(inset, inset)
+                if (rect.contains(lastFace.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45) {
+                    throw new Error("Face moved too far")
                 }
             }
-            capture.faceBounds = faceBoundsSmoothing.smoothedValue
-            capture.faceAngle = faceAngleSmoothing.smoothedValue
-            capture.isFacePresent = faceDetected
-            return capture
         }
+        capture.faceBounds = this.faceBoundsSmoothing.smoothedValue
+        capture.faceAngle = this.faceAngleSmoothing.smoothedValue
+        capture.isFacePresent = this.faceDetected
+        return capture
+    }
 
-        const detectFaceAlignment = (capture: LiveFaceCapture): LiveFaceCapture => {
-            if (capture.isFacePresent) {
-                const face: Face = faceBuffer.lastElement
-                if (face != null) {
-                    const now: number = new Date().getTime()/1000
-                    if (faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
-                        faceAlignmentStatus = FaceAlignmentStatus.FIXED
-                        fixTime = now
-                    }
-                    faces.enqueue(face)
-                    if (faceAlignmentStatus == FaceAlignmentStatus.FOUND && isFaceFixedInImageSize(face.bounds, new Rect(0, 0, capture.image.width, capture.image.height))) {
-                        fixTime = now
-                        faceAlignmentStatus = FaceAlignmentStatus.FIXED
-                    } else if (fixTime && now - fixTime > settings.pauseDuration && faces.isFull) {
-                        for (let i=0; i<faces.length; i++) {
-                            const f: Face = faces.get(i)
-                            if (!angleBearingEvaluation.angleMatchesBearing(f.angle, bearingIterator.value)) {
-                                faceAlignmentStatus = FaceAlignmentStatus.MISALIGNED
-                                capture.faceAlignmentStatus = faceAlignmentStatus
-                                capture.offsetAngleFromBearing = angleBearingEvaluation.offsetFromAngleToBearing(capture.faceAngle ? capture.faceAngle : new Angle(), bearingIterator.value)
-                                return capture
-                            }
+    detectFaceAlignment = (capture: LiveFaceCapture): LiveFaceCapture => {
+        if (capture.isFacePresent) {
+            const face: Face = this.faceBuffer.lastElement
+            if (face != null) {
+                const now: number = new Date().getTime()/1000
+                if (this.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
+                    this.faceAlignmentStatus = FaceAlignmentStatus.FIXED
+                    this.fixTime = now
+                }
+                this.faces.enqueue(face)
+                const imageSize: Size = capture.image
+                if (this.faceAlignmentStatus == FaceAlignmentStatus.FOUND && this.isFaceFixedInImageSize(face.bounds, this.settings.expectedFaceRect(imageSize), imageSize)) {
+                    this.fixTime = now
+                    this.faceAlignmentStatus = FaceAlignmentStatus.FIXED
+                } else if (this.fixTime && now - this.fixTime > this.settings.pauseDuration && this.faces.isFull) {
+                    for (let i=0; i<this.faces.length; i++) {
+                        const f: Face = this.faces.get(i)
+                        if (!this.angleBearingEvaluation.angleMatchesBearing(f.angle, this.bearingIterator.value)) {
+                            this.faceAlignmentStatus = FaceAlignmentStatus.MISALIGNED
+                            capture.faceAlignmentStatus = this.faceAlignmentStatus
+                            capture.offsetAngleFromBearing = this.angleBearingEvaluation.offsetFromAngleToBearing(capture.faceAngle ? capture.faceAngle : new Angle(), this.bearingIterator.value)
+                            return capture
                         }
-                        faces.clear()
-                        faceAlignmentStatus = FaceAlignmentStatus.ALIGNED
-                        fixTime = now
-                        alignedFaceCount += 1
-                        bearingIterator = bearingGenerator.next()
                     }
+                    this.faces.clear()
+                    this.faceAlignmentStatus = FaceAlignmentStatus.ALIGNED
+                    this.fixTime = now
+                    this.alignedFaceCount += 1
+                    this.bearingIterator = this.bearingGenerator.next()
                 }
-            } else {
-                faces.clear()
-                faceAlignmentStatus = FaceAlignmentStatus.FOUND
             }
-            capture.faceAlignmentStatus = faceAlignmentStatus
+        } else {
+            this.faces.clear()
+            this.faceAlignmentStatus = FaceAlignmentStatus.FOUND
+        }
+        capture.faceAlignmentStatus = this.faceAlignmentStatus
+        return capture
+    }
+
+    detectSpoofAttempt = (capture: LiveFaceCapture): LiveFaceCapture => {
+        const face: Face = this.faceBuffer.lastElement
+        if (!capture.isFacePresent || !face) {
+            this.angleHistory = []
             return capture
         }
+        if (capture.faceAlignmentStatus != FaceAlignmentStatus.ALIGNED) {
+            this.angleHistory.push(face.angle)
+            return capture
+        }
+        if (this.previousBearing != this.bearingIterator.value) {
+            const previousAngle: Angle = this.angleBearingEvaluation.angleForBearing(this.previousBearing)
+            const currentAngle: Angle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value)
+            const startYaw: number = Math.min(previousAngle.yaw, currentAngle.yaw)
+            const endYaw: number = Math.max(previousAngle.yaw, currentAngle.yaw)
+            const yawTolerance: number = this.angleBearingEvaluation.thresholdAngleToleranceForAxis(Axis.YAW)
+            let movedTooFast: boolean = this.angleHistory.length > 1
+            let movedOpposite: boolean = false
+            for (let angle of this.angleHistory) {
+                if (angle.yaw > startYaw - yawTolerance && angle.yaw < endYaw + yawTolerance) {
+                    movedTooFast = false
+                }
+                if (!this.angleBearingEvaluation.isAngleBetweenBearings(angle, this.previousBearing, this.bearingIterator.value)) {
+                    movedOpposite = true
+                }
+            }
+            if (movedTooFast) {
+                throw new Error("Moved too fast")
+            }
+            if (movedOpposite) {
+                throw new Error("Moved opposite")
+            }
+        }
+        this.angleHistory = []
+        return capture
+    }
 
-        const detectSpoofAttempt = (capture: LiveFaceCapture): LiveFaceCapture => {
-            const face: Face = faceBuffer.lastElement
-            if (!capture.isFacePresent || !face) {
-                angleHistory = []
+    createFaceCapture = (capture: LiveFaceCapture): Observable<LiveFaceCapture> => {
+        if (capture.requestedBearing == Bearing.STRAIGHT) {
+            const bounds: Rect = capture.face ? capture.face.bounds : null
+            return from(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
+                capture.face.template = recognizableFace.template
                 return capture
-            }
-            if (capture.faceAlignmentStatus != FaceAlignmentStatus.ALIGNED) {
-                angleHistory.push(face.angle)
-                return capture
-            }
-            if (previousBearing != bearingIterator.value) {
-                const previousAngle: Angle = angleBearingEvaluation.angleForBearing(previousBearing)
-                const currentAngle: Angle = angleBearingEvaluation.angleForBearing(bearingIterator.value)
-                const startYaw: number = Math.min(previousAngle.yaw, currentAngle.yaw)
-                const endYaw: number = Math.max(previousAngle.yaw, currentAngle.yaw)
-                const yawTolerance: number = angleBearingEvaluation.thresholdAngleToleranceForAxis(Axis.YAW)
-                let movedTooFast: boolean = angleHistory.length > 1
-                let movedOpposite: boolean = false
-                for (let angle of angleHistory) {
-                    if (angle.yaw > startYaw - yawTolerance && angle.yaw < endYaw + yawTolerance) {
-                        movedTooFast = false
-                    }
-                    if (!angleBearingEvaluation.isAngleBetweenBearings(angle, previousBearing, bearingIterator.value)) {
-                        movedOpposite = true
-                    }
-                }
-                if (movedTooFast) {
-                    throw new Error("Moved too fast")
-                }
-                if (movedOpposite) {
-                    throw new Error("Moved opposite")
-                }
-            }
-            angleHistory = []
-            return capture
+            }))
+        } else {
+            return of(capture)
         }
+    }
 
-        const createFaceCapture = (capture: LiveFaceCapture): Observable<LiveFaceCapture> => {
-            if (capture.requestedBearing == Bearing.STRAIGHT) {
-                const bounds: Rect = capture.face ? capture.face.bounds : null
-                return from(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
-                    capture.face.template = recognizableFace.template
-                    return capture
-                }))
-            } else {
-                return of(capture)
-            }
-        }
+    resultFromCaptures = (captures: LiveFaceCapture[]): LivenessDetectionSessionResult => {
+        return new LivenessDetectionSessionResult(new Date(this.startTime), captures)
+    }
 
-        const resultFromCaptures = (captures: LiveFaceCapture[]): LivenessDetectionSessionResult => {
-            return new LivenessDetectionSessionResult(new Date(startTime), captures)
-        }
-
-        const faceBuffer: CircularBuffer<Face> = new CircularBuffer<Face>(3)
-        const faces: CircularBuffer<Face> = new CircularBuffer<Face>(settings.faceCaptureFaceCount)
-        let faceDetected: boolean = false
-        let faceAlignmentStatus: FaceAlignmentStatus = FaceAlignmentStatus.FOUND
-        let fixTime: number = null
-        let alignedFaceCount: number = 0
-        let angleHistory: Angle[] = []
-        const startTime: number = new Date().getTime()
-        const angleBearingEvaluation: AngleBearingEvaluation = new AngleBearingEvaluation(settings, 5, 5)
-        const faceBoundsSmoothing: RectSmoothing = new RectSmoothing(3)
-        const faceAngleSmoothing: AngleSmoothing = new AngleSmoothing(3)
-
-        function liveFaceCapture(): Observable<LiveFaceCapture> {
-            return new Observable<LiveFaceCapture>(subscriber => {
-                if (!navigator.mediaDevices) {
-                    faceDetection.emitEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
-                    return
-                }
-
-                let videoTrack: MediaStreamTrack
-                const constraints: MediaTrackSupportedConstraints = navigator.mediaDevices.getSupportedConstraints();
-                const getUserMediaOptions: MediaStreamConstraints = {
-                    "audio": false,
-                    "video": true
-                }
-                if (constraints.facingMode) {
-                    getUserMediaOptions.video = {
-                        "facingMode": settings.useFrontCamera ? "user" : "environment"
-                    }
-                }
-                if (constraints.width) {
-                    const videoWidth: number = 480
-                    if (typeof(getUserMediaOptions.video) === "boolean") {
-                        getUserMediaOptions.video = {
-                            "width": videoWidth
-                        }
-                    } else {
-                        getUserMediaOptions.video.width = videoWidth
-                    }
-                }
-                Promise.all(faceDetection.loadPromises).then(() => {
-                    return navigator.mediaDevices.getUserMedia(getUserMediaOptions)
-                }).then((stream: MediaStream) => {
-                    videoTrack = stream.getVideoTracks()[0];
-                    if (settings.useFrontCamera) {
-                        video.style.transform = "scaleX(-1)"
-                    }
-                    if ("srcObject" in video) {
-                        video.srcObject = stream;
-                    } else {
-                        // @ts-ignore
-                        video.src = URL.createObjectURL(stream);
-                    }
-                    video.onplay = () => {
-                        const canvas: HTMLCanvasElement = document.createElement("canvas")
-                        canvas.width = video.videoWidth
-                        canvas.height = video.videoHeight
-                        const ctx: CanvasRenderingContext2D = canvas.getContext("2d")
-                        
-                        const detectSingleFace: () => void = async () => {
-                            try {
-                                const _face = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({"inputSize": 128})).withFaceLandmarks()
-                                let face: Face
-                                if (_face) {
-                                    face = faceDetection.faceApiFaceToVerIDFace(_face, canvas.width, settings.useFrontCamera)
-                                }
-                                if (!subscriber.closed) {
-                                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-                                    const image: HTMLImageElement = new Image()
-                                    image.width = canvas.width
-                                    image.height = canvas.height
-                                    image.src = canvas.toDataURL()
-                                    faceDetection.emitEvent(subscriber, {"type": "next", "value": new LiveFaceCapture(image, face)})
-                                }
-                                setTimeout(detectSingleFace, 0)
-                            } catch (error) {
-                                faceDetection.emitEvent(subscriber, {"type": "error", "error": error})
-                            }
-                        }
-                        setTimeout(detectSingleFace, 0)
-                    }
-                }).catch((error) => {
-                    faceDetection.emitEvent(subscriber, {"type": "error", "error": error})
-                })
-                return () => {
-                    if (videoTrack) {
-                        videoTrack.stop()
-                        videoTrack = null
-                    }
-                }
+    close = () => {
+        if (!this.closed) {
+            this.closed = true
+            setTimeout(() => {
+                this.ui.trigger({"type":FaceCaptureEventType.CLOSE})
             })
         }
-        let bearingGenerator: Generator = nextCaptureBearing()
-        let bearingIterator = bearingGenerator.next()
-        return <Observable<LivenessDetectionSessionResult>>(liveFaceCapture().pipe(
-            map((capture: LiveFaceCapture): LiveFaceCapture => {
-                capture.requestedBearing = bearingIterator.value
-                return capture
-            }),
-            map(detectFacePresence),
-            map(detectFaceAlignment),
-            tap(drawDetectedFace),
-            tap((capture: LiveFaceCapture) => {
-                if (faceDetectionCallback) {
-                    faceDetectionCallback(capture)
-                }
-            }),
-            filter((capture: LiveFaceCapture) => {
-                return capture.face && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED
-            }),
-            mergeMap(createFaceCapture),
-            tap((faceCapture: LiveFaceCapture) => {
-                if (faceCaptureCallback) {
-                    faceCaptureCallback(faceCapture)
-                }
-            }),
-            take(settings.faceCaptureCount),
-            takeWhile(() => {
-                return new Date().getTime() < startTime + settings.maxDuration * 1000
-            }),
-            toArray(),
-            map(resultFromCaptures),
-            map((result: LivenessDetectionSessionResult) => {
-                if (result.faceCaptures.length < settings.faceCaptureCount) {
-                    throw new Error("Session timed out")
-                }
-                return result
-            }),
-            (observable: Observable<LivenessDetectionSessionResult>) => new Observable<LivenessDetectionSessionResult>(subscriber => {
-                const subcription: Subscription = observable.subscribe({
-                    next: (val: LivenessDetectionSessionResult) => {
-                        faceDetection.emitEvent(subscriber, {"type": "next", "value": val})
-                    },
-                    error: (err: any) => {
-                        faceDetection.emitEvent(subscriber, {"type": "error", "error": err})
-                    },
-                    complete: () => {
-                        faceDetection.emitEvent(subscriber, {"type": "complete"})
-                    }
-                })
-                cancelButton.onclick = () => {
-                    faceDetection.emitEvent(subscriber, {"type": "complete"})
-                }
-                return () => {
-                    subcription.unsubscribe()
-                    if (videoContainer.parentNode) {
-                        videoContainer.parentNode.removeChild(videoContainer)
-                    }
-                }
-            })
-        ))
     }
 }
 
@@ -718,6 +570,22 @@ export class FaceCaptureSettings {
      * @defaultValue `[Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]`
      */
     bearings = [Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]
+
+    createUI: () => FaceCaptureUI = () => new VerIDFaceCaptureUI(this)
+
+    expectedFaceRect = (imageSize: Size): Rect => {
+        const faceRect = new Rect(0, 0, 0, 0)
+        if (imageSize.width > imageSize.height) {
+            faceRect.height = imageSize.height * this.expectedFaceExtents.proportionOfViewHeight
+            faceRect.width = faceRect.height / 1.25
+        } else {
+            faceRect.width = imageSize.width * this.expectedFaceExtents.proportionOfViewWidth
+            faceRect.height = faceRect.width * 1.25
+        }
+        faceRect.x = imageSize.width / 2 - faceRect.width / 2
+        faceRect.y = imageSize.height / 2 - faceRect.height / 2
+        return faceRect
+    }
 }
 
 /**

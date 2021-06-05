@@ -4,7 +4,8 @@
  */
 import { Observable } from "rxjs";
 import { Angle, Rect } from "./utils";
-import { Bearing, FaceAlignmentStatus } from "./types";
+import { Size, Bearing, FaceAlignmentStatus } from "./types";
+import { FaceCaptureUI } from "./faceDetectionUI";
 /**
  * Face detection
  */
@@ -27,7 +28,9 @@ export declare class FaceDetection {
      * @returns `true` if liveness detection is supported by the client
      */
     static isLivenessDetectionSupported(): boolean;
-    private emitEvent;
+    private onVideoPlay;
+    private liveFaceCapture;
+    private checkLivenessSessionAvailability;
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
      * @param settings Session settings
@@ -137,6 +140,8 @@ export declare class FaceCaptureSettings {
      * @defaultValue `[Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]`
      */
     bearings: Bearing[];
+    createUI: () => FaceCaptureUI;
+    expectedFaceRect: (imageSize: Size) => Rect;
 }
 /**
  * Face detected in an image

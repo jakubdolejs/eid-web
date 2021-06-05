@@ -1,5 +1,6 @@
 import { FaceCaptureSettings } from "./faceDetection";
 import { Axis, Bearing } from "./types";
+import { Subscriber } from "rxjs";
 /**
  * Circular (ring) buffer implementation
  *
@@ -162,6 +163,7 @@ export declare class Rect {
     mirrored(planeWidth: number): Rect;
     get right(): number;
     get bottom(): number;
+    equals: (other: Rect) => boolean;
 }
 /**
  * Evaluates angles in relation to bearings
@@ -192,6 +194,19 @@ export declare class Smoothing {
     private calculateSmoothedValue;
     reset(): void;
 }
+export declare type ObservableNextEvent<T> = {
+    type: "next";
+    value: T;
+};
+export declare type ObservableErrorEvent = {
+    type: "error";
+    error: any;
+};
+export declare type ObservableCompleteEvent = {
+    type: "complete";
+};
+declare type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent;
+export declare function emitRxEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void;
 export declare class RectSmoothing {
     private xSmoothing;
     private ySmoothing;
@@ -217,3 +232,4 @@ export declare class AngleSmoothing {
     removeFirstSample(): void;
 }
 export declare function clamp(a: number, limit: number): number;
+export {};
