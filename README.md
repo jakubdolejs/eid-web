@@ -43,6 +43,10 @@
 
 ## Usage
 
+### Important note
+
+Please note that the client-side scripts can only run on a secure connection (https). This is a feature of the [media devices API](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices). Ensure that you're accessing your pages over https.
+
 ### Running a liveness detection session:
 
 ```javascript
