@@ -1,4 +1,5 @@
 import { BlinkIdCombinedRecognizerResult, BlinkIdRecognizerResult, IdBarcodeRecognizerResult, BlinkIdCombinedRecognizer, BlinkIdRecognizer, IdBarcodeRecognizer, ImageOrientation, SuccessFrameGrabberRecognizer } from "@microblink/blinkid-in-browser-sdk";
+import { Angle, Rect } from "./utils";
 export declare type IdCaptureStatus = "pass" | "review" | "fail";
 export interface IdCaptureResponse {
     error?: any;
@@ -109,6 +110,15 @@ export declare type SupportedRecognizerResult = BlinkIdCombinedRecognizerResult 
 declare type SupportedWrappedRecognizer = BlinkIdCombinedRecognizer | BlinkIdRecognizer | IdBarcodeRecognizer;
 export declare type SupportedRecognizer = SupportedWrappedRecognizer | SuccessFrameGrabberRecognizer<SupportedWrappedRecognizer>;
 export declare type ProgressListener = (progress: number) => void;
+export declare type RecognizableFaceDetectionInput = {
+    [k: string]: {
+        image: HTMLImageElement | string;
+        faceRect?: Rect;
+    };
+};
+export declare type RecognizableFaceDetectionOutput = {
+    [k: string]: RecognizableFace;
+};
 /**
  * ID capture UI interface
  *
@@ -268,4 +278,23 @@ export declare enum Bearing {
 }
 export declare type RecognizerName = "BlinkIdCombinedRecognizer" | "BlinkIdRecognizer" | "IdBarcodeRecognizer";
 export declare type IdCaptureUIFactory = () => IdCaptureUI;
+export declare type Range<Type> = {
+    from: Type;
+    to: Type;
+};
+export declare type FaceRequirements = {
+    imageSize: Size;
+    ideal: {
+        bounds: Rect;
+        angle: Angle;
+    };
+    accepted: {
+        left: Range<number>;
+        top: Range<number>;
+        right: Range<number>;
+        bottom: Range<number>;
+        yaw: Range<number>;
+        pitch: Range<number>;
+    };
+};
 export {};

@@ -4,8 +4,11 @@
  */
 import { Observable } from "rxjs";
 import { Angle, Rect } from "./utils";
+import { FaceRecognition } from "./faceRecognition";
 import { Size, Bearing, FaceAlignmentStatus } from "./types";
 import { FaceCaptureUI } from "./faceDetectionUI";
+import { FaceRequirementListener, LivenessDetectionSession } from "./livenessDetectionSession";
+import { FaceDetectorFactory } from "./faceDetector";
 /**
  * Face detection
  */
@@ -15,14 +18,12 @@ export declare class FaceDetection {
      */
     readonly serviceURL: string;
     private readonly faceRecognition;
-    private readonly loadPromises;
+    private readonly createFaceDetectorPromise;
     /**
      * Constructor
      * @param serviceURL Base URL of the server that accepts the face detection and comparison calls
      */
-    constructor(serviceURL?: string);
-    private calculateFaceAngle;
-    private faceApiFaceToVerIDFace;
+    constructor(serviceURL?: string, faceDetectorFactory?: FaceDetectorFactory);
     detectFaceInImage(image: HTMLImageElement): Promise<Face>;
     /**
      * @returns `true` if liveness detection is supported by the client
@@ -37,7 +38,8 @@ export declare class FaceDetection {
      * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
      * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
      */
-    livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void): Observable<LivenessDetectionSessionResult>;
+    livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void, faceRequirementListener?: FaceRequirementListener, createSession?: (settings: FaceCaptureSettings, faceRecognition: FaceRecognition) => LivenessDetectionSession): Observable<LivenessDetectionSessionResult>;
+    private livenessDetectionSessionResultObservable;
 }
 /**
  * Result of a liveness detection session
@@ -55,12 +57,13 @@ export declare class LivenessDetectionSessionResult {
      * Array of face captures collected during the session
      */
     readonly faceCaptures: Array<LiveFaceCapture>;
+    readonly videoURL: string;
     /**
      * Constructor
      * @param startTime Date that represents the time the session was started
      * @internal
      */
-    constructor(startTime: Date, faceCaptures?: LiveFaceCapture[]);
+    constructor(startTime: Date, faceCaptures?: LiveFaceCapture[], videoURL?: string);
 }
 /**
  * Extents of a face within a view
@@ -106,14 +109,14 @@ export declare class FaceCaptureSettings {
      * Horizontal (yaw) threshold where face is considered to be at an angle
      *
      * For example, a value of 15 indicates that a face with yaw -15 and below is oriented left and a face with yaw 15 or above is oriented right
-     * @defaultValue `20`
+     * @defaultValue `28`
      */
     yawThreshold: number;
     /**
      * Vertical (pitch) threshold where face is considered to be at an angle
      *
      * For example, a value of 15 indicates that a face with pitch -15 and below is oriented up and a face with pitch 15 or above is oriented down
-     * @defaultValue `15`
+     * @defaultValue `12`
      */
     pitchThreshold: number;
     /**
@@ -140,8 +143,42 @@ export declare class FaceCaptureSettings {
      * @defaultValue `[Bearing.STRAIGHT, Bearing.LEFT, Bearing.RIGHT, Bearing.LEFT_UP, Bearing.RIGHT_UP]`
      */
     bearings: Bearing[];
+    /**
+     * Set to `true` to record a video of the session
+     *
+     * Note that some older browsers may not be capable of recording video
+     * @defaultValue `false`
+     */
+    recordSessionVideo: boolean;
+    /**
+     * Background: Once the initial aligned face is detected the session will start capturing "control" faces at interval set in the `controlFaceCaptureInterval` property until `maxControlFaceCount` faces are collected or the session finishes.
+     * These control faces are then compared to the aligned face to ensure that the person performing the liveness detection is the same person as the one on the aligned face.
+     * This prevents attacks where a picture is presented to the camera and a live person finishes the liveness detection.
+     * @defaultValue `4.5`
+     */
+    controlFaceSimilarityThreshold: number;
+    /**
+     * Interval at which to capture "control" faces.
+     * See `controlFaceSimilarityThreshold` for an explanation.
+     * @defaultValue `500`
+     */
+    controlFaceCaptureInterval: number;
+    /**
+     * Number of "control" faces to capture during a session.
+     * See `controlFaceSimilarityThreshold` for an explanation.
+     * @defaultValue `4`
+     */
+    maxControlFaceCount: number;
+    /**
+     * Set your own function if you wish to supply your own graphical user interface for the session.
+     * @returns Function that supplies an instance of `FaceCaptureUI`
+     */
     createUI: () => FaceCaptureUI;
-    expectedFaceRect: (imageSize: Size) => Rect;
+    /**
+     * @param imageSize Image size
+     * @returns Boundary of where the session expects a face in a given image size.
+     */
+    readonly expectedFaceRect: (imageSize: Size) => Rect;
 }
 /**
  * Face detected in an image
@@ -209,6 +246,13 @@ export declare class LiveFaceCapture {
      * @internal
      */
     offsetAngleFromBearing?: Angle;
+    /**
+     * Number between 0 and 1 representing the trajectory to the requested bearing angle.
+     * `1` means the face is moving straight towards the requested bearing.
+     * `0` means the face is moving in the opposite direction than the requested bearing.
+     */
+    angleTrajectory: number;
+    angleDistance: number;
     private _faceImage?;
     /**
      * Image cropped to the bounds of the detected face

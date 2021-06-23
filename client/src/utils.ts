@@ -1,6 +1,7 @@
 import { FaceCaptureSettings } from "./faceDetection"
-import { Axis, Bearing } from "./types"
+import { Axis, Bearing, Size } from "./types"
 import { Subscriber } from "rxjs"
+import { FaceDetectionSource } from "./faceDetector"
 
 /**
  * Circular (ring) buffer implementation
@@ -88,6 +89,12 @@ export class CircularBuffer<Type> {
      * @returns Result of applying the supplied function to each element of the array
      */
     reduce(fn: (previousValue: Type, currentValue: Type, currentIndex: number, array: Type[]) => Type) {
+        if (this.buffer.length == 0) {
+            return null
+        }
+        if (this.buffer.length == 1) {
+            return this.buffer[0]
+        }
         return this.buffer.reduce(fn)
     }
 }
@@ -195,8 +202,8 @@ export class Rect {
     inset(xInset: number, yInset: number) {
         this.x += xInset
         this.y += yInset
-        this.width -= xInset
-        this.height -= yInset
+        this.width -= xInset * 2
+        this.height -= yInset * 2
     }
 
     /**
@@ -348,9 +355,11 @@ export class AngleBearingEvaluation {
         const startLeft: Angle = new Angle(fromAngle.yaw - cosRad, fromAngle.pitch - sinRad)
         const endRight: Angle = new Angle(toAngle.yaw + cosRad, toAngle.pitch + sinRad)
         const endLeft: Angle = new Angle(toAngle.yaw - cosRad, toAngle.pitch - sinRad)
-        return !this.isPointToRightOfPlaneBetweenPoints(angle, startRight, endRight)
-            && this.isPointToRightOfPlaneBetweenPoints(angle, startLeft, endLeft)
-            && (this.isPointToRightOfPlaneBetweenPoints(angle, startRight, startLeft) || this.isPointInsideCircleCentredInPointWithRadius(angle, fromAngle, radius))
+        const isNotRightOfRight = !this.isPointToRightOfPlaneBetweenPoints(angle, startRight, endRight)
+        const isLeftOfLeft = this.isPointToRightOfPlaneBetweenPoints(angle, startLeft, endLeft)
+        const isRightOfStart = this.isPointToRightOfPlaneBetweenPoints(angle, startRight, startLeft)
+        const isInsideCircle = this.isPointInsideCircleCentredInPointWithRadius(angle, fromAngle, radius)
+        return isNotRightOfRight && isLeftOfLeft && (isRightOfStart || isInsideCircle)
     }
 
     offsetFromAngleToBearing(angle: Angle, bearing: Bearing): Angle {
@@ -372,7 +381,7 @@ export class AngleBearingEvaluation {
         return Math.hypot(angle.yaw-centre.yaw, angle.pitch-centre.pitch) < radius
     }
 
-    private minAngleForBearing(bearing: Bearing): Angle {
+    minAngleForBearing(bearing: Bearing): Angle {
         const pitchDistance: number = this.thresholdAngleForAxis(Axis.PITCH)
         const pitchTolerance: number = this.thresholdAngleToleranceForAxis(Axis.PITCH)
         const yawDistance: number = this.thresholdAngleForAxis(Axis.YAW)
@@ -382,7 +391,7 @@ export class AngleBearingEvaluation {
             case Bearing.UP:
             case Bearing.LEFT_UP:
             case Bearing.RIGHT_UP:
-                angle.pitch = 0 - Number.MAX_VALUE
+                angle.pitch = Number.NEGATIVE_INFINITY
                 break
             case Bearing.DOWN:
             case Bearing.LEFT_DOWN:
@@ -401,7 +410,7 @@ export class AngleBearingEvaluation {
             case Bearing.RIGHT:
             case Bearing.RIGHT_DOWN:
             case Bearing.RIGHT_UP:
-                angle.yaw = 0 - Number.MAX_VALUE
+                angle.yaw = Number.NEGATIVE_INFINITY
                 break
             default:
                 angle.yaw = 0 - yawDistance + yawTolerance
@@ -409,7 +418,7 @@ export class AngleBearingEvaluation {
         return angle
     }
 
-    private maxAngleForBearing(bearing: Bearing): Angle {
+    maxAngleForBearing(bearing: Bearing): Angle {
         const pitchDistance: number = this.thresholdAngleForAxis(Axis.PITCH)
         const pitchTolerance: number = this.thresholdAngleToleranceForAxis(Axis.PITCH)
         const yawDistance: number = this.thresholdAngleForAxis(Axis.YAW)
@@ -424,7 +433,7 @@ export class AngleBearingEvaluation {
             case Bearing.DOWN:
             case Bearing.LEFT_DOWN:
             case Bearing.RIGHT_DOWN:
-                angle.pitch = Number.MAX_VALUE
+                angle.pitch = Number.POSITIVE_INFINITY
                 break
             default:
                 angle.pitch = pitchDistance - pitchTolerance
@@ -433,7 +442,7 @@ export class AngleBearingEvaluation {
             case Bearing.LEFT:
             case Bearing.LEFT_DOWN:
             case Bearing.LEFT_UP:
-                angle.yaw = Number.MAX_VALUE
+                angle.yaw = Number.POSITIVE_INFINITY
                 break
             case Bearing.RIGHT:
             case Bearing.RIGHT_DOWN:
@@ -469,6 +478,9 @@ export class Smoothing {
     }
 
     private calculateSmoothedValue(): number {
+        if (this.buffer.length == 0) {
+            return null
+        }
         const val: number = this.buffer.reduce(function(previous, next) {
             return previous + next
         })
@@ -617,4 +629,34 @@ export function clamp(a: number, limit: number): number {
         return limit
     }
     return a
+}
+
+export function imageFromFaceDetectionSource(canvas: HTMLCanvasElement, source: FaceDetectionSource): HTMLImageElement {
+    const size = sizeOfFaceDetectionSource(source)
+    canvas.width = size.width
+    canvas.height = size.height
+    canvas.getContext("2d").drawImage(source.element, 0, 0, size.width, size.height)
+    const image: HTMLImageElement = new Image()
+    image.width = size.width
+    image.height = size.height
+    image.src = canvas.toDataURL()
+    return image
+}
+
+export function sizeOfFaceDetectionSource(source: FaceDetectionSource): Size {
+    let size: Size = {
+        width: 0,
+        height: 0
+    }
+    if ((source.element as HTMLVideoElement).videoWidth) {
+        size.width = (source.element as HTMLVideoElement).videoWidth
+        size.height = (source.element as HTMLVideoElement).videoHeight
+    } else if ((source.element as HTMLImageElement).naturalWidth) {
+        size.width = (source.element as HTMLImageElement).naturalWidth
+        size.height = (source.element as HTMLImageElement).naturalHeight
+    } else {
+        size.width = source.element.width
+        size.height = source.element.height
+    }
+    return size
 }

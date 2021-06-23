@@ -94,13 +94,17 @@
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#bearings" class="tsd-kind-icon">bearings</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#controlfacecaptureinterval" class="tsd-kind-icon">control<wbr>Face<wbr>Capture<wbr>Interval</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#controlfacesimilaritythreshold" class="tsd-kind-icon">control<wbr>Face<wbr>Similarity<wbr>Threshold</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#createui" class="tsd-kind-icon">createUI</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#expectedfaceextents" class="tsd-kind-icon">expected<wbr>Face<wbr>Extents</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#facecapturecount" class="tsd-kind-icon">face<wbr>Capture<wbr>Count</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#facecapturefacecount" class="tsd-kind-icon">face<wbr>Capture<wbr>Face<wbr>Count</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#maxcontrolfacecount" class="tsd-kind-icon">max<wbr>Control<wbr>Face<wbr>Count</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#maxduration" class="tsd-kind-icon">max<wbr>Duration</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#pauseduration" class="tsd-kind-icon">pause<wbr>Duration</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#pitchthreshold" class="tsd-kind-icon">pitch<wbr>Threshold</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#recordsessionvideo" class="tsd-kind-icon">record<wbr>Session<wbr>Video</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#usefrontcamera" class="tsd-kind-icon">use<wbr>Front<wbr>Camera</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="facecapturesettings.html#yawthreshold" class="tsd-kind-icon">yaw<wbr>Threshold</a></li>
 							</ul>
@@ -139,7 +143,7 @@
 					<div class="tsd-signature tsd-kind-icon">bearings<span class="tsd-signature-symbol">:</span> <a href="../enums/bearing.html" class="tsd-signature-type" data-tsd-kind="Enumeration">Bearing</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = ...</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L572">faceDetection.ts:572</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L329">faceDetection.ts:329</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -155,24 +159,77 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="createui" class="tsd-anchor"></a>
-					<h3>createUI</h3>
-					<div class="tsd-signature tsd-kind-icon">createUI<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">FaceCaptureUI</span><span class="tsd-signature-symbol"> = ...</span></div>
+					<a name="controlfacecaptureinterval" class="tsd-anchor"></a>
+					<h3>control<wbr>Face<wbr>Capture<wbr>Interval</h3>
+					<div class="tsd-signature tsd-kind-icon">control<wbr>Face<wbr>Capture<wbr>Interval<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 500</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L574">faceDetection.ts:574</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L352">faceDetection.ts:352</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Interval at which to capture &quot;control&quot; faces.
+							See <code>controlFaceSimilarityThreshold</code> for an explanation.</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>500</code></p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="controlfacesimilaritythreshold" class="tsd-anchor"></a>
+					<h3>control<wbr>Face<wbr>Similarity<wbr>Threshold</h3>
+					<div class="tsd-signature tsd-kind-icon">control<wbr>Face<wbr>Similarity<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 4.5</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L345">faceDetection.ts:345</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Background: Once the initial aligned face is detected the session will start capturing &quot;control&quot; faces at interval set in the <code>controlFaceCaptureInterval</code> property until <code>maxControlFaceCount</code> faces are collected or the session finishes.
+								These control faces are then compared to the aligned face to ensure that the person performing the liveness detection is the same person as the one on the aligned face.
+							This prevents attacks where a picture is presented to the camera and a live person finishes the liveness detection.</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>4.5</code></p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="createui" class="tsd-anchor"></a>
+					<h3>createUI</h3>
+					<div class="tsd-signature tsd-kind-icon">createUI<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><a href="../interfaces/facecaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">FaceCaptureUI</a><span class="tsd-signature-symbol"> = ...</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L365">faceDetection.ts:365</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Set your own function if you wish to supply your own graphical user interface for the session.</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>returns</dt>
+							<dd><p>Function that supplies an instance of <code>FaceCaptureUI</code></p>
+							</dd>
+						</dl>
+					</div>
 					<div class="tsd-type-declaration">
 						<h4>Type declaration</h4>
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter-signature">
 								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-class">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FaceCaptureUI</span></li>
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/facecaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">FaceCaptureUI</a></li>
 								</ul>
 								<ul class="tsd-descriptions">
 									<li class="tsd-description">
-										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">FaceCaptureUI</span></h4>
+										<h4 class="tsd-returns-title">Returns <a href="../interfaces/facecaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">FaceCaptureUI</a></h4>
 									</li>
 								</ul>
 							</li>
@@ -185,7 +242,7 @@
 					<div class="tsd-signature tsd-kind-icon">expected<wbr>Face<wbr>Extents<span class="tsd-signature-symbol">:</span> <a href="faceextents.html" class="tsd-signature-type" data-tsd-kind="Class">FaceExtents</a><span class="tsd-signature-symbol"> = ...</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L565">faceDetection.ts:565</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L322">faceDetection.ts:322</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -205,7 +262,7 @@
 					<div class="tsd-signature tsd-kind-icon">face<wbr>Capture<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 2</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L529">faceDetection.ts:529</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L286">faceDetection.ts:286</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -225,7 +282,7 @@
 					<div class="tsd-signature tsd-kind-icon">face<wbr>Capture<wbr>Face<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 2</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L553">faceDetection.ts:553</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L310">faceDetection.ts:310</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -240,12 +297,33 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="maxcontrolfacecount" class="tsd-anchor"></a>
+					<h3>max<wbr>Control<wbr>Face<wbr>Count</h3>
+					<div class="tsd-signature tsd-kind-icon">max<wbr>Control<wbr>Face<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 4</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L359">faceDetection.ts:359</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Number of &quot;control&quot; faces to capture during a session.
+							See <code>controlFaceSimilarityThreshold</code> for an explanation.</p>
+						</div>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>4</code></p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="maxduration" class="tsd-anchor"></a>
 					<h3>max<wbr>Duration</h3>
 					<div class="tsd-signature tsd-kind-icon">max<wbr>Duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 30</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L534">faceDetection.ts:534</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L291">faceDetection.ts:291</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -265,7 +343,7 @@
 					<div class="tsd-signature tsd-kind-icon">pause<wbr>Duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0.5</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L560">faceDetection.ts:560</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L317">faceDetection.ts:317</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -283,10 +361,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="pitchthreshold" class="tsd-anchor"></a>
 					<h3>pitch<wbr>Threshold</h3>
-					<div class="tsd-signature tsd-kind-icon">pitch<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 15</span></div>
+					<div class="tsd-signature tsd-kind-icon">pitch<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 12</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L548">faceDetection.ts:548</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L305">faceDetection.ts:305</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -296,7 +374,28 @@
 						<p>For example, a value of 15 indicates that a face with pitch -15 and below is oriented up and a face with pitch 15 or above is oriented down</p>
 						<dl class="tsd-comment-tags">
 							<dt>defaultvalue</dt>
-							<dd><p><code>15</code></p>
+							<dd><p><code>12</code></p>
+							</dd>
+						</dl>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="recordsessionvideo" class="tsd-anchor"></a>
+					<h3>record<wbr>Session<wbr>Video</h3>
+					<div class="tsd-signature tsd-kind-icon">record<wbr>Session<wbr>Video<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L337">faceDetection.ts:337</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Set to <code>true</code> to record a video of the session</p>
+						</div>
+						<p>Note that some older browsers may not be capable of recording video</p>
+						<dl class="tsd-comment-tags">
+							<dt>defaultvalue</dt>
+							<dd><p><code>false</code></p>
 							</dd>
 						</dl>
 					</div>
@@ -307,7 +406,7 @@
 					<div class="tsd-signature tsd-kind-icon">use<wbr>Front<wbr>Camera<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L524">faceDetection.ts:524</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L281">faceDetection.ts:281</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -324,10 +423,10 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="yawthreshold" class="tsd-anchor"></a>
 					<h3>yaw<wbr>Threshold</h3>
-					<div class="tsd-signature tsd-kind-icon">yaw<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 20</span></div>
+					<div class="tsd-signature tsd-kind-icon">yaw<wbr>Threshold<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 28</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L541">faceDetection.ts:541</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L298">faceDetection.ts:298</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -337,7 +436,7 @@
 						<p>For example, a value of 15 indicates that a face with yaw -15 and below is oriented left and a face with yaw 15 or above is oriented right</p>
 						<dl class="tsd-comment-tags">
 							<dt>defaultvalue</dt>
-							<dd><p><code>20</code></p>
+							<dd><p><code>28</code></p>
 							</dd>
 						</dl>
 					</div>
@@ -347,7 +446,7 @@
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="expectedfacerect" class="tsd-anchor"></a>
-					<h3>expected<wbr>Face<wbr>Rect</h3>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> expected<wbr>Face<wbr>Rect</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 						<li class="tsd-signature tsd-kind-icon">expected<wbr>Face<wbr>Rect<span class="tsd-signature-symbol">(</span>imageSize<span class="tsd-signature-symbol">: </span><a href="../interfaces/size.html" class="tsd-signature-type" data-tsd-kind="Interface">Size</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="rect.html" class="tsd-signature-type" data-tsd-kind="Class">Rect</a></li>
 					</ul>
@@ -355,16 +454,20 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L576">faceDetection.ts:576</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L371">faceDetection.ts:371</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>imageSize: <a href="../interfaces/size.html" class="tsd-signature-type" data-tsd-kind="Interface">Size</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Image size</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="rect.html" class="tsd-signature-type" data-tsd-kind="Class">Rect</a></h4>
+							<p>Boundary of where the session expects a face in a given image size.</p>
 						</li>
 					</ul>
 				</section>
@@ -392,6 +495,12 @@
 								<a href="facecapturesettings.html#bearings" class="tsd-kind-icon">bearings</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="facecapturesettings.html#controlfacecaptureinterval" class="tsd-kind-icon">control<wbr>Face<wbr>Capture<wbr>Interval</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="facecapturesettings.html#controlfacesimilaritythreshold" class="tsd-kind-icon">control<wbr>Face<wbr>Similarity<wbr>Threshold</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="facecapturesettings.html#createui" class="tsd-kind-icon">createUI</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
@@ -404,6 +513,9 @@
 								<a href="facecapturesettings.html#facecapturefacecount" class="tsd-kind-icon">face<wbr>Capture<wbr>Face<wbr>Count</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="facecapturesettings.html#maxcontrolfacecount" class="tsd-kind-icon">max<wbr>Control<wbr>Face<wbr>Count</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="facecapturesettings.html#maxduration" class="tsd-kind-icon">max<wbr>Duration</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
@@ -411,6 +523,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="facecapturesettings.html#pitchthreshold" class="tsd-kind-icon">pitch<wbr>Threshold</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="facecapturesettings.html#recordsessionvideo" class="tsd-kind-icon">record<wbr>Session<wbr>Video</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="facecapturesettings.html#usefrontcamera" class="tsd-kind-icon">use<wbr>Front<wbr>Camera</a>
@@ -440,8 +555,16 @@
 				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+			</ul>
+			<ul class="tsd-legend">
 				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>

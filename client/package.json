@@ -17,6 +17,7 @@
     "rxjs": "7.1.0"
   },
   "devDependencies": {
+    "@types/dom-mediacapture-record": "^1.0.7",
     "copy-webpack-plugin": "9.0.0",
     "file-loader": "6.2.0",
     "ts-loader": "9.2.2",

@@ -6,3 +6,7 @@ export * from "./idCapture";
 export * from "./faceAngle";
 export * from "./qrCodeGenerator";
 export * from "./normalDistribution";
+export * from "./faceDetector";
+export * from "./faceDetectionUI";
+export * from "./testFaceDetector";
+export * from "./livenessDetectionSession";

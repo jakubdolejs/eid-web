@@ -25,6 +25,9 @@
 #result .score h1.warning {
     color: red;
 }
+#result > img {
+    border-radius: 12px;
+}
 div.qr {
     margin-top: 20px;
     display: none;

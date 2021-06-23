@@ -104,6 +104,10 @@
 				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
 					<h2>Usage</h2>
 				</a>
+				<a href="#important-note" id="important-note" style="color: inherit; text-decoration: none;">
+					<h3>Important note</h3>
+				</a>
+				<p>Please note that the client-side scripts can only run on a secure connection (https). This is a feature of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices">media devices API</a>. Ensure that you&#39;re accessing your pages over https.</p>
 				<a href="#running-a-liveness-detection-session" id="running-a-liveness-detection-session" style="color: inherit; text-decoration: none;">
 					<h3>Running a liveness detection session:</h3>
 				</a>
@@ -249,6 +253,9 @@
 						<a href="enums/facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a>
 					</li>
 					<li class=" tsd-kind-enum">
+						<a href="enums/facecaptureeventtype.html" class="tsd-kind-icon">Face<wbr>Capture<wbr>Event<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
 						<a href="enums/idcaptureeventtype.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event<wbr>Type</a>
 					</li>
 					<li class=" tsd-kind-class">
@@ -291,7 +298,13 @@
 						<a href="classes/livefacecapture.html" class="tsd-kind-icon">Live<wbr>Face<wbr>Capture</a>
 					</li>
 					<li class=" tsd-kind-class">
+						<a href="classes/livenessdetectionsession.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session</a>
+					</li>
+					<li class=" tsd-kind-class">
 						<a href="classes/livenessdetectionsessionresult.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Result</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mocklivenessdetectionsession.html" class="tsd-kind-icon">Mock<wbr>Liveness<wbr>Detection<wbr>Session</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/normaldistribution.html" class="tsd-kind-icon">Normal<wbr>Distribution</a>
@@ -310,6 +323,21 @@
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/smoothing.html" class="tsd-kind-icon">Smoothing</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/testfacedetector.html" class="tsd-kind-icon">Test<wbr>Face<wbr>Detector</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/testfacedetectorfactory.html" class="tsd-kind-icon">Test<wbr>Face<wbr>Detector<wbr>Factory</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/veridfacecaptureui.html" class="tsd-kind-icon">VerIDFace<wbr>CaptureUI</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/veridfacedetector.html" class="tsd-kind-icon">VerIDFace<wbr>Detector</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/veridfacedetectorfactory.html" class="tsd-kind-icon">VerIDFace<wbr>Detector<wbr>Factory</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/warning.html" class="tsd-kind-icon">Warning</a>
@@ -331,6 +359,15 @@
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/documentfrontpage.html" class="tsd-kind-icon">Document<wbr>Front<wbr>Page</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/facecaptureui.html" class="tsd-kind-icon">Face<wbr>CaptureUI</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/facedetector.html" class="tsd-kind-icon">Face<wbr>Detector</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/facedetectorfactory.html" class="tsd-kind-icon">Face<wbr>Detector<wbr>Factory</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/iddocument.html" class="tsd-kind-icon">IDDocument</a>
@@ -360,6 +397,30 @@
 						<a href="modules.html#captureddocument" class="tsd-kind-icon">Captured<wbr>Document</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facecapturebaseevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Base<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facecaptureevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facecapturefacecapturedevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Face<wbr>Captured<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facecapturesimpleevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Simple<wbr>Event</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facedetectionelement" class="tsd-kind-icon">Face<wbr>Detection<wbr>Element</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facedetectionsource" class="tsd-kind-icon">Face<wbr>Detection<wbr>Source</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facerequirementlistener" class="tsd-kind-icon">Face<wbr>Requirement<wbr>Listener</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#facerequirements" class="tsd-kind-icon">Face<wbr>Requirements</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#idcaptureevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
@@ -386,6 +447,15 @@
 					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#progresslistener" class="tsd-kind-icon">Progress<wbr>Listener</a>
 					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#range" class="tsd-kind-icon">Range</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#recognizablefacedetectioninput" class="tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Input</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#recognizablefacedetectionoutput" class="tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Output</a>
+					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="modules.html#recognizername" class="tsd-kind-icon">Recognizer<wbr>Name</a>
 					</li>
@@ -407,6 +477,12 @@
 					<li class=" tsd-kind-function">
 						<a href="modules.html#estimatefaceangle" class="tsd-kind-icon">estimate<wbr>Face<wbr>Angle</a>
 					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#imagefromfacedetectionsource" class="tsd-kind-icon">image<wbr>From<wbr>Face<wbr>Detection<wbr>Source</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#sizeoffacedetectionsource" class="tsd-kind-icon">size<wbr>OfFace<wbr>Detection<wbr>Source</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
@@ -422,8 +498,16 @@
 				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+			</ul>
+			<ul class="tsd-legend">
 				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>

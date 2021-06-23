@@ -9,6 +9,8 @@ import {
     SuccessFrameGrabberRecognizer, 
     MetadataCallbacks 
 } from "@microblink/blinkid-in-browser-sdk"
+import { Face } from "./faceDetection"
+import { Angle, Rect } from "./utils"
 
 export type IdCaptureStatus = "pass" | "review" | "fail"
 
@@ -142,6 +144,17 @@ type SupportedWrappedRecognizer = BlinkIdCombinedRecognizer|BlinkIdRecognizer|Id
 export type SupportedRecognizer = SupportedWrappedRecognizer|SuccessFrameGrabberRecognizer<SupportedWrappedRecognizer>
 
 export type ProgressListener = (progress: number) => void
+
+export type RecognizableFaceDetectionInput = {
+    [k: string]: {
+        image: HTMLImageElement | string
+        faceRect?: Rect
+    }
+}
+
+export type RecognizableFaceDetectionOutput = {
+    [k: string]: RecognizableFace
+}
 
 /**
  * ID capture UI interface
@@ -312,3 +325,25 @@ export enum Bearing {
 export type RecognizerName = "BlinkIdCombinedRecognizer" | "BlinkIdRecognizer" | "IdBarcodeRecognizer"
 
 export type IdCaptureUIFactory = () => IdCaptureUI
+
+
+export type Range<Type> = {
+    from: Type,
+    to: Type
+}
+
+export type FaceRequirements = {
+    imageSize: Size
+    ideal: {
+        bounds: Rect,
+        angle: Angle
+    }
+    accepted: {
+        left: Range<number>
+        top: Range<number>
+        right: Range<number>
+        bottom: Range<number>
+        yaw: Range<number>
+        pitch: Range<number>
+    }
+}

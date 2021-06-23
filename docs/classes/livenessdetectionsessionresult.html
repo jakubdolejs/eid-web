@@ -96,6 +96,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="livenessdetectionsessionresult.html#duration" class="tsd-kind-icon">duration</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="livenessdetectionsessionresult.html#facecaptures" class="tsd-kind-icon">face<wbr>Captures</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="livenessdetectionsessionresult.html#starttime" class="tsd-kind-icon">start<wbr>Time</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="livenessdetectionsessionresult.html#videourl" class="tsd-kind-icon">videoURL</a></li>
 							</ul>
 						</section>
 					</div>
@@ -107,13 +108,13 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Liveness<wbr>Detection<wbr>Session<wbr>Result<span class="tsd-signature-symbol">(</span>startTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, faceCaptures<span class="tsd-signature-symbol">?: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="livenessdetectionsessionresult.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSessionResult</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Liveness<wbr>Detection<wbr>Session<wbr>Result<span class="tsd-signature-symbol">(</span>startTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, faceCaptures<span class="tsd-signature-symbol">?: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">[]</span>, videoURL<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="livenessdetectionsessionresult.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSessionResult</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L476">faceDetection.ts:476</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L232">faceDetection.ts:232</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -136,6 +137,9 @@
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> faceCaptures: <a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> videoURL: <span class="tsd-signature-type">string</span></h5>
+								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="livenessdetectionsessionresult.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSessionResult</a></h4>
 						</li>
@@ -150,7 +154,7 @@
 					<div class="tsd-signature tsd-kind-icon">duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L472">faceDetection.ts:472</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L226">faceDetection.ts:226</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -165,7 +169,7 @@
 					<div class="tsd-signature tsd-kind-icon">face<wbr>Captures<span class="tsd-signature-symbol">:</span> <a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L476">faceDetection.ts:476</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L230">faceDetection.ts:230</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -180,7 +184,7 @@
 					<div class="tsd-signature tsd-kind-icon">start<wbr>Time<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/bee078e/client/src/faceDetection.ts#L468">faceDetection.ts:468</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L222">faceDetection.ts:222</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -188,6 +192,16 @@
 							<p>Date that represents the time the session was started</p>
 						</div>
 					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="videourl" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> videoURL</h3>
+					<div class="tsd-signature tsd-kind-icon">videoURL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L232">faceDetection.ts:232</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -218,6 +232,9 @@
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="livenessdetectionsessionresult.html#starttime" class="tsd-kind-icon">start<wbr>Time</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="livenessdetectionsessionresult.html#videourl" class="tsd-kind-icon">videoURL</a>
+							</li>
 						</ul>
 					</li>
 				</ul>
@@ -237,8 +254,16 @@
 				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+			</ul>
+			<ul class="tsd-legend">
 				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>

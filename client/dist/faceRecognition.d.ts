@@ -3,7 +3,8 @@
  * @packageDocumentation
  */
 import { Rect } from "./utils";
-import { RecognizableFace } from "./types";
+import { RecognizableFace, RecognizableFaceDetectionInput, RecognizableFaceDetectionOutput } from "./types";
+declare type ImageInput = HTMLImageElement | string;
 /**
  * Face recognition
  */
@@ -17,13 +18,17 @@ export declare class FaceRecognition {
      * @param serviceURL Base URL of the server that accepts the face detection and comparison calls
      */
     constructor(serviceURL?: string);
+    private imageToBlob;
+    private imageInputToImage;
+    private getImageSize;
+    detectRecognizableFacesInImages(images: RecognizableFaceDetectionInput): Promise<RecognizableFaceDetectionOutput>;
     /**
      * Detect a face that can be used for face recognition
      * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
      * @param faceRect Optional expected bounds of a face in the image
      * @returns Promise that delivers a face that can be used for face recognition
      */
-    detectRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace>;
+    detectRecognizableFace(image: ImageInput, faceRect?: Rect): Promise<RecognizableFace>;
     /**
      * Detect a face that can be used for face recognition
      * @param image Image in which to detect the face. Can be either an Image or a base-64 encoded jpeg or data URL
@@ -32,6 +37,8 @@ export declare class FaceRecognition {
      * @returns Promise that delivers a face that can be used for face recognition
      */
     createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace>;
+    private faceCoordinatesToPixels;
+    private adjustImageCropRect;
     private cropImage;
     /**
      * Compare face templates and return similarity score
@@ -40,4 +47,6 @@ export declare class FaceRecognition {
      * @returns Similarity score between the two templates
      */
     compareFaceTemplates(template1: string, template2: string): Promise<number>;
+    compareFaceTemplateToTemplates(template: string, templates: string[]): Promise<number>;
 }
+export {};

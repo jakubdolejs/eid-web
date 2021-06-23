@@ -1,6 +1,7 @@
 import { FaceCaptureSettings } from "./faceDetection";
-import { Axis, Bearing } from "./types";
+import { Axis, Bearing, Size } from "./types";
 import { Subscriber } from "rxjs";
+import { FaceDetectionSource } from "./faceDetector";
 /**
  * Circular (ring) buffer implementation
  *
@@ -181,8 +182,8 @@ export declare class AngleBearingEvaluation {
     offsetFromAngleToBearing(angle: Angle, bearing: Bearing): Angle;
     private isPointToRightOfPlaneBetweenPoints;
     isPointInsideCircleCentredInPointWithRadius(angle: Angle, centre: Angle, radius: number): boolean;
-    private minAngleForBearing;
-    private maxAngleForBearing;
+    minAngleForBearing(bearing: Bearing): Angle;
+    maxAngleForBearing(bearing: Bearing): Angle;
 }
 export declare class Smoothing {
     buffer: CircularBuffer<number>;
@@ -232,4 +233,6 @@ export declare class AngleSmoothing {
     removeFirstSample(): void;
 }
 export declare function clamp(a: number, limit: number): number;
+export declare function imageFromFaceDetectionSource(canvas: HTMLCanvasElement, source: FaceDetectionSource): HTMLImageElement;
+export declare function sizeOfFaceDetectionSource(source: FaceDetectionSource): Size;
 export {};

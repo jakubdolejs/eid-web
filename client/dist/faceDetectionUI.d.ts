@@ -9,22 +9,18 @@ export declare type FaceCaptureBaseEvent = {
 };
 export declare enum FaceCaptureEventType {
     FACE_CAPTURED = "face captured",
+    CAPTURE_FINISHED = "capture finished",
     CLOSE = "close",
-    CANCEL = "cancel",
-    MEDIA_STREAM_AVAILABLE = "media stream available"
+    CANCEL = "cancel"
 }
 export declare type FaceCaptureSimpleEvent = {
-    type: FaceCaptureEventType.CLOSE | FaceCaptureEventType.CANCEL;
+    type: FaceCaptureEventType.CLOSE | FaceCaptureEventType.CANCEL | FaceCaptureEventType.CAPTURE_FINISHED;
 } & FaceCaptureBaseEvent;
 export declare type FaceCaptureFaceCapturedEvent = {
     type: FaceCaptureEventType.FACE_CAPTURED;
     capture: LiveFaceCapture;
 } & FaceCaptureBaseEvent;
-export declare type FaceCaptureMediaStreamAvailableEvent = {
-    type: FaceCaptureEventType.MEDIA_STREAM_AVAILABLE;
-    stream: MediaStream;
-} & FaceCaptureBaseEvent;
-export declare type FaceCaptureEvent = FaceCaptureFaceCapturedEvent | FaceCaptureMediaStreamAvailableEvent | FaceCaptureSimpleEvent;
+export declare type FaceCaptureEvent = FaceCaptureFaceCapturedEvent | FaceCaptureSimpleEvent;
 export declare class VerIDFaceCaptureUI implements FaceCaptureUI {
     private cameraOverlayCanvas;
     private cameraOverlayContext;
@@ -32,12 +28,15 @@ export declare class VerIDFaceCaptureUI implements FaceCaptureUI {
     private cancelButton;
     private eventListeners;
     private hasFaceBeenAligned;
+    private processingIndicator;
+    private angleBar;
     readonly video: HTMLVideoElement;
     readonly settings: FaceCaptureSettings;
     constructor(settings: FaceCaptureSettings);
     trigger(event: FaceCaptureEvent): void;
     on<Event extends FaceCaptureEvent>(eventType: FaceCaptureEventType, callback: (event: Event) => void): void;
-    private setVideoStream;
+    private drawFaceAlignmentProgress;
     private drawDetectedFace;
     private cleanup;
+    private showCaptureFinished;
 }

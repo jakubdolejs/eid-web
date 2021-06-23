@@ -11,7 +11,6 @@ const repo = "725614911995.dkr.ecr.us-east-1.amazonaws.com"
 const identityApiImageName = "identity_api"
 const demoImageName = "ver-id-browser-demo"
 const detcvImageName = "restful-servers_detcv"
-const recauthImageName = "restful-servers_recauth"
 const idScannerImageName = "id_scanner"
 const modelsVolumeName = "models"
 const modelsImageName = "restful-servers_models"
@@ -66,9 +65,6 @@ let licenceModelFiles = null;
             "faceQualityThreshold": 9,
             "authenticityScoreThreshold": 0.6,
             "modelsDir": "/models"
-        },
-        "faceRecognition": {
-            "serverURL": "http://recauth:8080"
         }
     }
     
@@ -88,7 +84,7 @@ let licenceModelFiles = null;
             "identity_api": {
                 "image": repo+"/"+identityApiImageName+":"+answers.identityApiVersion,
                 "depends_on": [
-                    "detcv", "recauth"
+                    "detcv"
                 ],
                 "configs": [
                     {
@@ -107,15 +103,6 @@ let licenceModelFiles = null;
                 "image": repo+"/"+detcvImageName+":"+answers.restfulServersVersion,
                 "environment": [
                     "PORT=8080"
-                ],
-                "networks": [
-                    "id_api"
-                ]
-            },
-            "recauth": {
-                "image": repo+"/"+recauthImageName+":"+answers.restfulServersVersion,
-                "entrypoint": [
-                    "./fb-recauth", "--foreground", "-p", "8080"
                 ],
                 "networks": [
                     "id_api"
@@ -145,11 +132,6 @@ let licenceModelFiles = null;
     if (answers.exposeDetcvPort) {
         compose.services.detcv.ports = [
             answers.detcvPort+":8080"
-        ]
-    }
-    if (answers.exposeRecauthPort) {
-        compose.services.recauth.ports = [
-            answers.recauthPort+":8080"
         ]
     }
     if (answers.enableIdCardDetection) {
@@ -301,26 +283,6 @@ function getQuestions(modelImageTags, demoImageTags, awsProfiles) {
                 return true
             }
         },{
-            "type": "confirm",
-            "name": "exposeRecauthPort",
-            "message": "Expose Recauth container port?",
-            "default": false
-        },{
-            "type": "number",
-            "name": "recauthPort",
-            "message": "Recauth container port",
-            "default": 8083,
-            "when": (ans) => ans.exposeRecauthPort,
-            "validate": (input, ans) => {
-                if ((ans.exposeRecauthPort && ans.exposeDetcvPort && ans.detcvPort == input) || input == ans.port) {
-                    return "Recauth container port must differ from Detcv and Server ports"
-                }
-                if (ans.exposeRecauthPort && input == ans.demoPort) {
-                    return "Recauth container port must differ from Demo port"
-                }
-                return true
-            }
-        },{
             "type": "input",
             "name": "mbBrowserLicenceKey",
             "message": "Microblink licence key (in-browser SDK)",
@@ -361,7 +323,7 @@ function getQuestions(modelImageTags, demoImageTags, awsProfiles) {
             "default": 8085,
             "when": (ans) => ans.enableIdCardDetection && ans.exposeIdScannerPort,
             "validate": (input, ans) => {
-                if ((ans.exposeDetcvPort && ans.detcvPort == input) || (ans.exposeRecauthPort && ans.recauthPort == input) || (ans.demoPort == input) || input == ans.port) {
+                if ((ans.exposeDetcvPort && ans.detcvPort == input) || (ans.demoPort == input) || input == ans.port) {
                     return "ID scanner container port must differ from other exposed ports"
                 }
                 return true

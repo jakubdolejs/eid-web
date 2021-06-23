@@ -14,13 +14,13 @@ export type FaceCaptureBaseEvent = {
 
 export enum FaceCaptureEventType {
     FACE_CAPTURED = "face captured",
+    CAPTURE_FINISHED = "capture finished",
     CLOSE = "close",
-    CANCEL = "cancel",
-    MEDIA_STREAM_AVAILABLE = "media stream available"
+    CANCEL = "cancel"
 }
 
 export type FaceCaptureSimpleEvent = {
-    type: FaceCaptureEventType.CLOSE | FaceCaptureEventType.CANCEL
+    type: FaceCaptureEventType.CLOSE | FaceCaptureEventType.CANCEL | FaceCaptureEventType.CAPTURE_FINISHED
 } & FaceCaptureBaseEvent
 
 export type FaceCaptureFaceCapturedEvent = {
@@ -28,12 +28,7 @@ export type FaceCaptureFaceCapturedEvent = {
     capture: LiveFaceCapture
 } & FaceCaptureBaseEvent
 
-export type FaceCaptureMediaStreamAvailableEvent = {
-    type: FaceCaptureEventType.MEDIA_STREAM_AVAILABLE
-    stream: MediaStream
-} & FaceCaptureBaseEvent
-
-export type FaceCaptureEvent = FaceCaptureFaceCapturedEvent | FaceCaptureMediaStreamAvailableEvent | FaceCaptureSimpleEvent
+export type FaceCaptureEvent = FaceCaptureFaceCapturedEvent | FaceCaptureSimpleEvent
 
 export class VerIDFaceCaptureUI implements FaceCaptureUI {
     
@@ -43,6 +38,8 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
     private cancelButton: HTMLAnchorElement
     private eventListeners: {[k in FaceCaptureEventType]?: (event: FaceCaptureEvent) => void} = {}
     private hasFaceBeenAligned = false
+    private processingIndicator: HTMLDivElement
+    private angleBar: HTMLDivElement
     readonly video: HTMLVideoElement
     readonly settings: FaceCaptureSettings
 
@@ -94,24 +91,48 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         this.cancelButton.onclick = () => {
             this.trigger({"type": FaceCaptureEventType.CANCEL})
         }
+
+        this.processingIndicator = document.createElement("div")
+        this.processingIndicator.innerText = "Evaluating captured images"
+        this.processingIndicator.style.fontFamily = "Helvetica, Arial, sans-serif"
+        this.processingIndicator.style.color = "white"
+        this.processingIndicator.style.position = "absolute"
+        this.processingIndicator.style.display = "none"
+        this.processingIndicator.style.alignItems = "center"
+        this.processingIndicator.style.textAlign = "center"
+        this.processingIndicator.style.height = "100%"
+        this.processingIndicator.style.width = "200px"
+        this.processingIndicator.style.margin = "0px auto"
+        this.processingIndicator.style.left = "16px"
+        this.processingIndicator.style.right = "16px"
+
+        this.angleBar = document.createElement("div")
+        this.angleBar.style.position = "absolute"
+        this.angleBar.style.right = "0px"
+        this.angleBar.style.bottom = "0px"
+        this.angleBar.style.width = "2px"
+        this.angleBar.style.height = "0%"
         
         this.videoContainer.appendChild(this.video)
         this.videoContainer.appendChild(this.cameraOverlayCanvas)
+        this.videoContainer.appendChild(this.processingIndicator)
+        this.videoContainer.appendChild(this.angleBar)
         this.videoContainer.appendChild(this.cancelButton)
     }
 
     trigger(event: FaceCaptureEvent) {
         switch (event.type) {
-            case FaceCaptureEventType.MEDIA_STREAM_AVAILABLE:
-                this.setVideoStream(event.stream)
-                break
             case FaceCaptureEventType.FACE_CAPTURED:
+                this.drawFaceAlignmentProgress(event.capture)
                 this.drawDetectedFace(event.capture)
                 break
             case FaceCaptureEventType.CLOSE:
                 this.cleanup()
                 break
             case FaceCaptureEventType.CANCEL:
+                break
+            case FaceCaptureEventType.CAPTURE_FINISHED:
+                this.showCaptureFinished()
                 break
         }
         if (this.eventListeners[event.type]) {
@@ -127,13 +148,24 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         }
     }
 
-    private setVideoStream(stream: MediaStream) {
-        if ("srcObject" in this.video) {
-            this.video.srcObject = stream;
+    private drawFaceAlignmentProgress = (capture: LiveFaceCapture): void => {
+        let barColor: string
+        if (!this.hasFaceBeenAligned) {
+            barColor = "#FFFFFF"
+        } else if (capture.angleTrajectory !== null) {
+            if (capture.angleTrajectory > 0.75) {
+                barColor = "#00FF00"
+            } else if (capture.angleTrajectory > 0.5) {
+                barColor = "#FF9900"
+            } else {
+                barColor = "#FF0000"
+            }
         } else {
-            // @ts-ignore
-            this.video.src = URL.createObjectURL(stream);
+            barColor = "#FF0000"
         }
+        this.angleBar.style.height = "100%"
+        this.angleBar.style.backgroundColor = barColor
+        this.angleBar.style.height = (100-capture.angleDistance*100)+"%"
     }
 
     private drawDetectedFace = (capture: LiveFaceCapture): void => {
@@ -208,6 +240,7 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         this.cameraOverlayContext.beginPath()
         this.cameraOverlayContext.ellipse(faceRect.x + faceRect.width / 2, faceRect.y + faceRect.height / 2, faceRect.width /2, faceRect.height / 2, 0, 0, Math.PI * 2)
         this.cameraOverlayContext.stroke()
+        
         let prompt: string
         switch (capture.faceAlignmentStatus) {
             case FaceAlignmentStatus.FIXED:
@@ -253,5 +286,11 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         if (this.videoContainer.parentElement) {
             this.videoContainer.parentElement.removeChild(this.videoContainer)
         }
+    }
+
+    private showCaptureFinished = () => {
+        this.video.style.display = "none"
+        this.cameraOverlayCanvas.style.display = "none"
+        this.processingIndicator.style.display = "flex"
     }
 }
