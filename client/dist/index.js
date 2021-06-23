@@ -18226,6 +18226,14 @@ function getRightEye(landmarks) {
     }
     return getMidPointBetweenPoints(landmarks[43], landmarks[46]);
 }
+/**
+ * Estimate an angle of a face from its landmarks
+ * @param landmarks Face landmarks
+ * @param estimateFn Estimation function
+ * @returns Angle
+ * @category Face detection
+ * @internal
+ */
 function estimateFaceAngle(landmarks, estimateFn) {
     const ls = new _landmarkStandardization__WEBPACK_IMPORTED_MODULE_0__.LandmarkStandardization(getLeftEye(landmarks), getRightEye(landmarks));
     const pts = landmarks.map(pt => ls.standardize(pt));
@@ -18250,6 +18258,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 
+/**
+ * @param landmarks Face landmarks
+ * @returns Angle
+ * @category Face detection
+ * @internal
+ */
 function estimateFaceAngle(landmarks) {
     if (landmarks.length != 68) {
         throw new Error("Face angle calculation requires 68 face landmarks");
@@ -18277,9 +18291,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "FaceDetection": () => (/* binding */ FaceDetection),
 /* harmony export */   "LivenessDetectionSessionResult": () => (/* binding */ LivenessDetectionSessionResult),
 /* harmony export */   "FaceExtents": () => (/* binding */ FaceExtents),
-/* harmony export */   "FaceCaptureSettings": () => (/* binding */ FaceCaptureSettings),
+/* harmony export */   "LivenessDetectionSessionSettings": () => (/* binding */ LivenessDetectionSessionSettings),
 /* harmony export */   "Face": () => (/* binding */ Face),
-/* harmony export */   "LiveFaceCapture": () => (/* binding */ LiveFaceCapture)
+/* harmony export */   "FaceCapture": () => (/* binding */ FaceCapture)
 /* harmony export */ });
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/Observable.js");
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/throwError.js");
@@ -18338,6 +18352,7 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
 
 /**
  * Face detection
+ * @category Face detection
  */
 class FaceDetection {
     /**
@@ -18360,7 +18375,7 @@ class FaceDetection {
                         (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "complete" });
                     }
                 });
-                session.ui.on(_faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.FaceCaptureEventType.CANCEL, () => {
+                session.ui.on(_faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CANCEL, () => {
                     (0,_utils__WEBPACK_IMPORTED_MODULE_0__.emitRxEvent)(subscriber, { "type": "complete" });
                 });
                 return () => {
@@ -18393,6 +18408,77 @@ class FaceDetection {
      */
     static isLivenessDetectionSupported() {
         return "Promise" in window && "fetch" in window;
+    }
+    /**
+     * Start a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
+     * @param session Session to use for for liveness detection
+     * @returns Observable
+     */
+    captureFaces(session) {
+        try {
+            this.checkLivenessSessionAvailability();
+        }
+        catch (error) {
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_7__.throwError)(() => error);
+        }
+        if (session.isClosed) {
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_7__.throwError)(() => new Error("Attempting to run a closed session"));
+        }
+        if (!session.faceRecognition) {
+            session.faceRecognition = this.faceRecognition;
+        }
+        let lastCaptureTime = null;
+        return (this.liveFaceCapture(session).pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((capture) => {
+            capture.requestedBearing = session.requestedBearing;
+            return capture;
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFaceAlignment), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectSpoofAttempt), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((capture) => {
+            if (capture.face && session.controlFaceCaptures.length < session.settings.maxControlFaceCount) {
+                const now = new Date().getTime();
+                if (lastCaptureTime == null && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED) {
+                    lastCaptureTime = now;
+                }
+                else if (lastCaptureTime != null && capture.faceAlignmentStatus != _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED && now - lastCaptureTime >= session.settings.controlFaceCaptureInterval) {
+                    lastCaptureTime = now;
+                    session.controlFaceCaptures.push(capture);
+                }
+            }
+            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture });
+            if (session.faceDetectionCallback) {
+                session.faceDetectionCallback(capture);
+            }
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.filter)((capture) => {
+            return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.createFaceCapture), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((faceCapture) => {
+            if (session.faceCaptureCallback) {
+                session.faceCaptureCallback(faceCapture);
+            }
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.take)(session.settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.takeWhile)(() => {
+            return new Date().getTime() < session.startTime + session.settings.maxDuration * 1000;
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_14__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)(() => {
+            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CAPTURE_FINISHED });
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((result) => {
+            if (result.faceCaptures.length < session.settings.faceCaptureCount) {
+                throw new Error("Session timed out");
+            }
+            return result;
+        }), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
+    }
+    /**
+     * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
+     * @param settings Session settings
+     * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
+     * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
+     * @deprecated Use {@linkcode captureFaces}
+     * @hidden
+     */
+    livenessDetectionSession(settings, faceDetectionCallback, faceCaptureCallback, faceRequirementListener) {
+        const session = new _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_4__.LivenessDetectionSession(settings, this.faceRecognition);
+        session.faceDetectionCallback = faceDetectionCallback;
+        session.faceCaptureCallback = faceCaptureCallback;
+        if (faceRequirementListener) {
+            session.registerFaceRequirementListener(faceRequirementListener);
+        }
+        return this.captureFaces(session);
     }
     onVideoPlay(session, subscriber) {
         return () => __awaiter(this, void 0, void 0, function* () {
@@ -18460,71 +18546,10 @@ class FaceDetection {
             throw new Error("Liveness detection is not supported by your browser");
         }
     }
-    /**
-     * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
-     * @param settings Session settings
-     * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
-     * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
-     */
-    livenessDetectionSession(settings, faceDetectionCallback, faceCaptureCallback, faceRequirementListener, createSession) {
-        try {
-            this.checkLivenessSessionAvailability();
-        }
-        catch (error) {
-            return (0,rxjs__WEBPACK_IMPORTED_MODULE_7__.throwError)(() => error);
-        }
-        if (!settings) {
-            settings = new FaceCaptureSettings();
-        }
-        let session;
-        if (createSession) {
-            session = createSession(settings, this.faceRecognition);
-        }
-        else {
-            session = new _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_4__.LivenessDetectionSession(settings, this.faceRecognition);
-        }
-        if (faceRequirementListener) {
-            session.registerFaceRequirementListener(faceRequirementListener);
-        }
-        let lastCaptureTime = null;
-        return (this.liveFaceCapture(session).pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((capture) => {
-            capture.requestedBearing = session.bearingIterator.value;
-            return capture;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFaceAlignment), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectSpoofAttempt), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((capture) => {
-            if (capture.face && session.controlFaceCaptures.length < session.settings.maxControlFaceCount) {
-                const now = new Date().getTime();
-                if (lastCaptureTime == null && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED) {
-                    lastCaptureTime = now;
-                }
-                else if (lastCaptureTime != null && capture.faceAlignmentStatus != _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED && now - lastCaptureTime >= session.settings.controlFaceCaptureInterval) {
-                    lastCaptureTime = now;
-                    session.controlFaceCaptures.push(capture);
-                }
-            }
-            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.FaceCaptureEventType.FACE_CAPTURED, "capture": capture });
-            if (faceDetectionCallback) {
-                faceDetectionCallback(capture);
-            }
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.filter)((capture) => {
-            return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.createFaceCapture), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((faceCapture) => {
-            if (faceCaptureCallback) {
-                faceCaptureCallback(faceCapture);
-            }
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.take)(settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.takeWhile)(() => {
-            return new Date().getTime() < session.startTime + settings.maxDuration * 1000;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_14__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)(() => {
-            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.FaceCaptureEventType.CAPTURE_FINISHED });
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((result) => {
-            if (result.faceCaptures.length < settings.faceCaptureCount) {
-                throw new Error("Session timed out");
-            }
-            return result;
-        }), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
-    }
 }
 /**
  * Result of a liveness detection session
+ * @category Face detection
  */
 class LivenessDetectionSessionResult {
     /**
@@ -18543,6 +18568,7 @@ class LivenessDetectionSessionResult {
  * Extents of a face within a view
  * @remarks
  * Used by liveness detection session to determine the area where to show the face in relation to the containing view
+ * @category Face detection
  */
 class FaceExtents {
     /**
@@ -18556,9 +18582,10 @@ class FaceExtents {
     }
 }
 /**
- * Face capture settings
+ * Liveness detection session settings
+ * @category Face detection
  */
-class FaceCaptureSettings {
+class LivenessDetectionSessionSettings {
     constructor() {
         /**
          * Whether to use the device's front-facing (selfie) camera
@@ -18643,7 +18670,7 @@ class FaceCaptureSettings {
          * Set your own function if you wish to supply your own graphical user interface for the session.
          * @returns Function that supplies an instance of `FaceCaptureUI`
          */
-        this.createUI = () => new _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.VerIDFaceCaptureUI(this);
+        this.createUI = () => new _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.VerIDLivenessDetectionSessionUI(this);
         /**
          * @param imageSize Image size
          * @returns Boundary of where the session expects a face in a given image size.
@@ -18666,6 +18693,7 @@ class FaceCaptureSettings {
 }
 /**
  * Face detected in an image
+ * @category Face detection
  */
 class Face {
     /**
@@ -18681,8 +18709,9 @@ class Face {
 }
 /**
  * Capture of a live face
+ * @category Face detection
  */
-class LiveFaceCapture {
+class FaceCapture {
     /**
      * Constructor
      * @param image Image in which the face was detected
@@ -18736,21 +18765,27 @@ class LiveFaceCapture {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "FaceCaptureEventType": () => (/* binding */ FaceCaptureEventType),
-/* harmony export */   "VerIDFaceCaptureUI": () => (/* binding */ VerIDFaceCaptureUI)
+/* harmony export */   "LivenessDetectionSessionEventType": () => (/* binding */ LivenessDetectionSessionEventType),
+/* harmony export */   "VerIDLivenessDetectionSessionUI": () => (/* binding */ VerIDLivenessDetectionSessionUI)
 /* harmony export */ });
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./types */ "./src/types.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 
 
-var FaceCaptureEventType;
-(function (FaceCaptureEventType) {
-    FaceCaptureEventType["FACE_CAPTURED"] = "face captured";
-    FaceCaptureEventType["CAPTURE_FINISHED"] = "capture finished";
-    FaceCaptureEventType["CLOSE"] = "close";
-    FaceCaptureEventType["CANCEL"] = "cancel";
-})(FaceCaptureEventType || (FaceCaptureEventType = {}));
-class VerIDFaceCaptureUI {
+/**
+ * @category Face detection
+ */
+var LivenessDetectionSessionEventType;
+(function (LivenessDetectionSessionEventType) {
+    LivenessDetectionSessionEventType["FACE_CAPTURED"] = "face captured";
+    LivenessDetectionSessionEventType["CAPTURE_FINISHED"] = "capture finished";
+    LivenessDetectionSessionEventType["CLOSE"] = "close";
+    LivenessDetectionSessionEventType["CANCEL"] = "cancel";
+})(LivenessDetectionSessionEventType || (LivenessDetectionSessionEventType = {}));
+/**
+ * @category Face detection
+ */
+class VerIDLivenessDetectionSessionUI {
     constructor(settings) {
         this.eventListeners = {};
         this.hasFaceBeenAligned = false;
@@ -18937,7 +18972,7 @@ class VerIDFaceCaptureUI {
         this.cancelButton.style.right = "8px";
         this.cancelButton.style.textAlign = "center";
         this.cancelButton.onclick = () => {
-            this.trigger({ "type": FaceCaptureEventType.CANCEL });
+            this.trigger({ "type": LivenessDetectionSessionEventType.CANCEL });
         };
         this.processingIndicator = document.createElement("div");
         this.processingIndicator.innerText = "Evaluating captured images";
@@ -18966,16 +19001,16 @@ class VerIDFaceCaptureUI {
     }
     trigger(event) {
         switch (event.type) {
-            case FaceCaptureEventType.FACE_CAPTURED:
+            case LivenessDetectionSessionEventType.FACE_CAPTURED:
                 this.drawFaceAlignmentProgress(event.capture);
                 this.drawDetectedFace(event.capture);
                 break;
-            case FaceCaptureEventType.CLOSE:
+            case LivenessDetectionSessionEventType.CLOSE:
                 this.cleanup();
                 break;
-            case FaceCaptureEventType.CANCEL:
+            case LivenessDetectionSessionEventType.CANCEL:
                 break;
-            case FaceCaptureEventType.CAPTURE_FINISHED:
+            case LivenessDetectionSessionEventType.CAPTURE_FINISHED:
                 this.showCaptureFinished();
                 break;
         }
@@ -19027,21 +19062,24 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
+/**
+ * @category Face detection
+ */
 class VerIDFaceDetector {
     constructor() {
         this.detectFace = (source) => __awaiter(this, void 0, void 0, function* () {
-            const faceApiFace = yield face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_1__.detectSingleFace(source.element, new face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_1__.TinyFaceDetectorOptions({ "inputSize": 128 })).withFaceLandmarks();
+            const src = source.element instanceof HTMLVideoElement || source.element instanceof HTMLImageElement || source.element instanceof HTMLCanvasElement ? source.element : yield (0,_utils__WEBPACK_IMPORTED_MODULE_4__.imageFromImageSource)(source.element);
+            const faceApiFace = yield face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_1__.detectSingleFace(src, new face_api_js_build_es6__WEBPACK_IMPORTED_MODULE_1__.TinyFaceDetectorOptions({ "inputSize": 128 })).withFaceLandmarks();
             let face;
             if (faceApiFace) {
-                face = this.faceApiFaceToVerIDFace(faceApiFace, source.element.videoWidth || source.element.naturalWidth || source.element.width, source.mirrored);
+                face = this.faceApiFaceToVerIDFace(faceApiFace, (yield (0,_utils__WEBPACK_IMPORTED_MODULE_4__.sizeOfImageSource)(source.element)).width, source.mirrored);
             }
             else {
                 face = null;
             }
-            const image = (0,_utils__WEBPACK_IMPORTED_MODULE_4__.imageFromFaceDetectionSource)(this.canvas, source);
-            return new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LiveFaceCapture(image, face);
+            const image = yield (0,_utils__WEBPACK_IMPORTED_MODULE_4__.imageFromImageSource)(source.element);
+            return new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceCapture(image, face);
         });
-        this.canvas = document.createElement("canvas");
     }
     calculateFaceAngle(face) {
         const landmarks = face.landmarks.positions.map(pt => new _utils__WEBPACK_IMPORTED_MODULE_4__.Point(pt.x, pt.y));
@@ -19081,6 +19119,9 @@ class VerIDFaceDetector {
         return veridFace;
     }
 }
+/**
+ * @category Face detection testing
+ */
 class VerIDFaceDetectorFactory {
     constructor() {
         this.createFaceDetector = () => __awaiter(this, void 0, void 0, function* () {
@@ -19124,6 +19165,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 /**
  * Face recognition
+ * @category Face recognition
  */
 class FaceRecognition {
     /**
@@ -19133,23 +19175,18 @@ class FaceRecognition {
     constructor(serviceURL) {
         this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : "";
     }
-    imageToBlob(image, cropRect) {
+    blobFromImage(image, cropRect) {
+        if (!cropRect) {
+            return (0,_utils__WEBPACK_IMPORTED_MODULE_0__.blobFromImageSource)(image);
+        }
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const img = yield this.imageInputToImage(image);
+                const img = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.imageFromImageSource)(image);
                 const canvas = document.createElement("canvas");
-                let x = 0;
-                let y = 0;
-                if (cropRect) {
-                    canvas.width = cropRect.width;
-                    canvas.height = cropRect.height;
-                    x = 0 - cropRect.x;
-                    y = 0 - cropRect.y;
-                }
-                else {
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                }
+                canvas.width = cropRect.width;
+                canvas.height = cropRect.height;
+                const x = 0 - cropRect.x;
+                const y = 0 - cropRect.y;
                 const context = canvas.getContext("2d");
                 context.drawImage(img, x, y);
                 canvas.toBlob((blob) => {
@@ -19161,39 +19198,6 @@ class FaceRecognition {
             }
         }));
     }
-    imageInputToImage(image) {
-        return new Promise((resolve, reject) => {
-            const onImageLoaded = () => {
-                resolve(img);
-            };
-            const onLoadError = () => {
-                reject(new Error("Failed to load image"));
-            };
-            let img;
-            if (image instanceof Image) {
-                img = image;
-                if (img.complete) {
-                    onImageLoaded();
-                }
-                else {
-                    img.onload = onImageLoaded;
-                    img.onerror = onLoadError;
-                }
-            }
-            else {
-                img = new Image();
-                img.onload = onImageLoaded;
-                img.onerror = onLoadError;
-                img.src = image;
-            }
-        });
-    }
-    getImageSize(image) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const img = yield this.imageInputToImage(image);
-            return { "width": img.naturalWidth, "height": img.naturalHeight };
-        });
-    }
     detectRecognizableFacesInImages(images) {
         return __awaiter(this, void 0, void 0, function* () {
             if (Object.values(images).length == 0) {
@@ -19203,11 +19207,11 @@ class FaceRecognition {
             const cropRects = {};
             const imageSizes = {};
             yield Promise.all(Object.entries(images).map((entry) => __awaiter(this, void 0, void 0, function* () {
-                const imageSize = yield this.getImageSize(entry[1].image);
+                const imageSize = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.sizeOfImageSource)(entry[1].image);
                 const cropRect = this.adjustImageCropRect(imageSize, entry[1].faceRect);
                 cropRects[entry[0]] = cropRect;
                 imageSizes[entry[0]] = imageSize;
-                const blob = yield this.imageToBlob(entry[1].image, cropRect);
+                const blob = yield this.blobFromImage(entry[1].image, cropRect);
                 formData.append(entry[0], blob);
             })));
             const response = yield fetch(this.serviceURL + "/detect_face", {
@@ -19241,7 +19245,7 @@ class FaceRecognition {
      */
     detectRecognizableFace(image, faceRect) {
         return __awaiter(this, void 0, void 0, function* () {
-            const body = yield this.imageToBlob(image, faceRect);
+            const body = yield this.blobFromImage(image, faceRect);
             const response = yield fetch(this.serviceURL + "/detect_face", {
                 "method": "POST",
                 "mode": "cors",
@@ -19255,7 +19259,7 @@ class FaceRecognition {
                 throw new Error("Failed to extract recognition template from face");
             }
             const json = yield response.json();
-            const imageSize = yield this.getImageSize(image);
+            const imageSize = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.sizeOfImageSource)(image);
             const cropRect = this.adjustImageCropRect(imageSize, faceRect);
             const facePixelRect = this.faceCoordinatesToPixels(json, imageSize, cropRect);
             json.x = facePixelRect.x;
@@ -19271,6 +19275,7 @@ class FaceRecognition {
      * @param faceRect Optional bounds of a face in the image
      * @deprecated Please use {@linkcode detectRecognizableFace} instead
      * @returns Promise that delivers a face that can be used for face recognition
+     * @internal
      */
     createRecognizableFace(image, faceRect) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -19416,6 +19421,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 /**
  * Ver-ID's implementation of the `IdCaptureUI` interface
+ * @category ID capture
  */
 class VerIDIdCaptureUI {
     constructor() {
@@ -19697,6 +19703,9 @@ class VerIDIdCaptureUI {
         }
     }
 }
+/**
+ * @category ID capture
+ */
 class IdCapture {
     constructor(settings, serviceURL) {
         this.percentLoaded = 0;
@@ -20114,6 +20123,7 @@ class IdCapture {
 }
 /**
  * ID capture settings
+ * @category ID capture
  */
 class IdCaptureSettings {
     /**
@@ -20130,6 +20140,7 @@ class IdCaptureSettings {
 }
 /**
  * ID capture session settings
+ * @category ID capture
  */
 class IdCaptureSessionSettings {
     /**
@@ -20166,6 +20177,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 
+/**
+ * @category ID capture
+ * @internal
+ */
 class LandmarkStandardization {
     constructor(leftEye, rightEye) {
         this.eyeCenter = new _utils__WEBPACK_IMPORTED_MODULE_0__.Point();
@@ -20227,21 +20242,27 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
+/**
+ * @category Face detection
+ */
 class LivenessDetectionSession {
     constructor(settings, faceRecognition) {
-        this.faceBuffer = new _utils__WEBPACK_IMPORTED_MODULE_3__.CircularBuffer(3);
-        this.faceDetected = false;
+        this.startTime = new Date().getTime();
+        /**
+         * @internal
+         */
+        this.controlFaceCaptures = [];
+        this.faceDetectionCallback = null;
+        this.faceCaptureCallback = null;
         this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FOUND;
         this.fixTime = null;
         this.alignedFaceCount = 0;
         this.angleHistory = [];
         this.previousBearing = _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT;
         this.closed = false;
-        this.startTime = new Date().getTime();
-        this.faceBoundsSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_3__.RectSmoothing(3);
-        this.faceAngleSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_3__.AngleSmoothing(3);
+        this.faceBoundsSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_3__.RectSmoothing(5);
+        this.faceAngleSmoothing = new _utils__WEBPACK_IMPORTED_MODULE_3__.AngleSmoothing(5);
         this.hasFaceBeenAligned = false;
-        this.controlFaceCaptures = [];
         this.faceRequirementListeners = new Set();
         this.pendingFaceRequirementsNotificationBearing = null;
         this.previousFaceAngle = null;
@@ -20254,15 +20275,9 @@ class LivenessDetectionSession {
         this.unregisterFaceRequirementListener = (listener) => {
             this.faceRequirementListeners.delete(listener);
         };
-        this.notifyFaceRequirementListeners = (bearing) => {
-            if (!this.imageSize) {
-                this.pendingFaceRequirementsNotificationBearing = bearing;
-                return;
-            }
-            for (let listener of this.faceRequirementListeners) {
-                listener.onChange(this.faceRequirements(this.imageSize, bearing));
-            }
-        };
+        /**
+         * @internal
+         */
         this.setupVideo = () => __awaiter(this, void 0, void 0, function* () {
             if (!navigator.mediaDevices) {
                 return Promise.reject(new Error("Unsupported browser"));
@@ -20304,18 +20319,15 @@ class LivenessDetectionSession {
             this.onVideoSize(videoSize);
             this.onMediaStreamAvailable(stream);
         });
-        this.cleanup = () => {
-            if (this.videoTrack) {
-                this.videoTrack.stop();
-                this.videoTrack = null;
-            }
-        };
-        this.selectNextBearing = (availableBearings) => {
-            return availableBearings[Math.floor(Math.random() * availableBearings.length)];
-        };
+        /**
+         * @internal
+         */
         this.faceAngleMatchesRequirements = (angle, requirements) => {
             return angle.yaw >= requirements.accepted.yaw.from && angle.yaw <= requirements.accepted.yaw.to && angle.pitch >= requirements.accepted.pitch.from && angle.pitch <= requirements.accepted.pitch.to;
         };
+        /**
+         * @internal
+         */
         this.faceRequirements = (imageSize, bearing = this.bearingIterator.value) => {
             const minAngle = this.angleBearingEvaluation.minAngleForBearing(bearing);
             const maxAngle = this.angleBearingEvaluation.maxAngleForBearing(bearing);
@@ -20368,6 +20380,9 @@ class LivenessDetectionSession {
             }
             return requirements;
         };
+        /**
+         * @internal
+         */
         this.isFaceFixedInImageSize = (actualFaceBounds, imageSize) => {
             const requirements = this.faceRequirements(imageSize);
             return actualFaceBounds.x >= requirements.accepted.left.from
@@ -20378,118 +20393,53 @@ class LivenessDetectionSession {
                 && actualFaceBounds.right <= requirements.accepted.right.to
                 && actualFaceBounds.bottom >= requirements.accepted.bottom.from
                 && actualFaceBounds.bottom <= requirements.accepted.bottom.to;
-            // if (this.hasFaceBeenAligned) {
-            //     return true
-            // }
-            // const maxRect: Rect = new Rect(0, 0, imageSize.width, imageSize.height)
-            // const inset = expectedFaceBounds.width * 0.25
-            // const minRect: Rect = new Rect(expectedFaceBounds.x + inset, expectedFaceBounds.y + inset, expectedFaceBounds.width - inset * 2, expectedFaceBounds.height - inset * 2)
-            // this.hasFaceBeenAligned = actualFaceBounds.contains(minRect) && maxRect.contains(actualFaceBounds)
-            // return this.hasFaceBeenAligned
         };
+        /**
+         * @internal
+         */
         this.detectFacePresence = (capture) => {
             if (capture.face) {
                 this.faceBuffer.enqueue(capture.face);
                 this.faceBoundsSmoothing.addSample(capture.face.bounds);
                 this.faceAngleSmoothing.addSample(capture.face.angle);
-                if (this.faceBuffer.isFull) {
-                    this.faceDetected = true;
-                }
             }
-            else if (this.alignedFaceCount >= this.settings.faceCaptureFaceCount) {
-                this.faceDetected = false;
-            }
-            else {
+            else if (this.alignedFaceCount > 0 && this.alignedFaceCount < this.settings.faceCaptureFaceCount) {
+                const isFaceBufferEmpty = this.faceBuffer.isEmpty;
                 this.faceBuffer.dequeue();
-                if (this.faceDetected && this.faceBuffer.isEmpty) {
+                if (!isFaceBufferEmpty && this.faceBuffer.isEmpty) {
                     throw new Error("Face lost");
                 }
-                this.faceDetected = false;
                 this.faceBoundsSmoothing.removeFirstSample();
                 this.faceAngleSmoothing.removeFirstSample();
                 const lastFace = this.faceBuffer.lastElement;
-                if (lastFace != null) {
-                    const requestedAngle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value).screenAngle;
-                    const detectedAngle = lastFace.angle.screenAngle;
-                    const deg45 = 45 * (Math.PI / 180);
-                    const inset = Math.min(capture.image.width, capture.image.height) * 0.05;
-                    const rect = new _utils__WEBPACK_IMPORTED_MODULE_3__.Rect(0, 0, capture.image.width, capture.image.height);
-                    rect.inset(inset, inset);
-                    if (rect.contains(lastFace.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45) {
-                        throw new Error("Face moved too far");
-                    }
+                if (lastFace != null && this.hasFaceMovedTooFar(lastFace, capture.image)) {
+                    throw new Error("Face moved too far");
                 }
             }
             capture.faceBounds = this.faceBoundsSmoothing.smoothedValue;
             capture.faceAngle = this.faceAngleSmoothing.smoothedValue;
-            capture.isFacePresent = this.faceDetected;
-            capture.angleTrajectory = null;
-            capture.angleDistance = 0;
-            if (capture.faceAngle) {
-                if (this.previousFaceAngle) {
-                    const target = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value);
-                    const previousToTarget = Math.atan2(this.previousFaceAngle.pitch - target.pitch, this.previousFaceAngle.yaw - target.yaw);
-                    const previousToCurrent = Math.atan2(this.previousFaceAngle.pitch - capture.faceAngle.pitch, this.previousFaceAngle.yaw - capture.faceAngle.yaw);
-                    const previousBearingAngle = this.angleBearingEvaluation.angleForBearing(this.previousBearing);
-                    const requestedBearingAngle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value);
-                    const angleDistance = Math.hypot(requestedBearingAngle.pitch - previousBearingAngle.pitch, requestedBearingAngle.yaw - previousBearingAngle.yaw);
-                    if (angleDistance != 0) {
-                        const faceAngleDistance = Math.hypot(requestedBearingAngle.pitch - capture.faceAngle.pitch, requestedBearingAngle.yaw - capture.faceAngle.yaw);
-                        capture.angleDistance = Math.min(faceAngleDistance / angleDistance, 1);
-                    }
-                    capture.angleTrajectory = 1 - Math.abs((previousToTarget - previousToCurrent) / Math.PI);
-                }
-                this.previousFaceAngle = capture.faceAngle;
-            }
-            else {
-                this.previousFaceAngle = null;
-            }
+            this.recordAngleDistanceAndTrajectory(capture);
             return capture;
         };
+        /**
+         * @internal
+         */
         this.detectFaceAlignment = (capture) => {
-            if (capture.isFacePresent) {
-                const face = this.faceBuffer.lastElement;
-                if (face != null) {
-                    const now = new Date().getTime() / 1000;
-                    if (this.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED) {
-                        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FIXED;
-                        this.fixTime = now;
-                    }
-                    this.faces.enqueue(face);
-                    const imageSize = capture.image;
-                    if (this.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FOUND && this.isFaceFixedInImageSize(face.bounds, imageSize)) {
-                        this.fixTime = now;
-                        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FIXED;
-                    }
-                    else if (this.fixTime && now - this.fixTime > this.settings.pauseDuration && this.faces.isFull) {
-                        for (let i = 0; i < this.faces.length; i++) {
-                            const f = this.faces.get(i);
-                            if (!this.faceAngleMatchesRequirements(f.angle, this.faceRequirements(imageSize))) {
-                                this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.MISALIGNED;
-                                capture.faceAlignmentStatus = this.faceAlignmentStatus;
-                                capture.offsetAngleFromBearing = this.angleBearingEvaluation.offsetFromAngleToBearing(capture.faceAngle ? capture.faceAngle : new _utils__WEBPACK_IMPORTED_MODULE_3__.Angle(), this.bearingIterator.value);
-                                return capture;
-                            }
-                        }
-                        this.faces.clear();
-                        this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
-                        this.fixTime = now;
-                        this.alignedFaceCount += 1;
-                        this.previousBearing = this.bearingIterator.value;
-                        this.bearingIterator = this.bearingGenerator.next();
-                    }
-                }
+            if (!this.faceBuffer.isEmpty) {
+                this.setFaceAlignmentFromFace(this.faceBuffer.lastElement, capture);
             }
             else {
-                this.faces.clear();
                 this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FOUND;
             }
             capture.faceAlignmentStatus = this.faceAlignmentStatus;
             return capture;
         };
+        /**
+         * @internal
+         */
         this.detectSpoofAttempt = (capture) => {
             const face = this.faceBuffer.lastElement;
-            if (!capture.isFacePresent || !face) {
+            if (!face) {
                 this.angleHistory = [];
                 return capture;
             }
@@ -20502,6 +20452,135 @@ class LivenessDetectionSession {
             }
             this.angleHistory = [];
             return capture;
+        };
+        /**
+         * @internal
+         */
+        this.createFaceCapture = (capture) => {
+            if (capture.requestedBearing == _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT && (!capture.face || !capture.face.template)) {
+                const bounds = capture.face ? capture.face.bounds : null;
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_4__.from)(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
+                    capture.face.template = recognizableFace.template;
+                    return capture;
+                }));
+            }
+            else {
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_5__.of)(capture);
+            }
+        };
+        /**
+         * @internal
+         */
+        this.resultFromCaptures = (captures) => {
+            let promise = Promise.resolve();
+            if (this.controlFaceCaptures.length > 0) {
+                const faceDetectionInput = {};
+                let i = 1;
+                this.controlFaceCaptures.forEach(capture => {
+                    faceDetectionInput["image_" + (i++)] = { image: capture.image, faceRect: capture.face.bounds };
+                });
+                promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response) => {
+                    if (Object.values(response).length == 0) {
+                        return this.settings.controlFaceSimilarityThreshold;
+                    }
+                    return this.compareControlFacesToCaptureFaces(response, captures);
+                }).then(score => {
+                    if (score < this.settings.controlFaceSimilarityThreshold) {
+                        throw new Error("Detected possible spoof attempt");
+                    }
+                });
+            }
+            if (this.settings.recordSessionVideo && this.mediaRecorder) {
+                promise = promise.then(() => this.getVideoURL()).then(videoURL => new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionResult(new Date(this.startTime), captures, videoURL));
+            }
+            else {
+                promise = promise.then(() => new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionResult(new Date(this.startTime), captures));
+            }
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_4__.from)(promise);
+        };
+        /**
+         * @internal
+         */
+        this.onVideoSize = (videoSize) => {
+            this.imageSize = videoSize;
+            if (this.pendingFaceRequirementsNotificationBearing !== null) {
+                const bearing = this.pendingFaceRequirementsNotificationBearing;
+                this.pendingFaceRequirementsNotificationBearing = null;
+                this.notifyFaceRequirementListeners(bearing);
+            }
+        };
+        /**
+         * @internal
+         */
+        this.onMediaStreamAvailable = (stream) => {
+            if (!this.settings.recordSessionVideo || !("MediaRecorder" in window)) {
+                return;
+            }
+            const videoTypes = ["video/mp4", "video/mpeg"];
+            for (let videoType of videoTypes) {
+                if (MediaRecorder.isTypeSupported(videoType)) {
+                    this.videoType = videoType;
+                    break;
+                }
+            }
+            if (!this.videoType) {
+                return;
+            }
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.mediaRecorder.start();
+        };
+        this.close = () => {
+            if (!this.closed) {
+                this.closed = true;
+                this.cleanup();
+                setTimeout(() => {
+                    this.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_1__.LivenessDetectionSessionEventType.CLOSE });
+                });
+            }
+        };
+        this.cleanup = () => {
+            if (this.videoTrack) {
+                this.videoTrack.stop();
+                this.videoTrack = null;
+            }
+            this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FOUND;
+            // this.faces.clear()
+            this.faceBuffer.clear();
+            this.angleHistory = [];
+            this.alignedFaceCount = 0;
+            this.fixTime = null;
+            this.hasFaceBeenAligned = false;
+            this.previousBearing = _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT;
+            this.previousFaceAngle = null;
+            this.bearingGenerator = this.nextCaptureBearing();
+            this.bearingIterator = this.bearingGenerator.next();
+        };
+        this.selectNextBearing = (availableBearings) => {
+            return availableBearings[Math.floor(Math.random() * availableBearings.length)];
+        };
+        this.getVideoURL = () => {
+            if (!this.settings.recordSessionVideo || !("MediaRecorder" in window) || !this.mediaRecorder) {
+                return Promise.reject(new Error("Video recording disabled or unavailable"));
+            }
+            return new Promise((resolve, reject) => {
+                this.mediaRecorder.ondataavailable = (event) => {
+                    const blob = new Blob([event.data], {
+                        type: this.videoType
+                    });
+                    const fileReader = new FileReader();
+                    fileReader.onloadend = () => {
+                        resolve(fileReader.result);
+                    };
+                    fileReader.onerror = () => {
+                        reject(new Error("Failed to read video"));
+                    };
+                    fileReader.readAsDataURL(blob);
+                };
+                this.mediaRecorder.onerror = (event) => {
+                    reject(new Error("Failed to record video"));
+                };
+                this.mediaRecorder.stop();
+            });
         };
         this.movedTooFast = () => {
             if (this.previousBearing != this.bearingIterator.value) {
@@ -20530,110 +20609,116 @@ class LivenessDetectionSession {
             }
             return false;
         };
-        this.createFaceCapture = (capture) => {
-            if (capture.requestedBearing == _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT && (!capture.face || !capture.face.template)) {
-                const bounds = capture.face ? capture.face.bounds : null;
-                return (0,rxjs__WEBPACK_IMPORTED_MODULE_4__.from)(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
-                    capture.face.template = recognizableFace.template;
-                    return capture;
-                }));
-            }
-            else {
-                return (0,rxjs__WEBPACK_IMPORTED_MODULE_5__.of)(capture);
-            }
-        };
-        this.resultFromCaptures = (captures) => {
-            let promise = Promise.resolve();
-            if (this.controlFaceCaptures.length > 0) {
-                const faceDetectionInput = {};
-                let i = 1;
-                this.controlFaceCaptures.forEach(capture => {
-                    faceDetectionInput["image_" + (i++)] = { image: capture.image, faceRect: capture.face.bounds };
-                });
-                promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response) => {
-                    if (Object.values(response).length == 0) {
-                        return this.settings.controlFaceSimilarityThreshold;
-                    }
-                    return this.compareControlFacesToCaptureFaces(response, captures);
-                }).then(score => {
-                    if (score < this.settings.controlFaceSimilarityThreshold) {
-                        throw new Error("Detected possible spoof attempt");
-                    }
-                });
-            }
-            if (this.settings.recordSessionVideo && this.mediaRecorder) {
-                promise = promise.then(() => this.getVideoURL()).then(videoURL => new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionResult(new Date(this.startTime), captures, videoURL));
-            }
-            else {
-                promise = promise.then(() => new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionResult(new Date(this.startTime), captures));
-            }
-            return (0,rxjs__WEBPACK_IMPORTED_MODULE_4__.from)(promise);
-        };
-        this.onVideoSize = (videoSize) => {
-            this.imageSize = videoSize;
-            if (this.pendingFaceRequirementsNotificationBearing !== null) {
-                const bearing = this.pendingFaceRequirementsNotificationBearing;
-                this.pendingFaceRequirementsNotificationBearing = null;
-                this.notifyFaceRequirementListeners(bearing);
-            }
-        };
-        this.onMediaStreamAvailable = (stream) => {
-            if (!this.settings.recordSessionVideo || !("MediaRecorder" in window)) {
-                return;
-            }
-            const videoTypes = ["video/mp4", "video/mpeg"];
-            for (let videoType of videoTypes) {
-                if (MediaRecorder.isTypeSupported(videoType)) {
-                    this.videoType = videoType;
-                    break;
+        this.areAllBufferedFacesAligned = (capture) => {
+            for (let i = 0; i < this.faceBuffer.length; i++) {
+                const f = this.faceBuffer.get(i);
+                if (!this.faceAngleMatchesRequirements(f.angle, this.faceRequirements(capture.image))) {
+                    return false;
                 }
             }
-            if (!this.videoType) {
+            return true;
+        };
+        this.setFaceAlignmentFromFace = (face, capture) => {
+            const now = new Date().getTime() / 1000;
+            if (this.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED) {
+                this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FIXED;
+                this.fixTime = now;
+            }
+            // this.faces.enqueue(face)
+            if (this.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FOUND && this.isFaceFixedInImageSize(face.bounds, capture.image)) {
+                this.fixTime = now;
+                this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FIXED;
+            }
+            else if (this.fixTime && now - this.fixTime > this.settings.pauseDuration && this.faceBuffer.isFull) {
+                if (!this.areAllBufferedFacesAligned(capture)) {
+                    this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.MISALIGNED;
+                    capture.offsetAngleFromBearing = this.angleBearingEvaluation.offsetFromAngleToBearing(capture.faceAngle ? capture.faceAngle : new _utils__WEBPACK_IMPORTED_MODULE_3__.Angle(), this.bearingIterator.value);
+                }
+                else {
+                    // this.faces.clear()
+                    this.faceBuffer.clear();
+                    this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
+                    this.fixTime = now;
+                    this.alignedFaceCount += 1;
+                    this.previousBearing = this.bearingIterator.value;
+                    this.bearingIterator = this.bearingGenerator.next();
+                }
+            }
+        };
+        this.hasFaceMovedTooFar = (face, imageSize) => {
+            const requestedAngle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value).screenAngle;
+            const detectedAngle = face.angle.screenAngle;
+            const deg45 = 45 * (Math.PI / 180);
+            const inset = Math.min(imageSize.width, imageSize.height) * 0.05;
+            const rect = new _utils__WEBPACK_IMPORTED_MODULE_3__.Rect(0, 0, imageSize.width, imageSize.height);
+            rect.inset(inset, inset);
+            return rect.contains(face.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45;
+        };
+        this.recordAngleDistanceAndTrajectory = (capture) => {
+            capture.angleTrajectory = null;
+            capture.angleDistance = 0;
+            if (capture.faceAngle) {
+                if (this.previousFaceAngle) {
+                    const target = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value);
+                    const previousToTarget = Math.atan2(this.previousFaceAngle.pitch - target.pitch, this.previousFaceAngle.yaw - target.yaw);
+                    const previousToCurrent = Math.atan2(this.previousFaceAngle.pitch - capture.faceAngle.pitch, this.previousFaceAngle.yaw - capture.faceAngle.yaw);
+                    const previousBearingAngle = this.angleBearingEvaluation.angleForBearing(this.previousBearing);
+                    const requestedBearingAngle = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value);
+                    const angleDistance = Math.hypot(requestedBearingAngle.pitch - previousBearingAngle.pitch, requestedBearingAngle.yaw - previousBearingAngle.yaw);
+                    if (angleDistance != 0) {
+                        const faceAngleDistance = Math.hypot(requestedBearingAngle.pitch - capture.faceAngle.pitch, requestedBearingAngle.yaw - capture.faceAngle.yaw);
+                        capture.angleDistance = Math.min(faceAngleDistance / angleDistance, 1);
+                    }
+                    capture.angleTrajectory = 1 - Math.abs((previousToTarget - previousToCurrent) / Math.PI);
+                }
+                this.previousFaceAngle = capture.faceAngle;
+            }
+            else {
+                this.previousFaceAngle = null;
+            }
+        };
+        this.notifyFaceRequirementListeners = (bearing) => {
+            if (!this.imageSize) {
+                this.pendingFaceRequirementsNotificationBearing = bearing;
                 return;
             }
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.mediaRecorder.start();
-        };
-        this.getVideoURL = () => {
-            if (!this.settings.recordSessionVideo || !("MediaRecorder" in window) || !this.mediaRecorder) {
-                return Promise.reject(new Error("Video recording disabled or unavailable"));
-            }
-            return new Promise((resolve, reject) => {
-                this.mediaRecorder.ondataavailable = (event) => {
-                    const blob = new Blob([event.data], {
-                        type: this.videoType
-                    });
-                    const fileReader = new FileReader();
-                    fileReader.onloadend = () => {
-                        resolve(fileReader.result);
-                    };
-                    fileReader.onerror = () => {
-                        reject(new Error("Failed to read video"));
-                    };
-                    fileReader.readAsDataURL(blob);
-                };
-                this.mediaRecorder.onerror = (event) => {
-                    reject(new Error("Failed to record video"));
-                };
-                this.mediaRecorder.stop();
-            });
-        };
-        this.close = () => {
-            if (!this.closed) {
-                this.closed = true;
-                this.cleanup();
-                setTimeout(() => {
-                    this.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_1__.FaceCaptureEventType.CLOSE });
-                });
+            for (let listener of this.faceRequirementListeners) {
+                listener.onChange(this.faceRequirements(this.imageSize, bearing));
             }
         };
+        if (!settings) {
+            settings = new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionSettings();
+        }
         this.settings = settings;
         this.ui = settings.createUI();
         this.faceRecognition = faceRecognition;
-        this.faces = new _utils__WEBPACK_IMPORTED_MODULE_3__.CircularBuffer(settings.faceCaptureFaceCount);
+        this.faceBuffer = new _utils__WEBPACK_IMPORTED_MODULE_3__.CircularBuffer(settings.faceCaptureFaceCount);
         this.angleBearingEvaluation = new _utils__WEBPACK_IMPORTED_MODULE_3__.AngleBearingEvaluation(settings, 5, 5);
         this.bearingGenerator = this.nextCaptureBearing.apply(this);
         this.bearingIterator = this.bearingGenerator.next();
+    }
+    /**
+     * @internal
+     */
+    get requestedBearing() {
+        return this.bearingIterator.value;
+    }
+    get isClosed() {
+        return this.closed;
+    }
+    compareControlFacesToCaptureFaces(controlFaces, captures) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const captureTemplates = captures.filter(capture => capture.face && capture.face.template && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED).map(capture => capture.face.template);
+            const controlTemplates = Object.values(controlFaces).map(face => face.template);
+            const scores = yield Promise.all(captureTemplates.map(template => this.faceRecognition.compareFaceTemplateToTemplates(template, controlTemplates)));
+            if (scores.length == 0) {
+                return 0;
+            }
+            if (scores.length == 1) {
+                return scores[0];
+            }
+            return scores.reduce((previous, current) => Math.min(previous, current));
+        });
     }
     *nextCaptureBearing() {
         let nextBearing = _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT;
@@ -20656,21 +20741,10 @@ class LivenessDetectionSession {
             }
         }
     }
-    compareControlFacesToCaptureFaces(controlFaces, captures) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const captureTemplates = captures.filter(capture => capture.face && capture.face.template && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED).map(capture => capture.face.template);
-            const controlTemplates = Object.values(controlFaces).map(face => face.template);
-            const scores = yield Promise.all(captureTemplates.map(template => this.faceRecognition.compareFaceTemplateToTemplates(template, controlTemplates)));
-            if (scores.length == 0) {
-                return 0;
-            }
-            if (scores.length == 1) {
-                return scores[0];
-            }
-            return scores.reduce((previous, current) => Math.min(previous, current));
-        });
-    }
 }
+/**
+ * @category Face detection testing
+ */
 class MockLivenessDetectionSession extends LivenessDetectionSession {
     constructor() {
         super(...arguments);
@@ -20711,50 +20785,6 @@ class MockLivenessDetectionSession extends LivenessDetectionSession {
         });
     }
 }
-class VideoLivenessDetectionSession extends LivenessDetectionSession {
-    constructor(settings, faceRecognition, videoURL, bearing) {
-        super(settings, faceRecognition);
-        this.setupVideo = () => __awaiter(this, void 0, void 0, function* () {
-            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-                this.ui.video.onloadedmetadata = () => {
-                    const videoSize = {
-                        width: this.ui.video.videoWidth,
-                        height: this.ui.video.videoHeight
-                    };
-                    this.onVideoSize(videoSize);
-                };
-                this.ui.video.oncanplaythrough = () => {
-                    this.ui.video.play().then(resolve).catch(reject);
-                };
-                this.ui.video.onerror = () => {
-                    reject(new Error("Failed to load video from " + this.videoURL));
-                };
-                try {
-                    const response = yield fetch(this.videoURL);
-                    if (response.status != 200) {
-                        throw new Error("Received status " + response.status + " when fetching video");
-                    }
-                    const videoBlob = yield response.blob();
-                    if ("srcObject" in this.ui.video) {
-                        this.ui.video.srcObject = videoBlob;
-                    }
-                    else {
-                        // @ts-ignore
-                        this.ui.video.src = URL.createObjectURL(videoBlob);
-                    }
-                }
-                catch (error) {
-                    reject(error);
-                }
-            }));
-        });
-        this.selectNextBearing = (availableBearings) => {
-            return this.bearing;
-        };
-        this.videoURL = videoURL;
-        this.bearing = bearing;
-    }
-}
 
 
 /***/ }),
@@ -20770,6 +20800,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "NormalDistribution": () => (/* binding */ NormalDistribution)
 /* harmony export */ });
+/**
+ * @internal
+ */
 class NormalDistribution {
     constructor(mean = 0, standardDeviation = 1) {
         this.mean = mean;
@@ -20960,19 +20993,22 @@ class ContinuedFraction {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "QRCodeGenerator": () => (/* binding */ QRCodeGenerator)
+/* harmony export */   "generateQRCode": () => (/* binding */ generateQRCode)
 /* harmony export */ });
 /* harmony import */ var qrcode_generator_es6__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! qrcode-generator-es6 */ "./node_modules/qrcode-generator-es6/index.js");
 
-class QRCodeGenerator {
-    static generateQRCode(text) {
-        const qr = new qrcode_generator_es6__WEBPACK_IMPORTED_MODULE_0__.default(0, 'H');
-        qr.addData(text);
-        qr.make();
-        const div = document.createElement("div");
-        div.innerHTML = qr.createImgTag(4);
-        return div.firstChild;
-    }
+/**
+ * @param text Text to encode in the QR code
+ * @returns Image with a QR code
+ * @category QR codes
+ */
+function generateQRCode(text) {
+    const qr = new qrcode_generator_es6__WEBPACK_IMPORTED_MODULE_0__.default(0, 'H');
+    qr.addData(text);
+    qr.make();
+    const div = document.createElement("div");
+    div.innerHTML = qr.createImgTag(4);
+    return div.firstChild;
 }
 
 
@@ -20992,8 +21028,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _faceDetection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./faceDetection */ "./src/faceDetection.ts");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
 
+/**
+ * @category Face detection testing
+ */
 class TestFaceDetector {
     constructor() {
         this.turnDurationMs = 2000;
@@ -21056,8 +21104,8 @@ class TestFaceDetector {
             else {
                 nameParts.push("straight");
             }
-            image.onload = () => {
-                const size = (0,_utils__WEBPACK_IMPORTED_MODULE_1__.sizeOfFaceDetectionSource)(source);
+            image.onload = () => __awaiter(this, void 0, void 0, function* () {
+                const size = yield (0,_utils__WEBPACK_IMPORTED_MODULE_1__.sizeOfImageSource)(source.element);
                 let scale = 1;
                 if (size.width / size.height > image.naturalWidth / image.naturalHeight) {
                     // The source image is "fatter", constrain height and crop the width
@@ -21075,11 +21123,11 @@ class TestFaceDetector {
                         if (face) {
                             this.jitterFace(face);
                         }
-                        resolve(new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LiveFaceCapture(image, face));
+                        resolve(new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceCapture(image, face));
                     };
                     image.src = URL.createObjectURL(blob);
                 });
-            };
+            });
             image.onerror = (ev) => {
                 reject(ev);
             };
@@ -21087,6 +21135,9 @@ class TestFaceDetector {
         });
     }
 }
+/**
+ * @category Face detection testing
+ */
 class TestFaceDetectorFactory {
     createFaceDetector() {
         return Promise.resolve(new TestFaceDetector());
@@ -21112,6 +21163,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "FaceAlignmentStatus": () => (/* binding */ FaceAlignmentStatus),
 /* harmony export */   "Bearing": () => (/* binding */ Bearing)
 /* harmony export */ });
+/**
+ * @category ID capture
+ */
 var DocumentPages;
 (function (DocumentPages) {
     DocumentPages["FRONT"] = "front";
@@ -21126,6 +21180,7 @@ class Warning {
 }
 /**
  * ID capture event types
+ * @category ID capture
  */
 var IdCaptureEventType;
 (function (IdCaptureEventType) {
@@ -21184,6 +21239,8 @@ var IdCaptureEventType;
 })(IdCaptureEventType || (IdCaptureEventType = {}));
 /**
  * Axis
+ * @category Face detection
+ * @internal
  */
 var Axis;
 (function (Axis) {
@@ -21198,6 +21255,8 @@ var Axis;
 })(Axis || (Axis = {}));
 /**
  * Face alignment status
+ * @category Face detection
+ * @internal
  */
 var FaceAlignmentStatus;
 (function (FaceAlignmentStatus) {
@@ -21208,6 +21267,7 @@ var FaceAlignmentStatus;
 })(FaceAlignmentStatus || (FaceAlignmentStatus = {}));
 /**
  * Bearing
+ * @category Face detection
  */
 var Bearing;
 (function (Bearing) {
@@ -21244,15 +21304,27 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "RectSmoothing": () => (/* binding */ RectSmoothing),
 /* harmony export */   "AngleSmoothing": () => (/* binding */ AngleSmoothing),
 /* harmony export */   "clamp": () => (/* binding */ clamp),
-/* harmony export */   "imageFromFaceDetectionSource": () => (/* binding */ imageFromFaceDetectionSource),
-/* harmony export */   "sizeOfFaceDetectionSource": () => (/* binding */ sizeOfFaceDetectionSource)
+/* harmony export */   "blobFromImageSource": () => (/* binding */ blobFromImageSource),
+/* harmony export */   "canvasFromImageSource": () => (/* binding */ canvasFromImageSource),
+/* harmony export */   "imageFromImageSource": () => (/* binding */ imageFromImageSource),
+/* harmony export */   "sizeOfImageSource": () => (/* binding */ sizeOfImageSource)
 /* harmony export */ });
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
 /**
  * Circular (ring) buffer implementation
  *
  * @typeParam Type - Type of value the buffer contains
+ * @internal
  */
 class CircularBuffer {
     /**
@@ -21345,6 +21417,7 @@ class CircularBuffer {
 }
 /**
  * Angle
+ * @internal
  */
 class Angle {
     /**
@@ -21367,6 +21440,7 @@ class Angle {
 }
 /**
  * Point
+ * @internal
  */
 class Point {
     /**
@@ -21381,6 +21455,7 @@ class Point {
 }
 /**
  * Rectangle
+ * @internal
  */
 class Rect {
     /**
@@ -21464,6 +21539,7 @@ class Rect {
 }
 /**
  * Evaluates angles in relation to bearings
+ * @internal
  */
 class AngleBearingEvaluation {
     constructor(settings, pitchThresholdTolerance, yawThresholdTolerance) {
@@ -21631,6 +21707,9 @@ class AngleBearingEvaluation {
         return angle;
     }
 }
+/**
+ * @internal
+ */
 class Smoothing {
     constructor(bufferSize) {
         this._smoothedValue = null;
@@ -21660,6 +21739,9 @@ class Smoothing {
         this._smoothedValue = null;
     }
 }
+/**
+ * @internal
+ */
 function emitRxEvent(subscriber, event) {
     if (subscriber.closed) {
         return;
@@ -21674,6 +21756,9 @@ function emitRxEvent(subscriber, event) {
         subscriber.complete();
     }
 }
+/**
+ * @internal
+ */
 class RectSmoothing {
     constructor(bufferSize) {
         this._smoothedValue = null;
@@ -21712,6 +21797,9 @@ class RectSmoothing {
         return new Rect(this.xSmoothing.smoothedValue, this.ySmoothing.smoothedValue, this.widthSmoothing.smoothedValue, this.heightSmoothing.smoothedValue);
     }
 }
+/**
+ * @internal
+ */
 class AngleSmoothing {
     constructor(bufferSize) {
         this.yawSmoothing = new Smoothing(bufferSize);
@@ -21742,6 +21830,13 @@ class AngleSmoothing {
         this.pitchSmoothing.removeFirstSample();
     }
 }
+/**
+ * Clamp a number so that it's between {@code 0-limit} and {@code limit}
+ * @param a Number to clamp
+ * @param limit Value to limit the clamped number to
+ * @returns Clamped number
+ * @internal
+ */
 function clamp(a, limit) {
     if (a < 0 - limit) {
         return 0 - limit;
@@ -21751,35 +21846,165 @@ function clamp(a, limit) {
     }
     return a;
 }
-function imageFromFaceDetectionSource(canvas, source) {
-    const size = sizeOfFaceDetectionSource(source);
-    canvas.width = size.width;
-    canvas.height = size.height;
-    canvas.getContext("2d").drawImage(source.element, 0, 0, size.width, size.height);
-    const image = new Image();
-    image.width = size.width;
-    image.height = size.height;
-    image.src = canvas.toDataURL();
-    return image;
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+function blobFromImageSource(imageSource) {
+    if (imageSource instanceof Blob) {
+        return Promise.resolve(imageSource);
+    }
+    return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+        const canvas = yield canvasFromImageSource(imageSource);
+        canvas.toBlob(blob => {
+            resolve(blob);
+        });
+    }));
 }
-function sizeOfFaceDetectionSource(source) {
-    let size = {
-        width: 0,
-        height: 0
-    };
-    if (source.element.videoWidth) {
-        size.width = source.element.videoWidth;
-        size.height = source.element.videoHeight;
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+function canvasFromImageSource(imageSource) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (imageSource instanceof HTMLCanvasElement) {
+            return imageSource;
+        }
+        const imageSize = yield sizeOfImageSource(imageSource);
+        const canvas = document.createElement("canvas");
+        canvas.width = imageSize.width;
+        canvas.height = imageSize.height;
+        const context = canvas.getContext("2d");
+        if (imageSource instanceof ImageData) {
+            context.putImageData(imageSource, 0, 0);
+        }
+        else if (imageSource instanceof HTMLImageElement || imageSource instanceof HTMLVideoElement) {
+            context.drawImage(imageSource, 0, 0);
+        }
+        else if (imageSource instanceof Blob) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    context.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(img.src);
+                    resolve(canvas);
+                };
+                img.onerror = () => {
+                    reject(new Error("Failed to load image"));
+                };
+                img.src = URL.createObjectURL(imageSource);
+            });
+        }
+        else if (typeof imageSource == "string") {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    context.drawImage(img, 0, 0);
+                    resolve(canvas);
+                };
+                img.onerror = () => {
+                    reject(new Error("Failed to load image"));
+                };
+                img.src = imageSource;
+            });
+        }
+        else {
+            throw new Error("Invalid image source");
+        }
+        return canvas;
+    });
+}
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+function imageFromImageSource(imageSource) {
+    if (imageSource instanceof HTMLImageElement) {
+        return Promise.resolve(imageSource);
     }
-    else if (source.element.naturalWidth) {
-        size.width = source.element.naturalWidth;
-        size.height = source.element.naturalHeight;
+    return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+        const blob = yield blobFromImageSource(imageSource);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(img.src);
+            resolve(img);
+        };
+        img.onerror = () => {
+            reject(new Error("Failed to load image"));
+        };
+        img.src = URL.createObjectURL(blob);
+    }));
+}
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+function sizeOfImageSource(imageSource) {
+    if (imageSource instanceof HTMLCanvasElement) {
+        return Promise.resolve({
+            "width": imageSource.width,
+            "height": imageSource.height
+        });
     }
-    else {
-        size.width = source.element.width;
-        size.height = source.element.height;
+    if (imageSource instanceof ImageData) {
+        return Promise.resolve({
+            "width": imageSource.width,
+            "height": imageSource.height
+        });
     }
-    return size;
+    if (imageSource instanceof HTMLVideoElement) {
+        return Promise.resolve({
+            "width": imageSource.videoWidth,
+            "height": imageSource.videoHeight
+        });
+    }
+    return new Promise((resolve, reject) => {
+        const onError = () => {
+            reject(new Error("Failed to load image"));
+        };
+        const onImageSize = (image) => {
+            resolve({
+                "width": image.naturalWidth,
+                "height": image.naturalHeight
+            });
+        };
+        if (imageSource instanceof HTMLImageElement) {
+            if (imageSource.complete) {
+                onImageSize(imageSource);
+            }
+            else {
+                imageSource.onload = () => {
+                    onImageSize(imageSource);
+                };
+                imageSource.onerror = onError;
+            }
+        }
+        else if (imageSource instanceof Blob) {
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(img.src);
+                onImageSize(img);
+            };
+            img.onerror = onError;
+            img.src = URL.createObjectURL(imageSource);
+        }
+        else if (typeof imageSource == "string") {
+            const img = new Image();
+            img.onload = () => {
+                onImageSize(img);
+            };
+            img.onerror = onError;
+            img.src = imageSource;
+        }
+    });
 }
 
 
@@ -22158,11 +22383,11 @@ var __webpack_exports__ = {};
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "Face": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.Face),
-/* harmony export */   "FaceCaptureSettings": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceCaptureSettings),
+/* harmony export */   "FaceCapture": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceCapture),
 /* harmony export */   "FaceDetection": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceDetection),
 /* harmony export */   "FaceExtents": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceExtents),
-/* harmony export */   "LiveFaceCapture": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LiveFaceCapture),
 /* harmony export */   "LivenessDetectionSessionResult": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionResult),
+/* harmony export */   "LivenessDetectionSessionSettings": () => (/* reexport safe */ _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionSettings),
 /* harmony export */   "FaceRecognition": () => (/* reexport safe */ _faceRecognition__WEBPACK_IMPORTED_MODULE_1__.FaceRecognition),
 /* harmony export */   "Axis": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.Axis),
 /* harmony export */   "Bearing": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.Bearing),
@@ -22178,20 +22403,22 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Rect": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.Rect),
 /* harmony export */   "RectSmoothing": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.RectSmoothing),
 /* harmony export */   "Smoothing": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.Smoothing),
+/* harmony export */   "blobFromImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.blobFromImageSource),
+/* harmony export */   "canvasFromImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.canvasFromImageSource),
 /* harmony export */   "clamp": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.clamp),
 /* harmony export */   "emitRxEvent": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.emitRxEvent),
-/* harmony export */   "imageFromFaceDetectionSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.imageFromFaceDetectionSource),
-/* harmony export */   "sizeOfFaceDetectionSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.sizeOfFaceDetectionSource),
+/* harmony export */   "imageFromImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.imageFromImageSource),
+/* harmony export */   "sizeOfImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.sizeOfImageSource),
 /* harmony export */   "IdCapture": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCapture),
 /* harmony export */   "IdCaptureSessionSettings": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCaptureSessionSettings),
 /* harmony export */   "IdCaptureSettings": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCaptureSettings),
 /* harmony export */   "estimateFaceAngle": () => (/* reexport safe */ _faceAngle__WEBPACK_IMPORTED_MODULE_5__.estimateFaceAngle),
-/* harmony export */   "QRCodeGenerator": () => (/* reexport safe */ _qrCodeGenerator__WEBPACK_IMPORTED_MODULE_6__.QRCodeGenerator),
+/* harmony export */   "generateQRCode": () => (/* reexport safe */ _qrCodeGenerator__WEBPACK_IMPORTED_MODULE_6__.generateQRCode),
 /* harmony export */   "NormalDistribution": () => (/* reexport safe */ _normalDistribution__WEBPACK_IMPORTED_MODULE_7__.NormalDistribution),
 /* harmony export */   "VerIDFaceDetector": () => (/* reexport safe */ _faceDetector__WEBPACK_IMPORTED_MODULE_8__.VerIDFaceDetector),
 /* harmony export */   "VerIDFaceDetectorFactory": () => (/* reexport safe */ _faceDetector__WEBPACK_IMPORTED_MODULE_8__.VerIDFaceDetectorFactory),
-/* harmony export */   "FaceCaptureEventType": () => (/* reexport safe */ _faceDetectionUI__WEBPACK_IMPORTED_MODULE_9__.FaceCaptureEventType),
-/* harmony export */   "VerIDFaceCaptureUI": () => (/* reexport safe */ _faceDetectionUI__WEBPACK_IMPORTED_MODULE_9__.VerIDFaceCaptureUI),
+/* harmony export */   "LivenessDetectionSessionEventType": () => (/* reexport safe */ _faceDetectionUI__WEBPACK_IMPORTED_MODULE_9__.LivenessDetectionSessionEventType),
+/* harmony export */   "VerIDLivenessDetectionSessionUI": () => (/* reexport safe */ _faceDetectionUI__WEBPACK_IMPORTED_MODULE_9__.VerIDLivenessDetectionSessionUI),
 /* harmony export */   "TestFaceDetector": () => (/* reexport safe */ _testFaceDetector__WEBPACK_IMPORTED_MODULE_10__.TestFaceDetector),
 /* harmony export */   "TestFaceDetectorFactory": () => (/* reexport safe */ _testFaceDetector__WEBPACK_IMPORTED_MODULE_10__.TestFaceDetectorFactory),
 /* harmony export */   "LivenessDetectionSession": () => (/* reexport safe */ _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_11__.LivenessDetectionSession),
@@ -22233,8 +22460,7 @@ var __webpack_exports__CircularBuffer = __webpack_exports__.CircularBuffer;
 var __webpack_exports__DocumentPages = __webpack_exports__.DocumentPages;
 var __webpack_exports__Face = __webpack_exports__.Face;
 var __webpack_exports__FaceAlignmentStatus = __webpack_exports__.FaceAlignmentStatus;
-var __webpack_exports__FaceCaptureEventType = __webpack_exports__.FaceCaptureEventType;
-var __webpack_exports__FaceCaptureSettings = __webpack_exports__.FaceCaptureSettings;
+var __webpack_exports__FaceCapture = __webpack_exports__.FaceCapture;
 var __webpack_exports__FaceDetection = __webpack_exports__.FaceDetection;
 var __webpack_exports__FaceExtents = __webpack_exports__.FaceExtents;
 var __webpack_exports__FaceRecognition = __webpack_exports__.FaceRecognition;
@@ -22242,27 +22468,30 @@ var __webpack_exports__IdCapture = __webpack_exports__.IdCapture;
 var __webpack_exports__IdCaptureEventType = __webpack_exports__.IdCaptureEventType;
 var __webpack_exports__IdCaptureSessionSettings = __webpack_exports__.IdCaptureSessionSettings;
 var __webpack_exports__IdCaptureSettings = __webpack_exports__.IdCaptureSettings;
-var __webpack_exports__LiveFaceCapture = __webpack_exports__.LiveFaceCapture;
 var __webpack_exports__LivenessDetectionSession = __webpack_exports__.LivenessDetectionSession;
+var __webpack_exports__LivenessDetectionSessionEventType = __webpack_exports__.LivenessDetectionSessionEventType;
 var __webpack_exports__LivenessDetectionSessionResult = __webpack_exports__.LivenessDetectionSessionResult;
+var __webpack_exports__LivenessDetectionSessionSettings = __webpack_exports__.LivenessDetectionSessionSettings;
 var __webpack_exports__MockLivenessDetectionSession = __webpack_exports__.MockLivenessDetectionSession;
 var __webpack_exports__NormalDistribution = __webpack_exports__.NormalDistribution;
 var __webpack_exports__Point = __webpack_exports__.Point;
-var __webpack_exports__QRCodeGenerator = __webpack_exports__.QRCodeGenerator;
 var __webpack_exports__Rect = __webpack_exports__.Rect;
 var __webpack_exports__RectSmoothing = __webpack_exports__.RectSmoothing;
 var __webpack_exports__Smoothing = __webpack_exports__.Smoothing;
 var __webpack_exports__TestFaceDetector = __webpack_exports__.TestFaceDetector;
 var __webpack_exports__TestFaceDetectorFactory = __webpack_exports__.TestFaceDetectorFactory;
-var __webpack_exports__VerIDFaceCaptureUI = __webpack_exports__.VerIDFaceCaptureUI;
 var __webpack_exports__VerIDFaceDetector = __webpack_exports__.VerIDFaceDetector;
 var __webpack_exports__VerIDFaceDetectorFactory = __webpack_exports__.VerIDFaceDetectorFactory;
+var __webpack_exports__VerIDLivenessDetectionSessionUI = __webpack_exports__.VerIDLivenessDetectionSessionUI;
 var __webpack_exports__Warning = __webpack_exports__.Warning;
+var __webpack_exports__blobFromImageSource = __webpack_exports__.blobFromImageSource;
+var __webpack_exports__canvasFromImageSource = __webpack_exports__.canvasFromImageSource;
 var __webpack_exports__clamp = __webpack_exports__.clamp;
 var __webpack_exports__emitRxEvent = __webpack_exports__.emitRxEvent;
 var __webpack_exports__estimateFaceAngle = __webpack_exports__.estimateFaceAngle;
-var __webpack_exports__imageFromFaceDetectionSource = __webpack_exports__.imageFromFaceDetectionSource;
-var __webpack_exports__sizeOfFaceDetectionSource = __webpack_exports__.sizeOfFaceDetectionSource;
-export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCaptureEventType as FaceCaptureEventType, __webpack_exports__FaceCaptureSettings as FaceCaptureSettings, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LiveFaceCapture as LiveFaceCapture, __webpack_exports__LivenessDetectionSession as LivenessDetectionSession, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__MockLivenessDetectionSession as MockLivenessDetectionSession, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__QRCodeGenerator as QRCodeGenerator, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__TestFaceDetector as TestFaceDetector, __webpack_exports__TestFaceDetectorFactory as TestFaceDetectorFactory, __webpack_exports__VerIDFaceCaptureUI as VerIDFaceCaptureUI, __webpack_exports__VerIDFaceDetector as VerIDFaceDetector, __webpack_exports__VerIDFaceDetectorFactory as VerIDFaceDetectorFactory, __webpack_exports__Warning as Warning, __webpack_exports__clamp as clamp, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle, __webpack_exports__imageFromFaceDetectionSource as imageFromFaceDetectionSource, __webpack_exports__sizeOfFaceDetectionSource as sizeOfFaceDetectionSource };
+var __webpack_exports__generateQRCode = __webpack_exports__.generateQRCode;
+var __webpack_exports__imageFromImageSource = __webpack_exports__.imageFromImageSource;
+var __webpack_exports__sizeOfImageSource = __webpack_exports__.sizeOfImageSource;
+export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCapture as FaceCapture, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LivenessDetectionSession as LivenessDetectionSession, __webpack_exports__LivenessDetectionSessionEventType as LivenessDetectionSessionEventType, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__LivenessDetectionSessionSettings as LivenessDetectionSessionSettings, __webpack_exports__MockLivenessDetectionSession as MockLivenessDetectionSession, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__TestFaceDetector as TestFaceDetector, __webpack_exports__TestFaceDetectorFactory as TestFaceDetectorFactory, __webpack_exports__VerIDFaceDetector as VerIDFaceDetector, __webpack_exports__VerIDFaceDetectorFactory as VerIDFaceDetectorFactory, __webpack_exports__VerIDLivenessDetectionSessionUI as VerIDLivenessDetectionSessionUI, __webpack_exports__Warning as Warning, __webpack_exports__blobFromImageSource as blobFromImageSource, __webpack_exports__canvasFromImageSource as canvasFromImageSource, __webpack_exports__clamp as clamp, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle, __webpack_exports__generateQRCode as generateQRCode, __webpack_exports__imageFromImageSource as imageFromImageSource, __webpack_exports__sizeOfImageSource as sizeOfImageSource };
 
 //# sourceMappingURL=index.js.map

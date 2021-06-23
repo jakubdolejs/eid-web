@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export class NormalDistribution {
 
     readonly mean: number

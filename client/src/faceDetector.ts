@@ -1,40 +1,46 @@
-import { Face, LiveFaceCapture } from "./faceDetection"
+import { Face, FaceCapture } from "./faceDetection"
 import * as faceapi from "face-api.js/build/es6"
 import { estimateFaceAngle } from "./faceAngle"
 import { estimateFaceAngle as estimateFaceAngleNoseTip } from "./faceAngleNoseTip"
-import { Angle, imageFromFaceDetectionSource, Point, Rect } from "./utils"
-import { Size } from "./types"
+import { Angle, imageFromImageSource, Point, Rect, sizeOfImageSource } from "./utils"
+import { ImageSource, Size } from "./types"
 
-export type FaceDetectionElement = HTMLVideoElement | HTMLImageElement | HTMLCanvasElement
+/**
+ * @category Face detection
+ */
 export type FaceDetectionSource = {
-    element: FaceDetectionElement
+    element: ImageSource
     mirrored: boolean
 }
+/**
+ * @category Face detection
+ */
 export interface FaceDetector {
-    detectFace(source: FaceDetectionSource): Promise<LiveFaceCapture>
+    detectFace(source: FaceDetectionSource): Promise<FaceCapture>
 }
+/**
+ * @category Face detection
+ */
 export interface FaceDetectorFactory {
     createFaceDetector(): Promise<FaceDetector>
 }
 
+/**
+ * @category Face detection
+ */
 export class VerIDFaceDetector implements FaceDetector {
 
-    private canvas: HTMLCanvasElement
-
-    constructor() {
-        this.canvas = document.createElement("canvas")
-    }
-
-    detectFace = async (source: FaceDetectionSource): Promise<LiveFaceCapture> => {
-        const faceApiFace = await faceapi.detectSingleFace(source.element, new faceapi.TinyFaceDetectorOptions({"inputSize": 128})).withFaceLandmarks()
+    detectFace = async (source: FaceDetectionSource): Promise<FaceCapture> => {
+        const src = source.element instanceof HTMLVideoElement || source.element instanceof HTMLImageElement || source.element instanceof HTMLCanvasElement ? source.element : await imageFromImageSource(source.element)
+        const faceApiFace = await faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({"inputSize": 128})).withFaceLandmarks()
         let face: Face
         if (faceApiFace) {
-            face = this.faceApiFaceToVerIDFace(faceApiFace, (source.element as HTMLVideoElement).videoWidth || (source.element as HTMLImageElement).naturalWidth || (source.element as HTMLCanvasElement).width, source.mirrored)
+            face = this.faceApiFaceToVerIDFace(faceApiFace, (await sizeOfImageSource(source.element)).width, source.mirrored)
         } else {
             face = null
         }
-        const image = imageFromFaceDetectionSource(this.canvas, source)
-        return new LiveFaceCapture(image, face)
+        const image = await imageFromImageSource(source.element)
+        return new FaceCapture(image, face)
     }
 
     private calculateFaceAngle(face: any): Angle {
@@ -77,6 +83,9 @@ export class VerIDFaceDetector implements FaceDetector {
     }
 }
 
+/**
+ * @category Face detection testing
+ */
 export class VerIDFaceDetectorFactory implements FaceDetectorFactory {
 
     createFaceDetector = async(): Promise<FaceDetector> => {

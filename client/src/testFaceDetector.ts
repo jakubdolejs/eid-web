@@ -1,9 +1,11 @@
-import { Face, LiveFaceCapture } from "./faceDetection";
+import { Face, FaceCapture } from "./faceDetection";
 import { FaceDetectionSource, FaceDetector, FaceDetectorFactory } from "./faceDetector";
-import { FaceRequirementListener } from "./livenessDetectionSession";
-import { FaceRequirements } from "./types";
-import { sizeOfFaceDetectionSource } from "./utils";
+import { FaceRequirements, FaceRequirementListener } from "./types";
+import { sizeOfImageSource } from "./utils";
 
+/**
+ * @category Face detection testing
+ */
 export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
 
     private face: Face
@@ -41,7 +43,7 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
         face.angle.pitch = this.jitterValue(face.angle.pitch, delta)
     }
 
-    detectFace(source: FaceDetectionSource): Promise<LiveFaceCapture> {
+    detectFace(source: FaceDetectionSource): Promise<FaceCapture> {
         return new Promise((resolve, reject) => {
             let image: HTMLImageElement = new Image()
             let face: Face
@@ -74,8 +76,8 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
             } else {
                 nameParts.push("straight")
             }
-            image.onload = () => {
-                const size = sizeOfFaceDetectionSource(source)
+            image.onload = async () => {
+                const size = await sizeOfImageSource(source.element)
                 let scale: number = 1
                 if (size.width / size.height > image.naturalWidth / image.naturalHeight) {
                     // The source image is "fatter", constrain height and crop the width
@@ -92,7 +94,7 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
                         if (face) {
                             this.jitterFace(face)
                         }
-                        resolve(new LiveFaceCapture(image, face))
+                        resolve(new FaceCapture(image, face))
                     }
                     image.src = URL.createObjectURL(blob)
                 })
@@ -106,6 +108,9 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
 
 }
 
+/**
+ * @category Face detection testing
+ */
 export class TestFaceDetectorFactory implements FaceDetectorFactory {
 
     createFaceDetector(): Promise<FaceDetector> {

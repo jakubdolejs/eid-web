@@ -1,49 +1,70 @@
-import { FaceCaptureSettings, LiveFaceCapture } from "./faceDetection"
+import { LivenessDetectionSessionSettings, FaceCapture } from "./faceDetection"
 import { FaceAlignmentStatus } from "./types"
 import { Rect } from "./utils"
 
-export interface FaceCaptureUI {
+/**
+ * @category Face detection
+ */
+export interface LivenessDetectionSessionUI {
     readonly video: HTMLVideoElement
-    trigger(event: FaceCaptureEvent): void
-    on<Event extends FaceCaptureEvent>(eventType: FaceCaptureEventType, callback: (event: Event) => void): void
+    trigger(event: LivenessDetectionSessionEvent): void
+    on<Event extends LivenessDetectionSessionEvent>(eventType: LivenessDetectionSessionEventType, callback: (event: Event) => void): void
 }
 
-export type FaceCaptureBaseEvent = {
-    type: FaceCaptureEventType
+/**
+ * @category Face detection
+ */
+export type LivenessDetectionSessionBaseEvent = {
+    type: LivenessDetectionSessionEventType
 }
 
-export enum FaceCaptureEventType {
+/**
+ * @category Face detection
+ */
+export enum LivenessDetectionSessionEventType {
     FACE_CAPTURED = "face captured",
     CAPTURE_FINISHED = "capture finished",
     CLOSE = "close",
     CANCEL = "cancel"
 }
 
-export type FaceCaptureSimpleEvent = {
-    type: FaceCaptureEventType.CLOSE | FaceCaptureEventType.CANCEL | FaceCaptureEventType.CAPTURE_FINISHED
-} & FaceCaptureBaseEvent
+/**
+ * @category Face detection
+ */
+export type LivenessDetectionSessionSimpleEvent = {
+    type: LivenessDetectionSessionEventType.CLOSE | LivenessDetectionSessionEventType.CANCEL | LivenessDetectionSessionEventType.CAPTURE_FINISHED
+} & LivenessDetectionSessionBaseEvent
 
-export type FaceCaptureFaceCapturedEvent = {
-    type: FaceCaptureEventType.FACE_CAPTURED
-    capture: LiveFaceCapture
-} & FaceCaptureBaseEvent
+/**
+ * @category Face detection
+ */
+export type LivenessDetectionSessionFaceCapturedEvent = {
+    type: LivenessDetectionSessionEventType.FACE_CAPTURED
+    capture: FaceCapture
+} & LivenessDetectionSessionBaseEvent
 
-export type FaceCaptureEvent = FaceCaptureFaceCapturedEvent | FaceCaptureSimpleEvent
+/**
+ * @category Face detection
+ */
+export type LivenessDetectionSessionEvent = LivenessDetectionSessionFaceCapturedEvent | LivenessDetectionSessionSimpleEvent
 
-export class VerIDFaceCaptureUI implements FaceCaptureUI {
+/**
+ * @category Face detection
+ */
+export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSessionUI {
     
     private cameraOverlayCanvas: HTMLCanvasElement
     private cameraOverlayContext: CanvasRenderingContext2D
     private videoContainer: HTMLDivElement
     private cancelButton: HTMLAnchorElement
-    private eventListeners: {[k in FaceCaptureEventType]?: (event: FaceCaptureEvent) => void} = {}
+    private eventListeners: {[k in LivenessDetectionSessionEventType]?: (event: LivenessDetectionSessionEvent) => void} = {}
     private hasFaceBeenAligned = false
     private processingIndicator: HTMLDivElement
     private angleBar: HTMLDivElement
     readonly video: HTMLVideoElement
-    readonly settings: FaceCaptureSettings
+    readonly settings: LivenessDetectionSessionSettings
 
-    constructor(settings: FaceCaptureSettings) {
+    constructor(settings: LivenessDetectionSessionSettings) {
         this.settings = settings
 
         this.cameraOverlayCanvas = document.createElement("canvas")
@@ -89,7 +110,7 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         this.cancelButton.style.right = "8px"
         this.cancelButton.style.textAlign = "center"
         this.cancelButton.onclick = () => {
-            this.trigger({"type": FaceCaptureEventType.CANCEL})
+            this.trigger({"type": LivenessDetectionSessionEventType.CANCEL})
         }
 
         this.processingIndicator = document.createElement("div")
@@ -120,18 +141,18 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         this.videoContainer.appendChild(this.cancelButton)
     }
 
-    trigger(event: FaceCaptureEvent) {
+    trigger(event: LivenessDetectionSessionEvent) {
         switch (event.type) {
-            case FaceCaptureEventType.FACE_CAPTURED:
+            case LivenessDetectionSessionEventType.FACE_CAPTURED:
                 this.drawFaceAlignmentProgress(event.capture)
                 this.drawDetectedFace(event.capture)
                 break
-            case FaceCaptureEventType.CLOSE:
+            case LivenessDetectionSessionEventType.CLOSE:
                 this.cleanup()
                 break
-            case FaceCaptureEventType.CANCEL:
+            case LivenessDetectionSessionEventType.CANCEL:
                 break
-            case FaceCaptureEventType.CAPTURE_FINISHED:
+            case LivenessDetectionSessionEventType.CAPTURE_FINISHED:
                 this.showCaptureFinished()
                 break
         }
@@ -140,7 +161,7 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         }
     }
 
-    on<Event extends FaceCaptureEvent>(eventType: FaceCaptureEventType, callback: (event: Event) => void) {
+    on<Event extends LivenessDetectionSessionEvent>(eventType: LivenessDetectionSessionEventType, callback: (event: Event) => void) {
         if (callback) {
             this.eventListeners[eventType] = callback
         } else {
@@ -148,7 +169,7 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         }
     }
 
-    private drawFaceAlignmentProgress = (capture: LiveFaceCapture): void => {
+    private drawFaceAlignmentProgress = (capture: FaceCapture): void => {
         let barColor: string
         if (!this.hasFaceBeenAligned) {
             barColor = "#FFFFFF"
@@ -168,7 +189,7 @@ export class VerIDFaceCaptureUI implements FaceCaptureUI {
         this.angleBar.style.height = (100-capture.angleDistance*100)+"%"
     }
 
-    private drawDetectedFace = (capture: LiveFaceCapture): void => {
+    private drawDetectedFace = (capture: FaceCapture): void => {
         const scale = Math.min(this.videoContainer.clientWidth / capture.image.width, this.videoContainer.clientHeight / capture.image.height)
         this.cameraOverlayCanvas.width = capture.image.width * scale
         this.cameraOverlayCanvas.height = capture.image.height * scale

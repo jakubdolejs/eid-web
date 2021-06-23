@@ -1,5 +1,5 @@
-import { FaceCaptureSettings } from "./faceDetection"
-import { Axis, Bearing, Size } from "./types"
+import { LivenessDetectionSessionSettings } from "./faceDetection"
+import { Axis, Bearing, ImageSource, Size } from "./types"
 import { Subscriber } from "rxjs"
 import { FaceDetectionSource } from "./faceDetector"
 
@@ -7,6 +7,7 @@ import { FaceDetectionSource } from "./faceDetector"
  * Circular (ring) buffer implementation
  * 
  * @typeParam Type - Type of value the buffer contains
+ * @internal
  */
 export class CircularBuffer<Type> {
     private buffer: Array<Type> = []
@@ -101,6 +102,7 @@ export class CircularBuffer<Type> {
 
 /**
  * Angle
+ * @internal
  */
 export class Angle {
     /**
@@ -137,6 +139,7 @@ export class Angle {
 
 /**
  * Point
+ * @internal
  */
 export class Point {
     /**
@@ -161,6 +164,7 @@ export class Point {
 
 /**
  * Rectangle
+ * @internal
  */
 export class Rect {
     /**
@@ -275,14 +279,15 @@ export class Rect {
 
 /**
  * Evaluates angles in relation to bearings
+ * @internal
  */
 export class AngleBearingEvaluation {
 
-    settings: FaceCaptureSettings
+    settings: LivenessDetectionSessionSettings
     pitchThresholdTolerance: number
     yawThresholdTolerance: number
 
-    constructor(settings: FaceCaptureSettings, pitchThresholdTolerance: number, yawThresholdTolerance: number) {
+    constructor(settings: LivenessDetectionSessionSettings, pitchThresholdTolerance: number, yawThresholdTolerance: number) {
         this.settings = settings
         this.pitchThresholdTolerance = pitchThresholdTolerance
         this.yawThresholdTolerance = yawThresholdTolerance
@@ -456,6 +461,9 @@ export class AngleBearingEvaluation {
     }
 }
 
+/**
+ * @internal
+ */
 export class Smoothing {
     buffer: CircularBuffer<number>
     private _smoothedValue: number = null
@@ -493,22 +501,34 @@ export class Smoothing {
     }
 }
 
+/**
+ * @internal
+ */
 export type ObservableNextEvent<T> = {
     type: "next",
     value: T
 }
 
+/**
+ * @internal
+ */
 export type ObservableErrorEvent = {
     type: "error",
     error: any
 }
 
+/**
+ * @internal
+ */
 export type ObservableCompleteEvent = {
     type: "complete"
 }
 
 type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent
 
+/**
+ * @internal
+ */
 export function emitRxEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void {
     if (subscriber.closed) {
         return
@@ -522,6 +542,9 @@ export function emitRxEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent
     }
 }
 
+/**
+ * @internal
+ */
 export class RectSmoothing {
 
     private xSmoothing: Smoothing
@@ -577,6 +600,9 @@ export class RectSmoothing {
     }
 }
 
+/**
+ * @internal
+ */
 export class AngleSmoothing {
     
     private yawSmoothing: Smoothing
@@ -621,6 +647,13 @@ export class AngleSmoothing {
     }
 }
 
+/**
+ * Clamp a number so that it's between {@code 0-limit} and {@code limit}
+ * @param a Number to clamp
+ * @param limit Value to limit the clamped number to
+ * @returns Clamped number
+ * @internal
+ */
 export function clamp(a: number, limit: number): number {
     if (a < 0-limit) {
         return 0-limit
@@ -631,32 +664,157 @@ export function clamp(a: number, limit: number): number {
     return a
 }
 
-export function imageFromFaceDetectionSource(canvas: HTMLCanvasElement, source: FaceDetectionSource): HTMLImageElement {
-    const size = sizeOfFaceDetectionSource(source)
-    canvas.width = size.width
-    canvas.height = size.height
-    canvas.getContext("2d").drawImage(source.element, 0, 0, size.width, size.height)
-    const image: HTMLImageElement = new Image()
-    image.width = size.width
-    image.height = size.height
-    image.src = canvas.toDataURL()
-    return image
+/**
+ * 
+ * @param imageSource 
+ * @returns 
+ * @internal
+ */
+export function blobFromImageSource(imageSource: ImageSource): Promise<Blob> {
+    if (imageSource instanceof Blob) {
+        return Promise.resolve(imageSource as Blob)
+    }
+    return new Promise(async (resolve) => {
+        const canvas = await canvasFromImageSource(imageSource)
+        canvas.toBlob(blob => {
+            resolve(blob)
+        })
+    })
 }
 
-export function sizeOfFaceDetectionSource(source: FaceDetectionSource): Size {
-    let size: Size = {
-        width: 0,
-        height: 0
+/**
+ * 
+ * @param imageSource 
+ * @returns 
+ * @internal
+ */
+export async function canvasFromImageSource(imageSource: ImageSource): Promise<HTMLCanvasElement> {
+    if (imageSource instanceof HTMLCanvasElement) {
+        return imageSource
     }
-    if ((source.element as HTMLVideoElement).videoWidth) {
-        size.width = (source.element as HTMLVideoElement).videoWidth
-        size.height = (source.element as HTMLVideoElement).videoHeight
-    } else if ((source.element as HTMLImageElement).naturalWidth) {
-        size.width = (source.element as HTMLImageElement).naturalWidth
-        size.height = (source.element as HTMLImageElement).naturalHeight
+    const imageSize = await sizeOfImageSource(imageSource)
+    const canvas = document.createElement("canvas")
+    canvas.width = imageSize.width
+    canvas.height = imageSize.height
+    const context = canvas.getContext("2d")
+    if (imageSource instanceof ImageData) {
+        context.putImageData(imageSource, 0, 0)
+    } else if (imageSource instanceof HTMLImageElement || imageSource instanceof HTMLVideoElement) {
+        context.drawImage(imageSource, 0, 0)
+    } else if (imageSource instanceof Blob) {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => {
+                context.drawImage(img, 0, 0)
+                URL.revokeObjectURL(img.src)
+                resolve(canvas)
+            }
+            img.onerror = () => {
+                reject(new Error("Failed to load image"))
+            }
+            img.src = URL.createObjectURL(imageSource)
+        })
+    } else if (typeof imageSource == "string") {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => {
+                context.drawImage(img, 0, 0)
+                resolve(canvas)
+            }
+            img.onerror = () => {
+                reject(new Error("Failed to load image"))
+            }
+            img.src = imageSource
+        })
     } else {
-        size.width = source.element.width
-        size.height = source.element.height
+        throw new Error("Invalid image source")
     }
-    return size
+    return canvas
+}
+
+/**
+ * 
+ * @param imageSource
+ * @returns 
+ * @internal
+ */
+export function imageFromImageSource(imageSource: ImageSource): Promise<HTMLImageElement> {
+    if (imageSource instanceof HTMLImageElement) {
+        return Promise.resolve(imageSource)
+    }
+    return new Promise(async (resolve, reject) => {
+        const blob = await blobFromImageSource(imageSource)
+        const img = new Image()
+        img.onload = () => {
+            URL.revokeObjectURL(img.src)
+            resolve(img)
+        }
+        img.onerror = () => {
+            reject(new Error("Failed to load image"))
+        }
+        img.src = URL.createObjectURL(blob)
+    })
+}
+
+/**
+ * 
+ * @param imageSource 
+ * @returns 
+ * @internal
+ */
+export function sizeOfImageSource(imageSource: ImageSource): Promise<Size> {
+    if (imageSource instanceof HTMLCanvasElement) {
+        return Promise.resolve({
+            "width": imageSource.width,
+            "height": imageSource.height
+        })
+    }
+    if (imageSource instanceof ImageData) {
+        return Promise.resolve({
+            "width": imageSource.width,
+            "height": imageSource.height
+        })
+    }
+    if (imageSource instanceof HTMLVideoElement) {
+        return Promise.resolve({
+            "width": imageSource.videoWidth,
+            "height": imageSource.videoHeight
+        })
+    }
+    return new Promise((resolve, reject) => {
+        const onError = () => {
+            reject(new Error("Failed to load image"))
+        }
+        const onImageSize = (image: HTMLImageElement) => {
+            resolve({
+                "width": image.naturalWidth,
+                "height": image.naturalHeight
+            })
+        }
+        if (imageSource instanceof HTMLImageElement) {
+            if (imageSource.complete) {
+                onImageSize(imageSource)
+            } else {
+                imageSource.onload = () => {
+                    onImageSize(imageSource)
+                }
+                imageSource.onerror = onError
+            }
+        } else if (imageSource instanceof Blob) {
+            const img = new Image()
+            img.onload = () => {
+                URL.revokeObjectURL(img.src)
+                onImageSize(img)
+            }
+            img.onerror = onError
+            img.src = URL.createObjectURL(imageSource)
+        } else if (typeof imageSource == "string") {
+            const img = new Image()
+            img.onload = () => {
+                onImageSize(img)
+            }
+            img.onerror = onError
+            img.src = imageSource
+        }
+    })
 }

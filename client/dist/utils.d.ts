@@ -1,11 +1,11 @@
-import { FaceCaptureSettings } from "./faceDetection";
-import { Axis, Bearing, Size } from "./types";
+import { LivenessDetectionSessionSettings } from "./faceDetection";
+import { Axis, Bearing, ImageSource, Size } from "./types";
 import { Subscriber } from "rxjs";
-import { FaceDetectionSource } from "./faceDetector";
 /**
  * Circular (ring) buffer implementation
  *
  * @typeParam Type - Type of value the buffer contains
+ * @internal
  */
 export declare class CircularBuffer<Type> {
     private buffer;
@@ -61,6 +61,7 @@ export declare class CircularBuffer<Type> {
 }
 /**
  * Angle
+ * @internal
  */
 export declare class Angle {
     /**
@@ -89,6 +90,7 @@ export declare class Angle {
 }
 /**
  * Point
+ * @internal
  */
 export declare class Point {
     /**
@@ -108,6 +110,7 @@ export declare class Point {
 }
 /**
  * Rectangle
+ * @internal
  */
 export declare class Rect {
     /**
@@ -168,12 +171,13 @@ export declare class Rect {
 }
 /**
  * Evaluates angles in relation to bearings
+ * @internal
  */
 export declare class AngleBearingEvaluation {
-    settings: FaceCaptureSettings;
+    settings: LivenessDetectionSessionSettings;
     pitchThresholdTolerance: number;
     yawThresholdTolerance: number;
-    constructor(settings: FaceCaptureSettings, pitchThresholdTolerance: number, yawThresholdTolerance: number);
+    constructor(settings: LivenessDetectionSessionSettings, pitchThresholdTolerance: number, yawThresholdTolerance: number);
     thresholdAngleForAxis(axis: Axis): number;
     angleForBearing(bearing: Bearing): Angle;
     thresholdAngleToleranceForAxis(axis: Axis): number;
@@ -185,6 +189,9 @@ export declare class AngleBearingEvaluation {
     minAngleForBearing(bearing: Bearing): Angle;
     maxAngleForBearing(bearing: Bearing): Angle;
 }
+/**
+ * @internal
+ */
 export declare class Smoothing {
     buffer: CircularBuffer<number>;
     private _smoothedValue;
@@ -195,19 +202,34 @@ export declare class Smoothing {
     private calculateSmoothedValue;
     reset(): void;
 }
+/**
+ * @internal
+ */
 export declare type ObservableNextEvent<T> = {
     type: "next";
     value: T;
 };
+/**
+ * @internal
+ */
 export declare type ObservableErrorEvent = {
     type: "error";
     error: any;
 };
+/**
+ * @internal
+ */
 export declare type ObservableCompleteEvent = {
     type: "complete";
 };
 declare type ObservableEvent<T> = ObservableNextEvent<T> | ObservableErrorEvent | ObservableCompleteEvent;
+/**
+ * @internal
+ */
 export declare function emitRxEvent<T>(subscriber: Subscriber<T>, event: ObservableEvent<T>): void;
+/**
+ * @internal
+ */
 export declare class RectSmoothing {
     private xSmoothing;
     private ySmoothing;
@@ -221,6 +243,9 @@ export declare class RectSmoothing {
     removeFirstSample(): void;
     private calculateSmoothedValue;
 }
+/**
+ * @internal
+ */
 export declare class AngleSmoothing {
     private yawSmoothing;
     private pitchSmoothing;
@@ -232,7 +257,40 @@ export declare class AngleSmoothing {
     reset(): void;
     removeFirstSample(): void;
 }
+/**
+ * Clamp a number so that it's between {@code 0-limit} and {@code limit}
+ * @param a Number to clamp
+ * @param limit Value to limit the clamped number to
+ * @returns Clamped number
+ * @internal
+ */
 export declare function clamp(a: number, limit: number): number;
-export declare function imageFromFaceDetectionSource(canvas: HTMLCanvasElement, source: FaceDetectionSource): HTMLImageElement;
-export declare function sizeOfFaceDetectionSource(source: FaceDetectionSource): Size;
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+export declare function blobFromImageSource(imageSource: ImageSource): Promise<Blob>;
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+export declare function canvasFromImageSource(imageSource: ImageSource): Promise<HTMLCanvasElement>;
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+export declare function imageFromImageSource(imageSource: ImageSource): Promise<HTMLImageElement>;
+/**
+ *
+ * @param imageSource
+ * @returns
+ * @internal
+ */
+export declare function sizeOfImageSource(imageSource: ImageSource): Promise<Size>;
 export {};

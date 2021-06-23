@@ -4,7 +4,7 @@ import {
     FaceDetector, 
     FaceDetectorFactory,
     MockLivenessDetectionSession,
-    FaceCaptureSettings
+    LivenessDetectionSessionSettings
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 type DemoConfiguration = {serverURL: string}
@@ -46,9 +46,11 @@ const setup = (config: DemoConfiguration) => {
 
     const onStart = () => {
         showPage("facecapture")
-        const settings = new FaceCaptureSettings()
+        const settings = new LivenessDetectionSessionSettings()
         settings.useFrontCamera = false
-        faceDetection.livenessDetectionSession(settings, null, null, testFaceDetector, (s, r) => new MockLivenessDetectionSession(s, r)).subscribe({
+        const session = new MockLivenessDetectionSession(settings)
+        session.faceDetector = testFaceDetector
+        faceDetection.captureFaces(session).subscribe({
             next: (result) => {
                 showPage("result")
                 if (result.faceCaptures.length > 0) {

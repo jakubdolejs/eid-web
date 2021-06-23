@@ -4,13 +4,13 @@
  */
 import { Observable } from "rxjs";
 import { Angle, Rect } from "./utils";
-import { FaceRecognition } from "./faceRecognition";
-import { Size, Bearing, FaceAlignmentStatus } from "./types";
-import { FaceCaptureUI } from "./faceDetectionUI";
-import { FaceRequirementListener, LivenessDetectionSession } from "./livenessDetectionSession";
+import { Size, Bearing, FaceRequirementListener, FaceAlignmentStatus, FaceCaptureCallback, ImageSource } from "./types";
+import { LivenessDetectionSessionUI } from "./faceDetectionUI";
+import { LivenessDetectionSession } from "./livenessDetectionSession";
 import { FaceDetectorFactory } from "./faceDetector";
 /**
  * Face detection
+ * @category Face detection
  */
 export declare class FaceDetection {
     /**
@@ -24,25 +24,34 @@ export declare class FaceDetection {
      * @param serviceURL Base URL of the server that accepts the face detection and comparison calls
      */
     constructor(serviceURL?: string, faceDetectorFactory?: FaceDetectorFactory);
-    detectFaceInImage(image: HTMLImageElement): Promise<Face>;
+    detectFaceInImage(image: ImageSource): Promise<Face>;
     /**
      * @returns `true` if liveness detection is supported by the client
      */
     static isLivenessDetectionSupported(): boolean;
-    private onVideoPlay;
-    private liveFaceCapture;
-    private checkLivenessSessionAvailability;
+    /**
+     * Start a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
+     * @param session Session to use for for liveness detection
+     * @returns Observable
+     */
+    captureFaces(session: LivenessDetectionSession): Observable<LivenessDetectionSessionResult>;
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
      * @param settings Session settings
      * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
      * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
+     * @deprecated Use {@linkcode captureFaces}
+     * @hidden
      */
-    livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void, faceRequirementListener?: FaceRequirementListener, createSession?: (settings: FaceCaptureSettings, faceRecognition: FaceRecognition) => LivenessDetectionSession): Observable<LivenessDetectionSessionResult>;
+    livenessDetectionSession(settings?: LivenessDetectionSessionSettings, faceDetectionCallback?: FaceCaptureCallback, faceCaptureCallback?: FaceCaptureCallback, faceRequirementListener?: FaceRequirementListener): Observable<LivenessDetectionSessionResult>;
+    private onVideoPlay;
+    private liveFaceCapture;
+    private checkLivenessSessionAvailability;
     private livenessDetectionSessionResultObservable;
 }
 /**
  * Result of a liveness detection session
+ * @category Face detection
  */
 export declare class LivenessDetectionSessionResult {
     /**
@@ -56,19 +65,20 @@ export declare class LivenessDetectionSessionResult {
     /**
      * Array of face captures collected during the session
      */
-    readonly faceCaptures: Array<LiveFaceCapture>;
+    readonly faceCaptures: Array<FaceCapture>;
     readonly videoURL: string;
     /**
      * Constructor
      * @param startTime Date that represents the time the session was started
      * @internal
      */
-    constructor(startTime: Date, faceCaptures?: LiveFaceCapture[], videoURL?: string);
+    constructor(startTime: Date, faceCaptures?: FaceCapture[], videoURL?: string);
 }
 /**
  * Extents of a face within a view
  * @remarks
  * Used by liveness detection session to determine the area where to show the face in relation to the containing view
+ * @category Face detection
  */
 export declare class FaceExtents {
     /**
@@ -87,9 +97,10 @@ export declare class FaceExtents {
     constructor(proportionOfViewWidth: number, proportionOfViewHeight: number);
 }
 /**
- * Face capture settings
+ * Liveness detection session settings
+ * @category Face detection
  */
-export declare class FaceCaptureSettings {
+export declare class LivenessDetectionSessionSettings {
     /**
      * Whether to use the device's front-facing (selfie) camera
      * @defaultValue `true`
@@ -173,7 +184,7 @@ export declare class FaceCaptureSettings {
      * Set your own function if you wish to supply your own graphical user interface for the session.
      * @returns Function that supplies an instance of `FaceCaptureUI`
      */
-    createUI: () => FaceCaptureUI;
+    createUI: () => LivenessDetectionSessionUI;
     /**
      * @param imageSize Image size
      * @returns Boundary of where the session expects a face in a given image size.
@@ -182,6 +193,7 @@ export declare class FaceCaptureSettings {
 }
 /**
  * Face detected in an image
+ * @category Face detection
  */
 export declare class Face {
     /**
@@ -206,8 +218,9 @@ export declare class Face {
 }
 /**
  * Capture of a live face
+ * @category Face detection
  */
-export declare class LiveFaceCapture {
+export declare class FaceCapture {
     /**
      * Image in which the face was detected
      */
@@ -229,13 +242,6 @@ export declare class LiveFaceCapture {
      * @internal
      */
     faceAngle?: Angle;
-    /**
-     * `true` if face is present
-     *
-     * Indicates that the face has been present in a number of consecutive frames
-     * @internal
-     */
-    isFacePresent?: boolean;
     /**
      * Face alignment status at time of capture
      * @internal

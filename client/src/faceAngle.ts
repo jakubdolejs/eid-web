@@ -19,6 +19,14 @@ function getRightEye(landmarks: Point[]): Point {
     return getMidPointBetweenPoints(landmarks[43], landmarks[46])
 }
 
+/**
+ * Estimate an angle of a face from its landmarks
+ * @param landmarks Face landmarks
+ * @param estimateFn Estimation function
+ * @returns Angle
+ * @category Face detection
+ * @internal
+ */
 export function estimateFaceAngle(landmarks: Point[], estimateFn: (landmarks: Point[]) => Angle): Angle {
     const ls: LandmarkStandardization = new LandmarkStandardization(getLeftEye(landmarks), getRightEye(landmarks))
     const pts: Point[] = landmarks.map(pt => ls.standardize(pt))

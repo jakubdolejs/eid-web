@@ -1,27 +1,48 @@
-import { FaceCaptureSettings, LiveFaceCapture } from "./faceDetection";
-export interface FaceCaptureUI {
+import { LivenessDetectionSessionSettings, FaceCapture } from "./faceDetection";
+/**
+ * @category Face detection
+ */
+export interface LivenessDetectionSessionUI {
     readonly video: HTMLVideoElement;
-    trigger(event: FaceCaptureEvent): void;
-    on<Event extends FaceCaptureEvent>(eventType: FaceCaptureEventType, callback: (event: Event) => void): void;
+    trigger(event: LivenessDetectionSessionEvent): void;
+    on<Event extends LivenessDetectionSessionEvent>(eventType: LivenessDetectionSessionEventType, callback: (event: Event) => void): void;
 }
-export declare type FaceCaptureBaseEvent = {
-    type: FaceCaptureEventType;
+/**
+ * @category Face detection
+ */
+export declare type LivenessDetectionSessionBaseEvent = {
+    type: LivenessDetectionSessionEventType;
 };
-export declare enum FaceCaptureEventType {
+/**
+ * @category Face detection
+ */
+export declare enum LivenessDetectionSessionEventType {
     FACE_CAPTURED = "face captured",
     CAPTURE_FINISHED = "capture finished",
     CLOSE = "close",
     CANCEL = "cancel"
 }
-export declare type FaceCaptureSimpleEvent = {
-    type: FaceCaptureEventType.CLOSE | FaceCaptureEventType.CANCEL | FaceCaptureEventType.CAPTURE_FINISHED;
-} & FaceCaptureBaseEvent;
-export declare type FaceCaptureFaceCapturedEvent = {
-    type: FaceCaptureEventType.FACE_CAPTURED;
-    capture: LiveFaceCapture;
-} & FaceCaptureBaseEvent;
-export declare type FaceCaptureEvent = FaceCaptureFaceCapturedEvent | FaceCaptureSimpleEvent;
-export declare class VerIDFaceCaptureUI implements FaceCaptureUI {
+/**
+ * @category Face detection
+ */
+export declare type LivenessDetectionSessionSimpleEvent = {
+    type: LivenessDetectionSessionEventType.CLOSE | LivenessDetectionSessionEventType.CANCEL | LivenessDetectionSessionEventType.CAPTURE_FINISHED;
+} & LivenessDetectionSessionBaseEvent;
+/**
+ * @category Face detection
+ */
+export declare type LivenessDetectionSessionFaceCapturedEvent = {
+    type: LivenessDetectionSessionEventType.FACE_CAPTURED;
+    capture: FaceCapture;
+} & LivenessDetectionSessionBaseEvent;
+/**
+ * @category Face detection
+ */
+export declare type LivenessDetectionSessionEvent = LivenessDetectionSessionFaceCapturedEvent | LivenessDetectionSessionSimpleEvent;
+/**
+ * @category Face detection
+ */
+export declare class VerIDLivenessDetectionSessionUI implements LivenessDetectionSessionUI {
     private cameraOverlayCanvas;
     private cameraOverlayContext;
     private videoContainer;
@@ -31,10 +52,10 @@ export declare class VerIDFaceCaptureUI implements FaceCaptureUI {
     private processingIndicator;
     private angleBar;
     readonly video: HTMLVideoElement;
-    readonly settings: FaceCaptureSettings;
-    constructor(settings: FaceCaptureSettings);
-    trigger(event: FaceCaptureEvent): void;
-    on<Event extends FaceCaptureEvent>(eventType: FaceCaptureEventType, callback: (event: Event) => void): void;
+    readonly settings: LivenessDetectionSessionSettings;
+    constructor(settings: LivenessDetectionSessionSettings);
+    trigger(event: LivenessDetectionSessionEvent): void;
+    on<Event extends LivenessDetectionSessionEvent>(eventType: LivenessDetectionSessionEventType, callback: (event: Event) => void): void;
     private drawFaceAlignmentProgress;
     private drawDetectedFace;
     private cleanup;

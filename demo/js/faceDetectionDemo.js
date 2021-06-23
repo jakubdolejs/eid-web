@@ -1,4 +1,4 @@
-import { FaceDetection } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
+import { FaceDetection, LivenessDetectionSession } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
 const setup = (config) => {
     const faceDetection = new FaceDetection(config.serverURL);
     function hideAllPages() {
@@ -24,7 +24,7 @@ const setup = (config) => {
     }
     const onStart = () => {
         showPage("facecapture");
-        faceDetection.livenessDetectionSession().subscribe({
+        faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
             next: (result) => {
                 showPage("result");
                 if (result.faceCaptures.length > 0) {

@@ -1,4 +1,4 @@
-import { FaceDetection, TestFaceDetector, MockLivenessDetectionSession, FaceCaptureSettings } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
+import { FaceDetection, TestFaceDetector, MockLivenessDetectionSession, LivenessDetectionSessionSettings } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
 const setup = (config) => {
     const testFaceDetector = new TestFaceDetector();
     const faceDetectorFactory = {
@@ -30,9 +30,11 @@ const setup = (config) => {
     }
     const onStart = () => {
         showPage("facecapture");
-        const settings = new FaceCaptureSettings();
+        const settings = new LivenessDetectionSessionSettings();
         settings.useFrontCamera = false;
-        faceDetection.livenessDetectionSession(settings, null, null, testFaceDetector, (s, r) => new MockLivenessDetectionSession(s, r)).subscribe({
+        const session = new MockLivenessDetectionSession(settings);
+        session.faceDetector = testFaceDetector;
+        faceDetection.captureFaces(session).subscribe({
             next: (result) => {
                 showPage("result");
                 if (result.faceCaptures.length > 0) {

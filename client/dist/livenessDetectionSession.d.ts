@@ -1,66 +1,114 @@
 import { Observable } from "rxjs";
 import { FaceRecognition } from "./faceRecognition";
-import { Face, FaceCaptureSettings, LiveFaceCapture, LivenessDetectionSessionResult } from "./faceDetection";
-import { FaceCaptureUI } from "./faceDetectionUI";
-import { Bearing, FaceRequirements, Size } from "./types";
-import { Angle, AngleBearingEvaluation, AngleSmoothing, CircularBuffer, Rect, RectSmoothing } from "./utils";
+import { LivenessDetectionSessionSettings, FaceCapture, LivenessDetectionSessionResult } from "./faceDetection";
+import { LivenessDetectionSessionUI } from "./faceDetectionUI";
+import { Bearing, FaceRequirements, Size, FaceRequirementListener, FaceCaptureCallback } from "./types";
+import { Angle, Rect } from "./utils";
 import { FaceDetector } from "./faceDetector";
-export declare type FaceRequirementListener = {
-    onChange: (requirements: FaceRequirements) => void;
-};
+/**
+ * @category Face detection
+ */
 export declare class LivenessDetectionSession {
-    readonly ui: FaceCaptureUI;
-    readonly faceBuffer: CircularBuffer<Face>;
-    readonly faces: CircularBuffer<Face>;
-    private faceDetected;
+    readonly ui: LivenessDetectionSessionUI;
+    readonly startTime: number;
+    readonly settings: LivenessDetectionSessionSettings;
+    /**
+     * @internal
+     */
+    readonly controlFaceCaptures: FaceCapture[];
+    faceRecognition: FaceRecognition;
+    faceDetector: FaceDetector;
+    faceDetectionCallback: FaceCaptureCallback;
+    faceCaptureCallback: FaceCaptureCallback;
+    private readonly faceBuffer;
     private faceAlignmentStatus;
     private fixTime;
     private alignedFaceCount;
     private angleHistory;
     private bearingGenerator;
-    bearingIterator: IteratorResult<unknown, any>;
+    private bearingIterator;
     private previousBearing;
     private closed;
-    readonly startTime: number;
-    readonly angleBearingEvaluation: AngleBearingEvaluation;
-    readonly faceBoundsSmoothing: RectSmoothing;
-    readonly faceAngleSmoothing: AngleSmoothing;
-    readonly settings: FaceCaptureSettings;
-    readonly faceRecognition: FaceRecognition;
+    private readonly angleBearingEvaluation;
+    private readonly faceBoundsSmoothing;
+    private readonly faceAngleSmoothing;
     private hasFaceBeenAligned;
     private mediaRecorder;
     private videoType;
-    readonly controlFaceCaptures: LiveFaceCapture[];
-    faceDetector: FaceDetector;
     private faceRequirementListeners;
     private imageSize;
     private pendingFaceRequirementsNotificationBearing;
     private videoTrack;
     private previousFaceAngle;
-    constructor(settings: FaceCaptureSettings, faceRecognition: FaceRecognition);
+    constructor(settings?: LivenessDetectionSessionSettings, faceRecognition?: FaceRecognition);
     readonly registerFaceRequirementListener: (listener: FaceRequirementListener) => void;
     readonly unregisterFaceRequirementListener: (listener: FaceRequirementListener) => void;
-    private notifyFaceRequirementListeners;
-    setupVideo: () => Promise<void>;
-    protected cleanup: () => void;
-    nextCaptureBearing(): IterableIterator<Bearing>;
-    protected selectNextBearing: (availableBearings: Bearing[]) => Bearing;
+    /**
+     * @internal
+     */
+    get requestedBearing(): Bearing;
+    /**
+     * @internal
+     */
+    readonly setupVideo: () => Promise<void>;
+    /**
+     * @internal
+     */
     readonly faceAngleMatchesRequirements: (angle: Angle, requirements: FaceRequirements) => boolean;
+    /**
+     * @internal
+     */
     readonly faceRequirements: (imageSize: Size, bearing?: Bearing) => FaceRequirements;
+    /**
+     * @internal
+     */
     readonly isFaceFixedInImageSize: (actualFaceBounds: Rect, imageSize: Size) => boolean;
-    readonly detectFacePresence: (capture: LiveFaceCapture) => LiveFaceCapture;
-    readonly detectFaceAlignment: (capture: LiveFaceCapture) => LiveFaceCapture;
-    readonly detectSpoofAttempt: (capture: LiveFaceCapture) => LiveFaceCapture;
+    /**
+     * @internal
+     */
+    readonly detectFacePresence: (capture: FaceCapture) => FaceCapture;
+    /**
+     * @internal
+     */
+    readonly detectFaceAlignment: (capture: FaceCapture) => FaceCapture;
+    /**
+     * @internal
+     */
+    readonly detectSpoofAttempt: (capture: FaceCapture) => FaceCapture;
+    /**
+     * @internal
+     */
+    readonly createFaceCapture: (capture: FaceCapture) => Observable<FaceCapture>;
+    /**
+     * @internal
+     */
+    readonly resultFromCaptures: (captures: FaceCapture[]) => Observable<LivenessDetectionSessionResult>;
+    /**
+     * @internal
+     */
+    readonly onVideoSize: (videoSize: Size) => void;
+    /**
+     * @internal
+     */
+    readonly onMediaStreamAvailable: (stream: MediaStream) => void;
+    readonly close: () => void;
+    get isClosed(): boolean;
+    protected cleanup: () => void;
+    protected selectNextBearing: (availableBearings: Bearing[]) => Bearing;
+    private getVideoURL;
+    private compareControlFacesToCaptureFaces;
     private movedTooFast;
     private movedOpposite;
-    readonly createFaceCapture: (capture: LiveFaceCapture) => Observable<LiveFaceCapture>;
-    private compareControlFacesToCaptureFaces;
-    readonly resultFromCaptures: (captures: LiveFaceCapture[]) => Observable<LivenessDetectionSessionResult>;
-    readonly onVideoSize: (videoSize: Size) => void;
-    readonly onMediaStreamAvailable: (stream: MediaStream) => void;
-    private getVideoURL;
-    readonly close: () => void;
+    private areAllBufferedFacesAligned;
+    private setFaceAlignmentFromFace;
+    private hasFaceMovedTooFar;
+    private recordAngleDistanceAndTrajectory;
+    private nextCaptureBearing;
+    private notifyFaceRequirementListeners;
 }
+/**
+ * @category Face detection testing
+ */
 export declare class MockLivenessDetectionSession extends LivenessDetectionSession {
-    setupVideo: () => Promise<void>;
+    readonly setupVideo: () => Promise<void>;
 }

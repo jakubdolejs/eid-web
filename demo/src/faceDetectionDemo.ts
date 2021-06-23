@@ -1,5 +1,5 @@
 import { 
-    FaceDetection
+    FaceDetection, LivenessDetectionSession, LivenessDetectionSessionSettings
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 type DemoConfiguration = {serverURL: string}
@@ -34,7 +34,7 @@ const setup = (config: DemoConfiguration) => {
 
     const onStart = () => {
         showPage("facecapture")
-        faceDetection.livenessDetectionSession().subscribe({
+        faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
             next: (result) => {
                 showPage("result")
                 if (result.faceCaptures.length > 0) {

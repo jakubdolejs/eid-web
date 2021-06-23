@@ -54,7 +54,7 @@ Please note that the client-side scripts can only run on a secure connection (ht
 const serverURL = "https://somedomain.com"
 
 // Import the face detection module
-import { FaceDetection } from "/@appliedrecognition/ver-id-browser/index.js"
+import { FaceDetection, LivenessDetectionSession } from "/@appliedrecognition/ver-id-browser/index.js"
     
 // Create an instance of the FaceDetection class
 const faceDetection = new FaceDetection(serverURL)
@@ -65,8 +65,11 @@ if (!faceDetection.isLivenessDetectionSupported()) {
     return
 }
 
+// Create a liveness detection session
+const livenessDetectionSession = new LivenessDetectionSession()
+
 // Create a session Observable and subscribe to it to start a liveness detection session
-const subscription = faceDetection.livenessDetectionSession().subscribe({
+const subscription = faceDetection.captureFaces(livenessDetectionSession).subscribe({
     next: (result) => {
         // Session succeeded
         // Detected faces and images are available in the result's faceCaptures array

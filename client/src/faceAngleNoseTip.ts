@@ -1,5 +1,11 @@
 import { Point, Angle, clamp } from "./utils"
 
+/**
+ * @param landmarks Face landmarks
+ * @returns Angle
+ * @category Face detection
+ * @internal
+ */
 export function estimateFaceAngle(landmarks: Point[]): Angle {
     if (landmarks.length != 68) {
         throw new Error("Face angle calculation requires 68 face landmarks")

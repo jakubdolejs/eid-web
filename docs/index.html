@@ -57,431 +57,570 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<div class="tsd-panel tsd-typography">
-				<a href="#ver-id-in-browser-live-face-detection-and-id-card-capture" id="ver-id-in-browser-live-face-detection-and-id-card-capture" style="color: inherit; text-decoration: none;">
-					<h1>Ver-ID In-Browser Live Face Detection and ID Card Capture</h1>
-				</a>
-				<a href="#requirements" id="requirements" style="color: inherit; text-decoration: none;">
-					<h2>Requirements</h2>
-				</a>
-				<ul>
-					<li><a href="https://nodejs.org">NodeJS</a> 14.6 or newer</li>
-					<li><a href="https://docker.com">Docker</a></li>
-					<li><a href="https://npmjs.com">NPM</a></li>
-					<li><a href="https://aws.amazon.com/cli">AWS CLI</a></li>
-					<li><a href="https://microblink.com/products/blinkid/in-browser-sdk">BlinkID In-browser SDK licence key</a> (if you&#39;re planning to capture ID cards)</li>
-				</ul>
-				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
-					<h2>Installation</h2>
-				</a>
-				<ol>
-					<li><p>Request AWS access key and secret key from Applied Recognition</p>
-					</li>
-					<li><p>Create an AWS profile with the credentials from the previous step (substitute ACME for your chosen profile name):</p>
-						<pre><code><span style="color: #001080">aws</span><span style="color: #000000"> --</span><span style="color: #001080">profile</span><span style="color: #000000"> </span><span style="color: #0070C1">ACME</span><span style="color: #000000"> </span><span style="color: #001080">configure</span>
-</code></pre>
-					</li>
-					<li><p>Log in to AWS ECR repository:</p>
-						<pre><code><span style="color: #001080">aws</span><span style="color: #000000"> --</span><span style="color: #001080">profile</span><span style="color: #000000"> </span><span style="color: #0070C1">ACME</span><span style="color: #000000"> </span><span style="color: #001080">ecr</span><span style="color: #000000"> </span><span style="color: #001080">get</span><span style="color: #000000">-</span><span style="color: #001080">login</span><span style="color: #000000">-</span><span style="color: #001080">password</span><span style="color: #000000"> | </span><span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">login</span><span style="color: #000000"> -</span><span style="color: #001080">u</span><span style="color: #000000"> </span><span style="color: #0070C1">AWS</span><span style="color: #000000"> --</span><span style="color: #001080">password</span><span style="color: #000000">-</span><span style="color: #001080">stdin</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span>
-</code></pre>
-					</li>
-					<li><p>Pull Docker images:</p>
-						<pre><code><span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/</span><span style="color: #001080">restful</span><span style="color: #000000">-servers_recauth:</span><span style="color: #098658">1.3</span><span style="color: #000000">.</span><span style="color: #098658">6</span>
-<span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/</span><span style="color: #001080">restful</span><span style="color: #000000">-servers_detcv:</span><span style="color: #098658">1.3</span><span style="color: #000000">.</span><span style="color: #098658">6</span>
-<span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/id_scanner:</span><span style="color: #098658">1.34</span><span style="color: #000000">.</span><span style="color: #098658">2</span>
-<span style="color: #001080">docker</span><span style="color: #000000"> </span><span style="color: #001080">pull</span><span style="color: #000000"> 725614911995.</span><span style="color: #001080">dkr</span><span style="color: #000000">.</span><span style="color: #001080">ecr</span><span style="color: #000000">.</span><span style="color: #001080">us</span><span style="color: #000000">-</span><span style="color: #001080">east</span><span style="color: #000000">-1.</span><span style="color: #001080">amazonaws</span><span style="color: #000000">.</span><span style="color: #001080">com</span><span style="color: #000000">/identity_api:</span><span style="color: #098658">1.9</span><span style="color: #000000">.</span><span style="color: #098658">0</span>
-</code></pre>
-					</li>
-					<li><p>In the project&#39;s root folder run:</p>
-						<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span>
-</code></pre>
-					</li>
-					<li><p>Run the configuration script and follow the prompts:</p>
-						<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">start</span>
-</code></pre>
-					</li>
-				</ol>
-				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
-					<h2>Usage</h2>
-				</a>
-				<a href="#important-note" id="important-note" style="color: inherit; text-decoration: none;">
-					<h3>Important note</h3>
-				</a>
-				<p>Please note that the client-side scripts can only run on a secure connection (https). This is a feature of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices">media devices API</a>. Ensure that you&#39;re accessing your pages over https.</p>
-				<a href="#running-a-liveness-detection-session" id="running-a-liveness-detection-session" style="color: inherit; text-decoration: none;">
-					<h3>Running a liveness detection session:</h3>
-				</a>
-				<pre><code class="language-javascript"><span style="color: #008000">// URL of the server running the identity_api container</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
-
-<span style="color: #008000">// Import the face detection module</span>
-<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">FaceDetection</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
-<span style="color: #000000">    </span>
-<span style="color: #008000">// Create an instance of the FaceDetection class</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">faceDetection</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">FaceDetection</span><span style="color: #000000">(</span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
-
-<span style="color: #008000">// Check that the browser supports liveness detection</span>
-<span style="color: #AF00DB">if</span><span style="color: #000000"> (!</span><span style="color: #001080">faceDetection</span><span style="color: #000000">.</span><span style="color: #795E26">isLivenessDetectionSupported</span><span style="color: #000000">()) {</span>
-<span style="color: #000000">    </span><span style="color: #795E26">alert</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;Liveness detection is not supported by your browser&quot;</span><span style="color: #000000">)</span>
-<span style="color: #000000">    </span><span style="color: #AF00DB">return</span>
-<span style="color: #000000">}</span>
-
-<span style="color: #008000">// Create a session Observable and subscribe to it to start a liveness detection session</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">subscription</span><span style="color: #000000"> = </span><span style="color: #001080">faceDetection</span><span style="color: #000000">.</span><span style="color: #795E26">livenessDetectionSession</span><span style="color: #000000">().</span><span style="color: #795E26">subscribe</span><span style="color: #000000">({</span>
-<span style="color: #000000">    </span><span style="color: #795E26">next</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #008000">// Session succeeded</span>
-<span style="color: #000000">        </span><span style="color: #008000">// Detected faces and images are available in the result&#039;s faceCaptures array</span>
-<span style="color: #000000">        </span><span style="color: #008000">// Obtain a face template that can be used for face recognition</span>
-<span style="color: #000000">        </span><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">template</span><span style="color: #000000"> = </span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">faceCaptures</span><span style="color: #000000">[</span><span style="color: #098658">0</span><span style="color: #000000">].</span><span style="color: #001080">face</span><span style="color: #000000">.</span><span style="color: #001080">template</span>
-<span style="color: #000000">        </span><span style="color: #008000">// Get the captured image cropped to the face bounding box</span>
-<span style="color: #000000">        </span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">faceCaptures</span><span style="color: #000000">[</span><span style="color: #098658">0</span><span style="color: #000000">].</span><span style="color: #001080">faceImage</span><span style="color: #000000">.</span><span style="color: #795E26">then</span><span style="color: #000000">((</span><span style="color: #001080">image</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">            </span><span style="color: #001080">document</span><span style="color: #000000">.</span><span style="color: #001080">body</span><span style="color: #000000">.</span><span style="color: #795E26">appendChild</span><span style="color: #000000">(</span><span style="color: #001080">image</span><span style="color: #000000">)</span>
-<span style="color: #000000">        })</span>
-<span style="color: #000000">    },</span>
-<span style="color: #000000">    </span><span style="color: #795E26">error</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">error</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #008000">// Session failed</span>
-<span style="color: #000000">    },</span>
-<span style="color: #000000">    </span><span style="color: #795E26">complete</span><span style="color: #001080">:</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #008000">// Session finished</span>
-<span style="color: #000000">        </span><span style="color: #008000">// If not result has been emitted it indicates that the session was cancelled</span>
-<span style="color: #000000">    }</span>
-<span style="color: #000000">})</span>
-<span style="color: #008000">// The session GUI displays a cancel button but if you need to otherwise </span>
-<span style="color: #008000">// cancel the session unsubscribe from the session:</span>
-<span style="color: #008000">// subscription.unsubscribe()</span>
-</code></pre>
-				<a href="#detecting-id-cards" id="detecting-id-cards" style="color: inherit; text-decoration: none;">
-					<h3>Detecting ID cards</h3>
-				</a>
-				<p>You&#39;ll need a licence key tied to your domain name for <a href="https://microblink.com/products/blinkid/in-browser-sdk">BlinkID In-browser SDK</a> to use this feature.</p>
-				<pre><code class="language-javascript"><span style="color: #008000">// URL of the server running the identity_api container</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
-
-<span style="color: #008000">// Import the ID capture module</span>
-<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">IdCapture</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSettings</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSessionSettings</span><span style="color: #000000">, </span><span style="color: #001080">DocumentPages</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
-
-<span style="color: #008000">// Settings</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">resourcesURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/resources/&quot;</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">settings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSettings</span><span style="color: #000000">(</span><span style="color: #001080">yourLicenceKey</span><span style="color: #000000">, </span><span style="color: #001080">resourcesURL</span><span style="color: #000000">, </span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">pages</span><span style="color: #000000"> = </span><span style="color: #001080">DocumentPages</span><span style="color: #000000">.</span><span style="color: #0070C1">FRONT_AND_BACK</span><span style="color: #000000"> </span><span style="color: #008000">// Scan the front and back of an ID</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">sessionTimeout</span><span style="color: #000000"> = </span><span style="color: #098658">60000</span><span style="color: #000000"> </span><span style="color: #008000">// Session will time out after 1 minute</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">saveCapturedImages</span><span style="color: #000000"> = </span><span style="color: #0000FF">true</span><span style="color: #000000"> </span><span style="color: #008000">// Save original images before they were cropped and deskewed</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">sessionSettings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSessionSettings</span><span style="color: #000000">(</span><span style="color: #001080">pages</span><span style="color: #000000">, </span><span style="color: #001080">sessionTimeout</span><span style="color: #000000">, </span><span style="color: #001080">saveCapturedImages</span><span style="color: #000000">)</span>
-
-<span style="color: #008000">// Create an instance of the IdCapture class</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">idCapture</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCapture</span><span style="color: #000000">(</span><span style="color: #001080">settings</span><span style="color: #000000">)</span>
-
-<span style="color: #008000">// Capture ID card</span>
-<span style="color: #001080">idCapture</span><span style="color: #000000">.</span><span style="color: #795E26">captureIdCard</span><span style="color: #000000">().</span><span style="color: #795E26">subscribe</span><span style="color: #000000">({</span>
-<span style="color: #000000">    </span><span style="color: #795E26">next</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #AF00DB">if</span><span style="color: #000000"> (</span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">pages</span><span style="color: #000000"> != </span><span style="color: #001080">DocumentPages</span><span style="color: #000000">.</span><span style="color: #0070C1">BACK</span><span style="color: #000000"> &amp;&amp; </span><span style="color: #001080">result</span><span style="color: #000000">.</span><span style="color: #001080">face</span><span style="color: #000000">) {</span>
-<span style="color: #000000">            </span><span style="color: #008000">// You can use the detected face for face recognition</span>
-<span style="color: #000000">        }</span>
-<span style="color: #000000">    },</span>
-<span style="color: #000000">    </span><span style="color: #795E26">error</span><span style="color: #001080">:</span><span style="color: #000000"> (</span><span style="color: #001080">error</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #008000">// ID capture failed</span>
-<span style="color: #000000">    },</span>
-<span style="color: #000000">    </span><span style="color: #795E26">complete</span><span style="color: #001080">:</span><span style="color: #000000"> () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #008000">// ID capture finished</span>
-<span style="color: #000000">        </span><span style="color: #008000">// If not result has been emitted it indicates that the session was cancelled</span>
-<span style="color: #000000">    }</span>
-<span style="color: #000000">})</span>
-
-</code></pre>
-				<a href="#comparing-faces" id="comparing-faces" style="color: inherit; text-decoration: none;">
-					<h3>Comparing faces</h3>
-				</a>
-				<pre><code class="language-javascript"><span style="color: #008000">// URL of the server running the identity_api container</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">serverURL</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;https://somedomain.com&quot;</span>
-
-<span style="color: #008000">// Import the face recognition module</span>
-<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">FaceRecognition</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
-
-<span style="color: #008000">// Create an instance of FaceRecognition</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">faceRecognition</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">FaceRecognition</span><span style="color: #000000">(</span><span style="color: #001080">serverURL</span><span style="color: #000000">)</span>
-<span style="color: #000000">    </span>
-<span style="color: #008000">// With two face templates obtained from createRecognizableFace:</span>
-<span style="color: #001080">faceRecognition</span><span style="color: #000000">.</span><span style="color: #795E26">compareFaceTemplates</span><span style="color: #000000">(</span><span style="color: #001080">template1</span><span style="color: #000000">, </span><span style="color: #001080">template2</span><span style="color: #000000">).</span><span style="color: #795E26">then</span><span style="color: #000000">((</span><span style="color: #001080">score</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #008000">// Face comparison finished</span>
-<span style="color: #000000">    </span><span style="color: #795E26">alert</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;The two faces scored &quot;</span><span style="color: #000000">+</span><span style="color: #001080">score</span><span style="color: #000000">+</span><span style="color: #A31515">&quot; on similarity&quot;</span><span style="color: #000000">)</span>
-<span style="color: #000000">}).</span><span style="color: #795E26">catch</span><span style="color: #000000">((</span><span style="color: #001080">error</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #008000">// Face comparison failed</span>
-<span style="color: #000000">})</span>
-</code></pre>
-				<a href="#implementing-your-own-user-interface" id="implementing-your-own-user-interface" style="color: inherit; text-decoration: none;">
-					<h3>Implementing your own user interface</h3>
-				</a>
-				<p>To create your own UI for the ID capture pass an implementation of the <a href="https://appliedrecognition.github.io/Ver-ID-Browser/interfaces/idcaptureui.html">IdCaptureUI</a> interface to the session&#39;s settings.</p>
-				<pre><code class="language-javascript"><span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">IdCaptureUI</span><span style="color: #000000">, </span><span style="color: #001080">IdCaptureSessionSettings</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;/@appliedrecognition/ver-id-browser/index.js&quot;</span>
-
-<span style="color: #008000">// Create your class that implements the IdCaptureUI interface</span>
-<span style="color: #0000FF">class</span><span style="color: #000000"> </span><span style="color: #267F99">MyIdCaptureUI</span><span style="color: #000000"> </span><span style="color: #0000FF">implements</span><span style="color: #000000"> </span><span style="color: #267F99">IdCaptureUI</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #008000">// ...</span>
-<span style="color: #000000">}</span>
-
-<span style="color: #008000">// Create session settings</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">sessionSettings</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">IdCaptureSessionSettings</span><span style="color: #000000">()</span>
-<span style="color: #008000">// Set the createUI function to return your instance of IdCaptureUI</span>
-<span style="color: #001080">sessionSettings</span><span style="color: #000000">.</span><span style="color: #795E26">createUI</span><span style="color: #000000"> = () </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">MyIdCaptureUI</span><span style="color: #000000">()</span>
-</code></pre>
-				<a href="#documentation" id="documentation" style="color: inherit; text-decoration: none;">
-					<h2>Documentation</h2>
-				</a>
-				<p>API reference documentation is available on the project&#39;s <a href="https://appliedrecognition.github.io/Ver-ID-Browser/">Github page</a>.</p>
-			</div>
+			<section class="tsd-panel-group tsd-index-group">
+				<h2>Index</h2>
+				<section class="tsd-panel tsd-index-panel">
+					<div class="tsd-index-content">
+						<section class="tsd-index-section">
+							<h3>Face detection</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-enum"><a href="enums/bearing.html" class="tsd-kind-icon">Bearing</a></li>
+								<li class="tsd-kind-enum"><a href="enums/livenessdetectionsessioneventtype.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Event<wbr>Type</a></li>
+								<li class="tsd-kind-class"><a href="classes/face.html" class="tsd-kind-icon">Face</a></li>
+								<li class="tsd-kind-class"><a href="classes/facecapture.html" class="tsd-kind-icon">Face<wbr>Capture</a></li>
+								<li class="tsd-kind-class"><a href="classes/facedetection.html" class="tsd-kind-icon">Face<wbr>Detection</a></li>
+								<li class="tsd-kind-class"><a href="classes/faceextents.html" class="tsd-kind-icon">Face<wbr>Extents</a></li>
+								<li class="tsd-kind-class"><a href="classes/livenessdetectionsession.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session</a></li>
+								<li class="tsd-kind-class"><a href="classes/livenessdetectionsessionresult.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Result</a></li>
+								<li class="tsd-kind-class"><a href="classes/livenessdetectionsessionsettings.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Settings</a></li>
+								<li class="tsd-kind-class"><a href="classes/veridfacedetector.html" class="tsd-kind-icon">VerIDFace<wbr>Detector</a></li>
+								<li class="tsd-kind-class"><a href="classes/veridlivenessdetectionsessionui.html" class="tsd-kind-icon">VerIDLiveness<wbr>Detection<wbr>SessionUI</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/facedetector.html" class="tsd-kind-icon">Face<wbr>Detector</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/facedetectorfactory.html" class="tsd-kind-icon">Face<wbr>Detector<wbr>Factory</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/livenessdetectionsessionui.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>SessionUI</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#facecapturecallback" class="tsd-kind-icon">Face<wbr>Capture<wbr>Callback</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#facedetectionsource" class="tsd-kind-icon">Face<wbr>Detection<wbr>Source</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#facerequirementlistener" class="tsd-kind-icon">Face<wbr>Requirement<wbr>Listener</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#facerequirements" class="tsd-kind-icon">Face<wbr>Requirements</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#livenessdetectionsessionbaseevent" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Base<wbr>Event</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#livenessdetectionsessionevent" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Event</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#livenessdetectionsessionfacecapturedevent" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Face<wbr>Captured<wbr>Event</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#livenessdetectionsessionsimpleevent" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Simple<wbr>Event</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section">
+							<h3>Face recognition</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-class"><a href="classes/facerecognition.html" class="tsd-kind-icon">Face<wbr>Recognition</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/recognizableface.html" class="tsd-kind-icon">Recognizable<wbr>Face</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#recognizablefacedetectioninput" class="tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Input</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#recognizablefacedetectionoutput" class="tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Output</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section">
+							<h3>ID capture</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-enum"><a href="enums/documentpages.html" class="tsd-kind-icon">Document<wbr>Pages</a></li>
+								<li class="tsd-kind-enum"><a href="enums/idcaptureeventtype.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event<wbr>Type</a></li>
+								<li class="tsd-kind-class"><a href="classes/idcapture.html" class="tsd-kind-icon">Id<wbr>Capture</a></li>
+								<li class="tsd-kind-class"><a href="classes/idcapturesessionsettings.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Session<wbr>Settings</a></li>
+								<li class="tsd-kind-class"><a href="classes/idcapturesettings.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Settings</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/address.html" class="tsd-kind-icon">Address</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/classinfo.html" class="tsd-kind-icon">Class<wbr>Info</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/documentdate.html" class="tsd-kind-icon">Document<wbr>Date</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/idcaptureui.html" class="tsd-kind-icon">Id<wbr>CaptureUI</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#idcaptureevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#idcaptureprogressevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#idcaptureresult" class="tsd-kind-icon">Id<wbr>Capture<wbr>Result</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#idcapturestatus" class="tsd-kind-icon">Id<wbr>Capture<wbr>Status</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#idcaptureuifactory" class="tsd-kind-icon">Id<wbr>CaptureUIFactory</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#recognizername" class="tsd-kind-icon">Recognizer<wbr>Name</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#recognizertype" class="tsd-kind-icon">Recognizer<wbr>Type</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#supportedrecognizer" class="tsd-kind-icon">Supported<wbr>Recognizer</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#supportedrecognizerresult" class="tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section">
+							<h3>QR codes</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-function"><a href="index.html#generateqrcode" class="tsd-kind-icon">generateQRCode</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section">
+							<h3>Face detection testing</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-class"><a href="classes/mocklivenessdetectionsession.html" class="tsd-kind-icon">Mock<wbr>Liveness<wbr>Detection<wbr>Session</a></li>
+								<li class="tsd-kind-class"><a href="classes/testfacedetector.html" class="tsd-kind-icon">Test<wbr>Face<wbr>Detector</a></li>
+								<li class="tsd-kind-class"><a href="classes/testfacedetectorfactory.html" class="tsd-kind-icon">Test<wbr>Face<wbr>Detector<wbr>Factory</a></li>
+								<li class="tsd-kind-class"><a href="classes/veridfacedetectorfactory.html" class="tsd-kind-icon">VerIDFace<wbr>Detector<wbr>Factory</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section">
+							<h3>Other</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-class"><a href="classes/warning.html" class="tsd-kind-icon">Warning</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/size.html" class="tsd-kind-icon">Size</a></li>
+								<li class="tsd-kind-type-alias"><a href="index.html#imagesource" class="tsd-kind-icon">Image<wbr>Source</a></li>
+								<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="index.html#range" class="tsd-kind-icon">Range</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Face detection</h2>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="facecapturecallback" class="tsd-anchor"></a>
+					<h3>Face<wbr>Capture<wbr>Callback</h3>
+					<div class="tsd-signature tsd-kind-icon">Face<wbr>Capture<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>faceCapture<span class="tsd-signature-symbol">: </span><a href="classes/facecapture.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L459">types.ts:459</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>faceCapture<span class="tsd-signature-symbol">: </span><a href="classes/facecapture.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5>faceCapture: <a href="classes/facecapture.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCapture</a></h5>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="facedetectionsource" class="tsd-anchor"></a>
+					<h3>Face<wbr>Detection<wbr>Source</h3>
+					<div class="tsd-signature tsd-kind-icon">Face<wbr>Detection<wbr>Source<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>element<span class="tsd-signature-symbol">: </span><a href="index.html#imagesource" class="tsd-signature-type" data-tsd-kind="Type alias">ImageSource</a><span class="tsd-signature-symbol">; </span>mirrored<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetector.ts#L11">faceDetector.ts:11</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>element<span class="tsd-signature-symbol">: </span><a href="index.html#imagesource" class="tsd-signature-type" data-tsd-kind="Type alias">ImageSource</a></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>mirrored<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="facerequirementlistener" class="tsd-anchor"></a>
+					<h3>Face<wbr>Requirement<wbr>Listener</h3>
+					<div class="tsd-signature tsd-kind-icon">Face<wbr>Requirement<wbr>Listener<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>onChange<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>requirements<span class="tsd-signature-symbol">: </span><a href="index.html#facerequirements" class="tsd-signature-type" data-tsd-kind="Type alias">FaceRequirements</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L452">types.ts:452</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>on<wbr>Change<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span>requirements<span class="tsd-signature-symbol">: </span><a href="index.html#facerequirements" class="tsd-signature-type" data-tsd-kind="Type alias">FaceRequirements</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter-signature">
+										<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-literal">
+											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>requirements<span class="tsd-signature-symbol">: </span><a href="index.html#facerequirements" class="tsd-signature-type" data-tsd-kind="Type alias">FaceRequirements</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+										</ul>
+										<ul class="tsd-descriptions">
+											<li class="tsd-description">
+												<h4 class="tsd-parameters-title">Parameters</h4>
+												<ul class="tsd-parameters">
+													<li>
+														<h5>requirements: <a href="index.html#facerequirements" class="tsd-signature-type" data-tsd-kind="Type alias">FaceRequirements</a></h5>
+													</li>
+												</ul>
+												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+											</li>
+										</ul>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="facerequirements" class="tsd-anchor"></a>
+					<h3>Face<wbr>Requirements</h3>
+					<div class="tsd-signature tsd-kind-icon">Face<wbr>Requirements<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>accepted<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>bottom<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>left<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>pitch<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>right<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>top<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>yaw<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>ideal<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>angle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Angle</span><span class="tsd-signature-symbol">; </span>bounds<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Rect</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>imageSize<span class="tsd-signature-symbol">: </span><a href="interfaces/size.html" class="tsd-signature-type" data-tsd-kind="Interface">Size</a><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L433">types.ts:433</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>accepted<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>bottom<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>left<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>pitch<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>right<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>top<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>yaw<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5>bottom<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>left<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>pitch<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>right<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>top<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>yaw<span class="tsd-signature-symbol">: </span><a href="index.html#range" class="tsd-signature-type" data-tsd-kind="Type alias">Range</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+									</li>
+								</ul>
+							</li>
+							<li class="tsd-parameter">
+								<h5>ideal<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>angle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Angle</span><span class="tsd-signature-symbol">; </span>bounds<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Rect</span><span class="tsd-signature-symbol"> }</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5>angle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Angle</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>bounds<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Rect</span></h5>
+									</li>
+								</ul>
+							</li>
+							<li class="tsd-parameter">
+								<h5>image<wbr>Size<span class="tsd-signature-symbol">: </span><a href="interfaces/size.html" class="tsd-signature-type" data-tsd-kind="Interface">Size</a></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="livenessdetectionsessionbaseevent" class="tsd-anchor"></a>
+					<h3>Liveness<wbr>Detection<wbr>Session<wbr>Base<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Base<wbr>Event<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>type<span class="tsd-signature-symbol">: </span><a href="enums/livenessdetectionsessioneventtype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">LivenessDetectionSessionEventType</a><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetectionUI.ts#L17">faceDetectionUI.ts:17</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>type<span class="tsd-signature-symbol">: </span><a href="enums/livenessdetectionsessioneventtype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">LivenessDetectionSessionEventType</a></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="livenessdetectionsessionevent" class="tsd-anchor"></a>
+					<h3>Liveness<wbr>Detection<wbr>Session<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Event<span class="tsd-signature-symbol">:</span> <a href="index.html#livenessdetectionsessionfacecapturedevent" class="tsd-signature-type" data-tsd-kind="Type alias">LivenessDetectionSessionFaceCapturedEvent</a><span class="tsd-signature-symbol"> | </span><a href="index.html#livenessdetectionsessionsimpleevent" class="tsd-signature-type" data-tsd-kind="Type alias">LivenessDetectionSessionSimpleEvent</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetectionUI.ts#L49">faceDetectionUI.ts:49</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="livenessdetectionsessionfacecapturedevent" class="tsd-anchor"></a>
+					<h3>Liveness<wbr>Detection<wbr>Session<wbr>Face<wbr>Captured<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Face<wbr>Captured<wbr>Event<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>capture<span class="tsd-signature-symbol">: </span><a href="classes/facecapture.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCapture</a><span class="tsd-signature-symbol">; </span>type<span class="tsd-signature-symbol">: </span><a href="enums/livenessdetectionsessioneventtype.html#face_captured" class="tsd-signature-type" data-tsd-kind="Enumeration member">FACE_CAPTURED</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> &amp; </span><a href="index.html#livenessdetectionsessionbaseevent" class="tsd-signature-type" data-tsd-kind="Type alias">LivenessDetectionSessionBaseEvent</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetectionUI.ts#L41">faceDetectionUI.ts:41</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="livenessdetectionsessionsimpleevent" class="tsd-anchor"></a>
+					<h3>Liveness<wbr>Detection<wbr>Session<wbr>Simple<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Simple<wbr>Event<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>type<span class="tsd-signature-symbol">: </span><a href="enums/livenessdetectionsessioneventtype.html#close" class="tsd-signature-type" data-tsd-kind="Enumeration member">CLOSE</a><span class="tsd-signature-symbol"> | </span><a href="enums/livenessdetectionsessioneventtype.html#cancel" class="tsd-signature-type" data-tsd-kind="Enumeration member">CANCEL</a><span class="tsd-signature-symbol"> | </span><a href="enums/livenessdetectionsessioneventtype.html#capture_finished" class="tsd-signature-type" data-tsd-kind="Enumeration member">CAPTURE_FINISHED</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> &amp; </span><a href="index.html#livenessdetectionsessionbaseevent" class="tsd-signature-type" data-tsd-kind="Type alias">LivenessDetectionSessionBaseEvent</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetectionUI.ts#L34">faceDetectionUI.ts:34</a></li>
+						</ul>
+					</aside>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Face recognition</h2>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="recognizablefacedetectioninput" class="tsd-anchor"></a>
+					<h3>Recognizable<wbr>Face<wbr>Detection<wbr>Input</h3>
+					<div class="tsd-signature tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Input<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L220">types.ts:220</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-index-signature">
+								<h5><span class="tsd-signature-symbol">[</span>k: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-symbol">{ </span>faceRect<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Rect</span><span class="tsd-signature-symbol">; </span>image<span class="tsd-signature-symbol">: </span><a href="index.html#imagesource" class="tsd-signature-type" data-tsd-kind="Type alias">ImageSource</a><span class="tsd-signature-symbol"> }</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> face<wbr>Rect<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Rect</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>image<span class="tsd-signature-symbol">: </span><a href="index.html#imagesource" class="tsd-signature-type" data-tsd-kind="Type alias">ImageSource</a></h5>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="recognizablefacedetectionoutput" class="tsd-anchor"></a>
+					<h3>Recognizable<wbr>Face<wbr>Detection<wbr>Output</h3>
+					<div class="tsd-signature tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Output<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L230">types.ts:230</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-index-signature">
+								<h5><span class="tsd-signature-symbol">[</span>k: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><a href="interfaces/recognizableface.html" class="tsd-signature-type" data-tsd-kind="Interface">RecognizableFace</a></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>ID capture</h2>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureevent" class="tsd-anchor"></a>
+					<h3>Id<wbr>Capture<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Event<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>type<span class="tsd-signature-symbol">: </span><a href="enums/idcaptureeventtype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">IdCaptureEventType</a><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L264">types.ts:264</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>type<span class="tsd-signature-symbol">: </span><a href="enums/idcaptureeventtype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">IdCaptureEventType</a></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureprogressevent" class="tsd-anchor"></a>
+					<h3>Id<wbr>Capture<wbr>Progress<wbr>Event</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event<span class="tsd-signature-symbol">:</span> <a href="index.html#idcaptureevent" class="tsd-signature-type" data-tsd-kind="Type alias">IdCaptureEvent</a><span class="tsd-signature-symbol"> &amp; </span><span class="tsd-signature-symbol">{ </span>progress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L271">types.ts:271</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureresult" class="tsd-anchor"></a>
+					<h3>Id<wbr>Capture<wbr>Result</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Result<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>capturedImage<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageData</span><span class="tsd-signature-symbol">; </span>orientation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageOrientation</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>face<span class="tsd-signature-symbol">?: </span><a href="interfaces/recognizableface.html" class="tsd-signature-type" data-tsd-kind="Interface">RecognizableFace</a><span class="tsd-signature-symbol">; </span>pages<span class="tsd-signature-symbol">: </span><a href="enums/documentpages.html" class="tsd-signature-type" data-tsd-kind="Enumeration">DocumentPages</a><span class="tsd-signature-symbol">; </span>result<span class="tsd-signature-symbol">: </span><a href="index.html#supportedrecognizerresult" class="tsd-signature-type" data-tsd-kind="Type alias">SupportedRecognizerResult</a><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L174">types.ts:174</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> captured<wbr>Image<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageData</span><span class="tsd-signature-symbol">; </span>orientation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageOrientation</span><span class="tsd-signature-symbol"> }</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageData</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>orientation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ImageOrientation</span></h5>
+									</li>
+								</ul>
+							</li>
+							<li class="tsd-parameter">
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> face<span class="tsd-signature-symbol">?: </span><a href="interfaces/recognizableface.html" class="tsd-signature-type" data-tsd-kind="Interface">RecognizableFace</a></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>pages<span class="tsd-signature-symbol">: </span><a href="enums/documentpages.html" class="tsd-signature-type" data-tsd-kind="Enumeration">DocumentPages</a></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>result<span class="tsd-signature-symbol">: </span><a href="index.html#supportedrecognizerresult" class="tsd-signature-type" data-tsd-kind="Type alias">SupportedRecognizerResult</a></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcapturestatus" class="tsd-anchor"></a>
+					<h3>Id<wbr>Capture<wbr>Status</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>Capture<wbr>Status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;pass&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;review&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;fail&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L17">types.ts:17</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="idcaptureuifactory" class="tsd-anchor"></a>
+					<h3>Id<wbr>CaptureUIFactory</h3>
+					<div class="tsd-signature tsd-kind-icon">Id<wbr>CaptureUIFactory<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><a href="interfaces/idcaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">IdCaptureUI</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L422">types.ts:422</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="interfaces/idcaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">IdCaptureUI</a></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-returns-title">Returns <a href="interfaces/idcaptureui.html" class="tsd-signature-type" data-tsd-kind="Interface">IdCaptureUI</a></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="recognizername" class="tsd-anchor"></a>
+					<h3>Recognizer<wbr>Name</h3>
+					<div class="tsd-signature tsd-kind-icon">Recognizer<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;BlinkIdCombinedRecognizer&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;BlinkIdRecognizer&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;IdBarcodeRecognizer&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L417">types.ts:417</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="recognizertype" class="tsd-anchor"></a>
+					<h3>Recognizer<wbr>Type</h3>
+					<div class="tsd-signature tsd-kind-icon">Recognizer<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;BLINK_ID&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;USDL&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;PASSPORT&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L95">types.ts:95</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="supportedrecognizer" class="tsd-anchor"></a>
+					<h3>Supported<wbr>Recognizer</h3>
+					<div class="tsd-signature tsd-kind-icon">Supported<wbr>Recognizer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">SupportedWrappedRecognizer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">SuccessFrameGrabberRecognizer</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">SupportedWrappedRecognizer</span><span class="tsd-signature-symbol">&gt;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L205">types.ts:205</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="supportedrecognizerresult" class="tsd-anchor"></a>
+					<h3>Supported<wbr>Recognizer<wbr>Result</h3>
+					<div class="tsd-signature tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BlinkIdCombinedRecognizerResult</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">BlinkIdRecognizerResult</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">IdBarcodeRecognizerResult</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L198">types.ts:198</a></li>
+						</ul>
+					</aside>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>QR codes</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function">
+					<a name="generateqrcode" class="tsd-anchor"></a>
+					<h3>generateQRCode</h3>
+					<ul class="tsd-signatures tsd-kind-function">
+						<li class="tsd-signature tsd-kind-icon">generateQRCode<span class="tsd-signature-symbol">(</span>text<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">HTMLImageElement</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/qrCodeGenerator.ts#L8">qrCodeGenerator.ts:8</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>text: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Text to encode in the QR code</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">HTMLImageElement</span></h4>
+							<p>Image with a QR code</p>
+						</li>
+					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Other</h2>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="imagesource" class="tsd-anchor"></a>
+					<h3>Image<wbr>Source</h3>
+					<div class="tsd-signature tsd-kind-icon">Image<wbr>Source<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">HTMLCanvasElement</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">HTMLImageElement</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">HTMLVideoElement</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Blob</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ImageData</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L215">types.ts:215</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Image source</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-has-type-parameter">
+					<a name="range" class="tsd-anchor"></a>
+					<h3>Range</h3>
+					<div class="tsd-signature tsd-kind-icon">Range&lt;Type&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>from<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Type</span><span class="tsd-signature-symbol">; </span>to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Type</span><span class="tsd-signature-symbol"> }</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/types.ts#L425">types.ts:425</a></li>
+						</ul>
+					</aside>
+					<h4 class="tsd-type-parameters-title">Type parameters</h4>
+					<ul class="tsd-type-parameters">
+						<li>
+							<h4>Type</h4>
+						</li>
+					</ul>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>from<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Type</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Type</span></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 			<nav class="tsd-navigation primary">
 				<ul>
-					<li class=" ">
-						<a href="modules.html">Exports</a>
+					<li class="current ">
+						<a href="index.html">Exports</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-enum">
-						<a href="enums/axis.html" class="tsd-kind-icon">Axis</a>
-					</li>
-					<li class=" tsd-kind-enum">
-						<a href="enums/bearing.html" class="tsd-kind-icon">Bearing</a>
-					</li>
-					<li class=" tsd-kind-enum">
-						<a href="enums/documentpages.html" class="tsd-kind-icon">Document<wbr>Pages</a>
-					</li>
-					<li class=" tsd-kind-enum">
-						<a href="enums/facealignmentstatus.html" class="tsd-kind-icon">Face<wbr>Alignment<wbr>Status</a>
-					</li>
-					<li class=" tsd-kind-enum">
-						<a href="enums/facecaptureeventtype.html" class="tsd-kind-icon">Face<wbr>Capture<wbr>Event<wbr>Type</a>
-					</li>
-					<li class=" tsd-kind-enum">
-						<a href="enums/idcaptureeventtype.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event<wbr>Type</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/angle.html" class="tsd-kind-icon">Angle</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/anglebearingevaluation.html" class="tsd-kind-icon">Angle<wbr>Bearing<wbr>Evaluation</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/anglesmoothing.html" class="tsd-kind-icon">Angle<wbr>Smoothing</a>
-					</li>
-					<li class=" tsd-kind-class tsd-has-type-parameter">
-						<a href="classes/circularbuffer.html" class="tsd-kind-icon">Circular<wbr>Buffer</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/face.html" class="tsd-kind-icon">Face</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/facecapturesettings.html" class="tsd-kind-icon">Face<wbr>Capture<wbr>Settings</a>
-					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/facedetection.html" class="tsd-kind-icon">Face<wbr>Detection</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/faceextents.html" class="tsd-kind-icon">Face<wbr>Extents</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/facerecognition.html" class="tsd-kind-icon">Face<wbr>Recognition</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/idcapture.html" class="tsd-kind-icon">Id<wbr>Capture</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/idcapturesessionsettings.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Session<wbr>Settings</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/idcapturesettings.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Settings</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/livefacecapture.html" class="tsd-kind-icon">Live<wbr>Face<wbr>Capture</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/livenessdetectionsession.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/livenessdetectionsessionresult.html" class="tsd-kind-icon">Liveness<wbr>Detection<wbr>Session<wbr>Result</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/mocklivenessdetectionsession.html" class="tsd-kind-icon">Mock<wbr>Liveness<wbr>Detection<wbr>Session</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/normaldistribution.html" class="tsd-kind-icon">Normal<wbr>Distribution</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/point.html" class="tsd-kind-icon">Point</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/qrcodegenerator.html" class="tsd-kind-icon">QRCode<wbr>Generator</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/rect.html" class="tsd-kind-icon">Rect</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/rectsmoothing.html" class="tsd-kind-icon">Rect<wbr>Smoothing</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/smoothing.html" class="tsd-kind-icon">Smoothing</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/testfacedetector.html" class="tsd-kind-icon">Test<wbr>Face<wbr>Detector</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/testfacedetectorfactory.html" class="tsd-kind-icon">Test<wbr>Face<wbr>Detector<wbr>Factory</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/veridfacecaptureui.html" class="tsd-kind-icon">VerIDFace<wbr>CaptureUI</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/veridfacedetector.html" class="tsd-kind-icon">VerIDFace<wbr>Detector</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/veridfacedetectorfactory.html" class="tsd-kind-icon">VerIDFace<wbr>Detector<wbr>Factory</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/warning.html" class="tsd-kind-icon">Warning</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/address.html" class="tsd-kind-icon">Address</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/classinfo.html" class="tsd-kind-icon">Class<wbr>Info</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/dateddocument.html" class="tsd-kind-icon">Dated<wbr>Document</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/documentbackpage.html" class="tsd-kind-icon">Document<wbr>Back<wbr>Page</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/documentdate.html" class="tsd-kind-icon">Document<wbr>Date</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/documentfrontpage.html" class="tsd-kind-icon">Document<wbr>Front<wbr>Page</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/facecaptureui.html" class="tsd-kind-icon">Face<wbr>CaptureUI</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/facedetector.html" class="tsd-kind-icon">Face<wbr>Detector</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/facedetectorfactory.html" class="tsd-kind-icon">Face<wbr>Detector<wbr>Factory</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/iddocument.html" class="tsd-kind-icon">IDDocument</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/idcaptureresponse.html" class="tsd-kind-icon">Id<wbr>Capture<wbr>Response</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/idcaptureui.html" class="tsd-kind-icon">Id<wbr>CaptureUI</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/imagedocument.html" class="tsd-kind-icon">Image<wbr>Document</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/imagequality.html" class="tsd-kind-icon">Image<wbr>Quality</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/passportdocument.html" class="tsd-kind-icon">Passport<wbr>Document</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/recognizableface.html" class="tsd-kind-icon">Recognizable<wbr>Face</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/size.html" class="tsd-kind-icon">Size</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#captureddocument" class="tsd-kind-icon">Captured<wbr>Document</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facecapturebaseevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Base<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facecaptureevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facecapturefacecapturedevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Face<wbr>Captured<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facecapturesimpleevent" class="tsd-kind-icon">Face<wbr>Capture<wbr>Simple<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facedetectionelement" class="tsd-kind-icon">Face<wbr>Detection<wbr>Element</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facedetectionsource" class="tsd-kind-icon">Face<wbr>Detection<wbr>Source</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facerequirementlistener" class="tsd-kind-icon">Face<wbr>Requirement<wbr>Listener</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#facerequirements" class="tsd-kind-icon">Face<wbr>Requirements</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#idcaptureevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#idcaptureprogressevent" class="tsd-kind-icon">Id<wbr>Capture<wbr>Progress<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#idcaptureresult" class="tsd-kind-icon">Id<wbr>Capture<wbr>Result</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#idcapturestatus" class="tsd-kind-icon">Id<wbr>Capture<wbr>Status</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#idcaptureuifactory" class="tsd-kind-icon">Id<wbr>CaptureUIFactory</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#observablecompleteevent" class="tsd-kind-icon">Observable<wbr>Complete<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#observableerrorevent" class="tsd-kind-icon">Observable<wbr>Error<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#observablenextevent" class="tsd-kind-icon">Observable<wbr>Next<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#progresslistener" class="tsd-kind-icon">Progress<wbr>Listener</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
-						<a href="modules.html#range" class="tsd-kind-icon">Range</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#recognizablefacedetectioninput" class="tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Input</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#recognizablefacedetectionoutput" class="tsd-kind-icon">Recognizable<wbr>Face<wbr>Detection<wbr>Output</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#recognizername" class="tsd-kind-icon">Recognizer<wbr>Name</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#recognizertype" class="tsd-kind-icon">Recognizer<wbr>Type</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#supportedrecognizer" class="tsd-kind-icon">Supported<wbr>Recognizer</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#supportedrecognizerresult" class="tsd-kind-icon">Supported<wbr>Recognizer<wbr>Result</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#clamp" class="tsd-kind-icon">clamp</a>
-					</li>
-					<li class=" tsd-kind-function tsd-has-type-parameter">
-						<a href="modules.html#emitrxevent" class="tsd-kind-icon">emit<wbr>RxEvent</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#estimatefaceangle" class="tsd-kind-icon">estimate<wbr>Face<wbr>Angle</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#imagefromfacedetectionsource" class="tsd-kind-icon">image<wbr>From<wbr>Face<wbr>Detection<wbr>Source</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#sizeoffacedetectionsource" class="tsd-kind-icon">size<wbr>OfFace<wbr>Detection<wbr>Source</a>
 					</li>
 				</ul>
 			</nav>

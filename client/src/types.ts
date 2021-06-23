@@ -6,14 +6,19 @@ import {
     BlinkIdRecognizer, 
     IdBarcodeRecognizer, 
     ImageOrientation,
-    SuccessFrameGrabberRecognizer, 
-    MetadataCallbacks 
+    SuccessFrameGrabberRecognizer
 } from "@microblink/blinkid-in-browser-sdk"
-import { Face } from "./faceDetection"
+import { FaceCapture } from "./faceDetection"
 import { Angle, Rect } from "./utils"
 
+/**
+ * @category ID capture
+ */
 export type IdCaptureStatus = "pass" | "review" | "fail"
 
+/**
+ * @category ID capture
+ */
 export interface IdCaptureResponse {
     error?: any
     result: {
@@ -24,6 +29,10 @@ export interface IdCaptureResponse {
     warnings?: Warning[]
     status: IdCaptureStatus
 }
+
+/**
+ * @category ID capture
+ */
 export interface Address {
     street: string
     city: string
@@ -31,6 +40,10 @@ export interface Address {
     jurisdiction: string
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export interface IDDocument {
     documentNumber: string
     firstName: string
@@ -41,10 +54,18 @@ export interface IDDocument {
     recognizer: RecognizerType
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export interface DatedDocument {
     dateOfIssue: DocumentDate
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export interface ImageDocument {
     image: string
     faces: {
@@ -59,14 +80,23 @@ export interface ImageDocument {
     imageSize: Size
 }
 
+/**
+ * @internal
+ */
 export interface ImageQuality {
     brightness: number
     contrast: number
     sharpness: number
 }
 
+/**
+ * @category ID capture
+ */
 export type RecognizerType = "BLINK_ID" | "USDL" | "PASSPORT"
 
+/**
+ * @category ID capture
+ */
 export interface DocumentDate {
     day: number
     month: number
@@ -75,6 +105,9 @@ export interface DocumentDate {
     originalString?: string
 }
 
+/**
+ * @category ID capture
+ */
 export interface ClassInfo {
     country: string
     region: string
@@ -85,6 +118,10 @@ export interface ClassInfo {
     isoNumericCountryCode: string
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export interface DocumentFrontPage extends IDDocument, ImageDocument, DatedDocument {
     classInfo: ClassInfo
     fullName: string
@@ -93,6 +130,10 @@ export interface DocumentFrontPage extends IDDocument, ImageDocument, DatedDocum
     authenticityScore: number
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export interface DocumentBackPage extends IDDocument, DatedDocument {
     barcode: string
     issuerIdentificationNumber: string
@@ -100,6 +141,10 @@ export interface DocumentBackPage extends IDDocument, DatedDocument {
     address: Address
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export interface PassportDocument extends IDDocument, ImageDocument {
     rawMRZString: string
     issuer: string
@@ -108,14 +153,24 @@ export interface PassportDocument extends IDDocument, ImageDocument {
     recognitionStatus: string
 }
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export type CapturedDocument<T extends RecognizerType> = T extends "PASSPORT" ? PassportDocument : T extends "USDL" ? DocumentBackPage : DocumentFrontPage
 
+/**
+ * @category ID capture
+ */
 export enum DocumentPages {
     FRONT = "front",
     BACK = "back",
     FRONT_AND_BACK = "front and back"
 }
 
+/**
+ * @category ID capture
+ */
 export type IdCaptureResult = {
     face?: RecognizableFace
     pages: DocumentPages
@@ -137,21 +192,41 @@ export class Warning {
     }
 }
 
+/**
+ * @category ID capture
+ */
 export type SupportedRecognizerResult = BlinkIdCombinedRecognizerResult|BlinkIdRecognizerResult|IdBarcodeRecognizerResult
 
 type SupportedWrappedRecognizer = BlinkIdCombinedRecognizer|BlinkIdRecognizer|IdBarcodeRecognizer
 
+/**
+ * @category ID capture
+ */
 export type SupportedRecognizer = SupportedWrappedRecognizer|SuccessFrameGrabberRecognizer<SupportedWrappedRecognizer>
 
+/**
+ * @internal
+ */
 export type ProgressListener = (progress: number) => void
 
+/**
+ * Image source
+ */
+export type ImageSource = HTMLCanvasElement | HTMLImageElement | HTMLVideoElement | Blob | ImageData | string
+
+/**
+ * @category Face recognition
+ */
 export type RecognizableFaceDetectionInput = {
     [k: string]: {
-        image: HTMLImageElement | string
+        image: ImageSource
         faceRect?: Rect
     }
 }
 
+/**
+ * @category Face recognition
+ */
 export type RecognizableFaceDetectionOutput = {
     [k: string]: RecognizableFace
 }
@@ -160,6 +235,7 @@ export type RecognizableFaceDetectionOutput = {
  * ID capture UI interface
  * 
  * Facilitates the implementation of a custom user interface for ID capture sessions
+ * @category ID capture
  */
 export interface IdCaptureUI {
     /**
@@ -182,16 +258,23 @@ export interface IdCaptureUI {
     on<Event extends IdCaptureEvent>(eventType: IdCaptureEventType, callback: (event: Event) => void): void
 }
 
+/**
+ * @category ID capture
+ */
 export type IdCaptureEvent = {
     type: IdCaptureEventType
 }
 
+/**
+ * @category ID capture
+ */
 export type IdCaptureProgressEvent = IdCaptureEvent & {
     progress: number
 }
 
 /**
  * ID capture event types
+ * @category ID capture
  */
 export enum IdCaptureEventType {
     /**
@@ -250,6 +333,7 @@ export enum IdCaptureEventType {
 
 /**
  * Face that contains a template that can be used for face recognition
+ * @category Face recognition
  */
 export interface RecognizableFace {
     /**
@@ -280,6 +364,8 @@ export interface RecognizableFace {
 
 /**
  * Axis
+ * @category Face detection
+ * @internal
  */
 export enum Axis {
     /**
@@ -299,6 +385,8 @@ export interface Size {
 
 /**
  * Face alignment status
+ * @category Face detection
+ * @internal
  */
 export enum FaceAlignmentStatus {
     FOUND,
@@ -309,6 +397,7 @@ export enum FaceAlignmentStatus {
 
 /**
  * Bearing
+ * @category Face detection
  */
 export enum Bearing {
     STRAIGHT,
@@ -322,8 +411,14 @@ export enum Bearing {
     RIGHT_DOWN
 }
 
+/**
+ * @category ID capture
+ */
 export type RecognizerName = "BlinkIdCombinedRecognizer" | "BlinkIdRecognizer" | "IdBarcodeRecognizer"
 
+/**
+ * @category ID capture
+ */
 export type IdCaptureUIFactory = () => IdCaptureUI
 
 
@@ -332,6 +427,9 @@ export type Range<Type> = {
     to: Type
 }
 
+/**
+ * @category Face detection
+ */
 export type FaceRequirements = {
     imageSize: Size
     ideal: {
@@ -347,3 +445,15 @@ export type FaceRequirements = {
         pitch: Range<number>
     }
 }
+
+/**
+ * @category Face detection
+ */
+export type FaceRequirementListener = {
+    onChange: (requirements: FaceRequirements) => void
+}
+
+/**
+ * @category Face detection
+ */
+export type FaceCaptureCallback = (faceCapture: FaceCapture) => void

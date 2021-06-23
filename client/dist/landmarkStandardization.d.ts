@@ -1,4 +1,8 @@
 import { Point } from "./utils";
+/**
+ * @category ID capture
+ * @internal
+ */
 export declare class LandmarkStandardization {
     private eyeCenter;
     eyeVec: Point;

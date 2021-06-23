@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export declare class NormalDistribution {
     readonly mean: number;
     readonly standardDeviation: number;

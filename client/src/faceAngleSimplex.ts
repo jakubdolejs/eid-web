@@ -1,5 +1,11 @@
 import { Point, Angle, clamp } from "./utils"
 
+/**
+ * @param landmarks Face landmarks
+ * @returns Angle
+ * @category Face detection
+ * @internal
+ */
 export function estimateFaceAngle(landmarks: Point[]): Angle {
     const tip: Point = landmarks[30]
     const base: Point = landmarks[33]

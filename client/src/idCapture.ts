@@ -46,6 +46,7 @@ import {
 
 /**
  * Ver-ID's implementation of the `IdCaptureUI` interface
+ * @category ID capture
  */
 class VerIDIdCaptureUI implements IdCaptureUI {
 
@@ -364,6 +365,9 @@ type CombinedResult = {
     successFrame?: SuccessFrameGrabberRecognizerResult
 }
 
+/**
+ * @category ID capture
+ */
 export class IdCapture {
 
     readonly serviceURL: string
@@ -771,6 +775,7 @@ export class IdCapture {
 
 /**
  * ID capture settings
+ * @category ID capture
  */
 export class IdCaptureSettings {
     /**
@@ -801,6 +806,7 @@ export class IdCaptureSettings {
 
 /**
  * ID capture session settings
+ * @category ID capture
  */
 export class IdCaptureSessionSettings {
     /**

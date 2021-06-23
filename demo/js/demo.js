@@ -1,4 +1,4 @@
-import { FaceDetection, IdCapture, IdCaptureSettings, IdCaptureSessionSettings, FaceRecognition, QRCodeGenerator, NormalDistribution, Rect, DocumentPages } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
+import { FaceDetection, IdCapture, IdCaptureSettings, IdCaptureSessionSettings, FaceRecognition, generateQRCode, NormalDistribution, Rect, DocumentPages } from "../node_modules/@appliedrecognition/ver-id-browser/index.js";
 function setup(config) {
     const settings = new IdCaptureSettings(config.licenceKey, "/node_modules/@appliedrecognition/ver-id-browser/resources/");
     const faceDetection = new FaceDetection(config.serverURL);
@@ -164,7 +164,7 @@ function setup(config) {
             }
         });
     };
-    const qrCodeImg = QRCodeGenerator.generateQRCode(location.href);
+    const qrCodeImg = generateQRCode(location.href);
     document.querySelector("div.qr details").appendChild(qrCodeImg);
     document.querySelector("div.qr").style.display = "block";
     document.querySelector("#result a.button").onclick = () => {

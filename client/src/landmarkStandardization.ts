@@ -1,5 +1,9 @@
 import { Point } from "./utils"
 
+/**
+ * @category ID capture
+ * @internal
+ */
 export class LandmarkStandardization {
 
     private eyeCenter: Point

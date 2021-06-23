@@ -1,7 +1,9 @@
-import { LiveFaceCapture } from "./faceDetection";
+import { FaceCapture } from "./faceDetection";
 import { FaceDetectionSource, FaceDetector, FaceDetectorFactory } from "./faceDetector";
-import { FaceRequirementListener } from "./livenessDetectionSession";
-import { FaceRequirements } from "./types";
+import { FaceRequirements, FaceRequirementListener } from "./types";
+/**
+ * @category Face detection testing
+ */
 export declare class TestFaceDetector implements FaceDetector, FaceRequirementListener {
     private face;
     private requestedFace;
@@ -13,8 +15,11 @@ export declare class TestFaceDetector implements FaceDetector, FaceRequirementLi
     private valueBetween;
     private jitterValue;
     private jitterFace;
-    detectFace(source: FaceDetectionSource): Promise<LiveFaceCapture>;
+    detectFace(source: FaceDetectionSource): Promise<FaceCapture>;
 }
+/**
+ * @category Face detection testing
+ */
 export declare class TestFaceDetectorFactory implements FaceDetectorFactory {
     createFaceDetector(): Promise<FaceDetector>;
 }

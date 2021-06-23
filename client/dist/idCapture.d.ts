@@ -1,5 +1,8 @@
 import { Observable } from "rxjs";
 import { DocumentPages, IdCaptureResponse, IdCaptureResult, IdCaptureUIFactory } from "./types";
+/**
+ * @category ID capture
+ */
 export declare class IdCapture {
     readonly serviceURL: string;
     private readonly faceRecognition;
@@ -42,6 +45,7 @@ export declare class IdCapture {
 }
 /**
  * ID capture settings
+ * @category ID capture
  */
 export declare class IdCaptureSettings {
     /**
@@ -66,6 +70,7 @@ export declare class IdCaptureSettings {
 }
 /**
  * ID capture session settings
+ * @category ID capture
  */
 export declare class IdCaptureSessionSettings {
     /**

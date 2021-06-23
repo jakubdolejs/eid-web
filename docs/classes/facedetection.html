@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">@appliedrecognition/ver-id-browser</a>
+					<a href="../index.html">@appliedrecognition/ver-id-browser</a>
 				</li>
 				<li>
 					<a href="facedetection.html">FaceDetection</a>
@@ -99,8 +99,8 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="facedetection.html#capturefaces" class="tsd-kind-icon">capture<wbr>Faces</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="facedetection.html#detectfaceinimage" class="tsd-kind-icon">detect<wbr>Face<wbr>InImage</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="facedetection.html#livenessdetectionsession" class="tsd-kind-icon">liveness<wbr>Detection<wbr>Session</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="facedetection.html#islivenessdetectionsupported" class="tsd-kind-icon">is<wbr>Liveness<wbr>Detection<wbr>Supported</a></li>
 							</ul>
 						</section>
@@ -119,7 +119,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L24">faceDetection.ts:24</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetection.ts#L25">faceDetection.ts:25</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -152,7 +152,7 @@
 					<div class="tsd-signature tsd-kind-icon">serviceURL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L22">faceDetection.ts:22</a></li>
+							<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetection.ts#L23">faceDetection.ts:23</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -165,131 +165,57 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="detectfaceinimage" class="tsd-anchor"></a>
-					<h3>detect<wbr>Face<wbr>InImage</h3>
+					<a name="capturefaces" class="tsd-anchor"></a>
+					<h3>capture<wbr>Faces</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">detect<wbr>Face<wbr>InImage<span class="tsd-signature-symbol">(</span>image<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">HTMLImageElement</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="face.html" class="tsd-signature-type" data-tsd-kind="Class">Face</a><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">capture<wbr>Faces<span class="tsd-signature-symbol">(</span>session<span class="tsd-signature-symbol">: </span><a href="livenessdetectionsession.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSession</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Observable</span><span class="tsd-signature-symbol">&lt;</span><a href="livenessdetectionsessionresult.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSessionResult</a><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L39">faceDetection.ts:39</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>image: <span class="tsd-signature-type">HTMLImageElement</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="face.html" class="tsd-signature-type" data-tsd-kind="Class">Face</a><span class="tsd-signature-symbol">&gt;</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="livenessdetectionsession" class="tsd-anchor"></a>
-					<h3>liveness<wbr>Detection<wbr>Session</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">liveness<wbr>Detection<wbr>Session<span class="tsd-signature-symbol">(</span>settings<span class="tsd-signature-symbol">?: </span><a href="facecapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCaptureSettings</a>, faceDetectionCallback<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span>faceDetectionResult<span class="tsd-signature-symbol">: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span>, faceCaptureCallback<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span>faceCapture<span class="tsd-signature-symbol">: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span>, faceRequirementListener<span class="tsd-signature-symbol">?: </span><a href="../modules.html#facerequirementlistener" class="tsd-signature-type" data-tsd-kind="Type alias">FaceRequirementListener</a>, createSession<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span>settings<span class="tsd-signature-symbol">: </span><a href="facecapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCaptureSettings</a>, faceRecognition<span class="tsd-signature-symbol">: </span><a href="facerecognition.html" class="tsd-signature-type" data-tsd-kind="Class">FaceRecognition</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><a href="livenessdetectionsession.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSession</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Observable</span><span class="tsd-signature-symbol">&lt;</span><a href="livenessdetectionsessionresult.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSessionResult</a><span class="tsd-signature-symbol">&gt;</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L118">faceDetection.ts:118</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetection.ts#L62">faceDetection.ts:62</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.</p>
+									<p>Start a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> settings: <a href="facecapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCaptureSettings</a></h5>
+									<h5>session: <a href="livenessdetectionsession.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSession</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Session settings</p>
+										<p>Session to use for for liveness detection</p>
 									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> faceDetectionCallback: <span class="tsd-signature-symbol">(</span>faceDetectionResult<span class="tsd-signature-symbol">: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Optional callback to invoke each time a frame is ran by face detection</p>
-									</div>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter-signature">
-											<ul class="tsd-signatures tsd-kind-type-literal">
-												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>faceDetectionResult<span class="tsd-signature-symbol">: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-											</ul>
-											<ul class="tsd-descriptions">
-												<li class="tsd-description">
-													<h4 class="tsd-parameters-title">Parameters</h4>
-													<ul class="tsd-parameters">
-														<li>
-															<h5>faceDetectionResult: <a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a></h5>
-														</li>
-													</ul>
-													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-												</li>
-											</ul>
-										</li>
-									</ul>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> faceCaptureCallback: <span class="tsd-signature-symbol">(</span>faceCapture<span class="tsd-signature-symbol">: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Optional callback to invoke when a face aligned to the requested bearing is captured</p>
-									</div>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter-signature">
-											<ul class="tsd-signatures tsd-kind-type-literal">
-												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>faceCapture<span class="tsd-signature-symbol">: </span><a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-											</ul>
-											<ul class="tsd-descriptions">
-												<li class="tsd-description">
-													<h4 class="tsd-parameters-title">Parameters</h4>
-													<ul class="tsd-parameters">
-														<li>
-															<h5>faceCapture: <a href="livefacecapture.html" class="tsd-signature-type" data-tsd-kind="Class">LiveFaceCapture</a></h5>
-														</li>
-													</ul>
-													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-												</li>
-											</ul>
-										</li>
-									</ul>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> faceRequirementListener: <a href="../modules.html#facerequirementlistener" class="tsd-signature-type" data-tsd-kind="Type alias">FaceRequirementListener</a></h5>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> createSession: <span class="tsd-signature-symbol">(</span>settings<span class="tsd-signature-symbol">: </span><a href="facecapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCaptureSettings</a>, faceRecognition<span class="tsd-signature-symbol">: </span><a href="facerecognition.html" class="tsd-signature-type" data-tsd-kind="Class">FaceRecognition</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><a href="livenessdetectionsession.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSession</a></h5>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter-signature">
-											<ul class="tsd-signatures tsd-kind-type-literal">
-												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>settings<span class="tsd-signature-symbol">: </span><a href="facecapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCaptureSettings</a>, faceRecognition<span class="tsd-signature-symbol">: </span><a href="facerecognition.html" class="tsd-signature-type" data-tsd-kind="Class">FaceRecognition</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="livenessdetectionsession.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSession</a></li>
-											</ul>
-											<ul class="tsd-descriptions">
-												<li class="tsd-description">
-													<h4 class="tsd-parameters-title">Parameters</h4>
-													<ul class="tsd-parameters">
-														<li>
-															<h5>settings: <a href="facecapturesettings.html" class="tsd-signature-type" data-tsd-kind="Class">FaceCaptureSettings</a></h5>
-														</li>
-														<li>
-															<h5>faceRecognition: <a href="facerecognition.html" class="tsd-signature-type" data-tsd-kind="Class">FaceRecognition</a></h5>
-														</li>
-													</ul>
-													<h4 class="tsd-returns-title">Returns <a href="livenessdetectionsession.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSession</a></h4>
-												</li>
-											</ul>
-										</li>
-									</ul>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Observable</span><span class="tsd-signature-symbol">&lt;</span><a href="livenessdetectionsessionresult.html" class="tsd-signature-type" data-tsd-kind="Class">LivenessDetectionSessionResult</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Observable</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="detectfaceinimage" class="tsd-anchor"></a>
+					<h3>detect<wbr>Face<wbr>InImage</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">detect<wbr>Face<wbr>InImage<span class="tsd-signature-symbol">(</span>image<span class="tsd-signature-symbol">: </span><a href="../index.html#imagesource" class="tsd-signature-type" data-tsd-kind="Type alias">ImageSource</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="face.html" class="tsd-signature-type" data-tsd-kind="Class">Face</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetection.ts#L40">faceDetection.ts:40</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>image: <a href="../index.html#imagesource" class="tsd-signature-type" data-tsd-kind="Type alias">ImageSource</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="face.html" class="tsd-signature-type" data-tsd-kind="Class">Face</a><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -303,7 +229,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/fd6df68/client/src/faceDetection.ts#L52">faceDetection.ts:52</a></li>
+									<li>Defined in <a href="https://github.com/AppliedRecognition/Ver-ID-Browser/blob/e158563/client/src/faceDetection.ts#L53">faceDetection.ts:53</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -317,7 +243,7 @@
 			<nav class="tsd-navigation primary">
 				<ul>
 					<li class=" ">
-						<a href="../modules.html">Exports</a>
+						<a href="../index.html">Exports</a>
 					</li>
 				</ul>
 			</nav>
@@ -335,10 +261,10 @@
 								<a href="facedetection.html#serviceurl" class="tsd-kind-icon">serviceURL</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="facedetection.html#detectfaceinimage" class="tsd-kind-icon">detect<wbr>Face<wbr>InImage</a>
+								<a href="facedetection.html#capturefaces" class="tsd-kind-icon">capture<wbr>Faces</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="facedetection.html#livenessdetectionsession" class="tsd-kind-icon">liveness<wbr>Detection<wbr>Session</a>
+								<a href="facedetection.html#detectfaceinimage" class="tsd-kind-icon">detect<wbr>Face<wbr>InImage</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
 								<a href="facedetection.html#islivenessdetectionsupported" class="tsd-kind-icon">is<wbr>Liveness<wbr>Detection<wbr>Supported</a>

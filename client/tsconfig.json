@@ -14,6 +14,15 @@
     "typedocOptions": {
         "entryPoints": "./src/index.ts",
         "out": "../docs",
-        "excludePrivate": true
+        "excludePrivate": true,
+        "excludeInternal": true,
+        "categorizeByGroup": false,
+        "categoryOrder": [
+            "Face detection", "Face recognition", "ID capture", "QR codes", "Face detection testing", "*"
+        ],
+        "toc": [
+            "FaceDetection", "FaceRecognition", "IdCapture"
+        ],
+        "readme": "none"
     }
 }

@@ -5,7 +5,7 @@ import {
     IdCaptureSessionSettings, 
     IdCaptureResult, 
     FaceRecognition, 
-    QRCodeGenerator, 
+    generateQRCode, 
     NormalDistribution, 
     Rect, 
     RecognizableFace,
@@ -186,7 +186,7 @@ function setup(config: DemoConfiguration) {
         })
     }
 
-    const qrCodeImg = QRCodeGenerator.generateQRCode(location.href)
+    const qrCodeImg = generateQRCode(location.href)
     document.querySelector("div.qr details").appendChild(qrCodeImg);
     (document.querySelector("div.qr") as HTMLElement).style.display = "block";
 

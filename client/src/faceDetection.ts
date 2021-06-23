@@ -7,19 +7,20 @@ import { Observable, throwError, Subscription, Subscriber } from "rxjs"
 import { map, filter, take, takeWhile, tap, mergeMap, toArray } from "rxjs/operators"
 import { Angle, Rect, emitRxEvent } from "./utils"
 import { FaceRecognition } from "./faceRecognition"
-import { Size, Bearing, FaceAlignmentStatus } from "./types"
-import { FaceCaptureEventType, FaceCaptureUI, VerIDFaceCaptureUI } from "./faceDetectionUI"
-import { FaceRequirementListener, LivenessDetectionSession } from "./livenessDetectionSession"
+import { Size, Bearing, FaceRequirementListener, FaceAlignmentStatus, FaceCaptureCallback, ImageSource } from "./types"
+import { LivenessDetectionSessionEventType, LivenessDetectionSessionUI, VerIDLivenessDetectionSessionUI } from "./faceDetectionUI"
+import { LivenessDetectionSession } from "./livenessDetectionSession"
 import { FaceDetector, FaceDetectorFactory, VerIDFaceDetectorFactory } from "./faceDetector"
 
 /**
  * Face detection
+ * @category Face detection
  */
 export class FaceDetection {
     /**
      * Base URL of the server that accepts the face detection calls
      */
-    readonly serviceURL: string
+    public readonly serviceURL: string
     private readonly faceRecognition: FaceRecognition
     private readonly createFaceDetectorPromise: Promise<FaceDetector>
 
@@ -27,7 +28,7 @@ export class FaceDetection {
      * Constructor
      * @param serviceURL Base URL of the server that accepts the face detection and comparison calls
      */
-    constructor(serviceURL?: string, faceDetectorFactory?: FaceDetectorFactory) {
+    public constructor(serviceURL?: string, faceDetectorFactory?: FaceDetectorFactory) {
         this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : ""
         this.faceRecognition = new FaceRecognition(this.serviceURL)
         if (!faceDetectorFactory) {
@@ -36,7 +37,7 @@ export class FaceDetection {
         this.createFaceDetectorPromise = faceDetectorFactory.createFaceDetector()
     }
 
-    async detectFaceInImage(image: HTMLImageElement): Promise<Face> {
+    public async detectFaceInImage(image: ImageSource): Promise<Face> {
         const faceDetector: FaceDetector = await this.createFaceDetectorPromise
         const faceCapture = await faceDetector.detectFace({element: image, mirrored: false})
         if (faceCapture.face) {
@@ -49,13 +50,101 @@ export class FaceDetection {
     /**
      * @returns `true` if liveness detection is supported by the client
      */
-    static isLivenessDetectionSupported(): boolean {
+    public static isLivenessDetectionSupported(): boolean {
         return "Promise" in window && "fetch" in window
     }
 
-    private onVideoPlay(session: LivenessDetectionSession, subscriber: Subscriber<LiveFaceCapture>): () => void {
+    /**
+     * Start a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
+     * @param session Session to use for for liveness detection
+     * @returns Observable
+     */
+    public captureFaces(session: LivenessDetectionSession): Observable<LivenessDetectionSessionResult> {
+        try {
+            this.checkLivenessSessionAvailability()
+        } catch (error) {
+            return throwError(() => error)
+        }
+        if (session.isClosed) {
+            return throwError(() => new Error("Attempting to run a closed session"))
+        }
+        if (!session.faceRecognition) {
+            session.faceRecognition = this.faceRecognition
+        }
+        let lastCaptureTime: number = null
+
+        return <Observable<LivenessDetectionSessionResult>>(this.liveFaceCapture(session).pipe(
+            map((capture: FaceCapture): FaceCapture => {
+                capture.requestedBearing = session.requestedBearing
+                return capture
+            }),
+            map(session.detectFacePresence),
+            map(session.detectFaceAlignment),
+            map(session.detectSpoofAttempt),
+            tap((capture: FaceCapture) => {
+                if (capture.face && session.controlFaceCaptures.length < session.settings.maxControlFaceCount) {
+                    const now = new Date().getTime()
+                    if (lastCaptureTime == null && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
+                        lastCaptureTime = now
+                    } else if (lastCaptureTime != null && capture.faceAlignmentStatus != FaceAlignmentStatus.ALIGNED && now - lastCaptureTime >= session.settings.controlFaceCaptureInterval) {
+                        lastCaptureTime = now
+                        session.controlFaceCaptures.push(capture)
+                    }
+                }
+                session.ui.trigger({"type": LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture})
+                if (session.faceDetectionCallback) {
+                    session.faceDetectionCallback(capture)
+                }
+            }),
+            filter((capture: FaceCapture) => {
+                return capture.face && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED
+            }),
+            mergeMap(session.createFaceCapture),
+            tap((faceCapture: FaceCapture) => {
+                if (session.faceCaptureCallback) {
+                    session.faceCaptureCallback(faceCapture)
+                }
+            }),
+            take(session.settings.faceCaptureCount),
+            takeWhile(() => {
+                return new Date().getTime() < session.startTime + session.settings.maxDuration * 1000
+            }),
+            toArray(),
+            tap(() => {
+                session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
+            }),
+            mergeMap(session.resultFromCaptures),
+            map((result: LivenessDetectionSessionResult) => {
+                if (result.faceCaptures.length < session.settings.faceCaptureCount) {
+                    throw new Error("Session timed out")
+                }
+                return result
+            }),
+            (observable: Observable<LivenessDetectionSessionResult>) => this.livenessDetectionSessionResultObservable(observable, session)
+        ))
+    }
+
+    /**
+     * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
+     * @param settings Session settings
+     * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
+     * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
+     * @deprecated Use {@linkcode captureFaces}
+     * @hidden
+     */
+    public livenessDetectionSession(settings?: LivenessDetectionSessionSettings, faceDetectionCallback?: FaceCaptureCallback, faceCaptureCallback?: FaceCaptureCallback, faceRequirementListener?: FaceRequirementListener): Observable<LivenessDetectionSessionResult> {
+        const session = new LivenessDetectionSession(settings, this.faceRecognition)
+        session.faceDetectionCallback = faceDetectionCallback
+        session.faceCaptureCallback = faceCaptureCallback
+        if (faceRequirementListener) {
+            session.registerFaceRequirementListener(faceRequirementListener)
+        }
+        return this.captureFaces(session)
+    }
+
+    private onVideoPlay(session: LivenessDetectionSession, subscriber: Subscriber<FaceCapture>): () => void {
         return async () => {
-            const detectFaceAfterInterval = (interval: number): Promise<LiveFaceCapture> => {
+            const detectFaceAfterInterval = (interval: number): Promise<FaceCapture> => {
                 return new Promise((resolve, reject) => {
                     setTimeout(async () => {
                         try {
@@ -88,8 +177,8 @@ export class FaceDetection {
         }
     }
 
-    private liveFaceCapture(session: LivenessDetectionSession): Observable<LiveFaceCapture> {
-        return new Observable<LiveFaceCapture>(subscriber => {
+    private liveFaceCapture(session: LivenessDetectionSession): Observable<FaceCapture> {
+        return new Observable<FaceCapture>(subscriber => {
             this.createFaceDetectorPromise.then(faceDetector => {
                 session.faceDetector = faceDetector
                 session.ui.video.onplay = this.onVideoPlay(session, subscriber)
@@ -109,83 +198,6 @@ export class FaceDetection {
         }
     }
 
-    /**
-     * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
-     * @param settings Session settings
-     * @param faceDetectionCallback Optional callback to invoke each time a frame is ran by face detection
-     * @param faceCaptureCallback Optional callback to invoke when a face aligned to the requested bearing is captured
-     */
-    livenessDetectionSession(settings?: FaceCaptureSettings, faceDetectionCallback?: (faceDetectionResult: LiveFaceCapture) => void, faceCaptureCallback?: (faceCapture: LiveFaceCapture) => void, faceRequirementListener?: FaceRequirementListener, createSession?: (settings: FaceCaptureSettings, faceRecognition: FaceRecognition) => LivenessDetectionSession): Observable<LivenessDetectionSessionResult> {
-        try {
-            this.checkLivenessSessionAvailability()
-        } catch (error) {
-            return throwError(() => error)
-        }
-        if (!settings) {
-            settings = new FaceCaptureSettings()
-        }
-        let session: LivenessDetectionSession
-        if (createSession) {
-            session = createSession(settings, this.faceRecognition)
-        } else {
-            session = new LivenessDetectionSession(settings, this.faceRecognition)
-        }
-        if (faceRequirementListener) {
-            session.registerFaceRequirementListener(faceRequirementListener)
-        }
-        let lastCaptureTime: number = null
-
-        return <Observable<LivenessDetectionSessionResult>>(this.liveFaceCapture(session).pipe(
-            map((capture: LiveFaceCapture): LiveFaceCapture => {
-                capture.requestedBearing = session.bearingIterator.value
-                return capture
-            }),
-            map(session.detectFacePresence),
-            map(session.detectFaceAlignment),
-            map(session.detectSpoofAttempt),
-            tap((capture: LiveFaceCapture) => {
-                if (capture.face && session.controlFaceCaptures.length < session.settings.maxControlFaceCount) {
-                    const now = new Date().getTime()
-                    if (lastCaptureTime == null && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
-                        lastCaptureTime = now
-                    } else if (lastCaptureTime != null && capture.faceAlignmentStatus != FaceAlignmentStatus.ALIGNED && now - lastCaptureTime >= session.settings.controlFaceCaptureInterval) {
-                        lastCaptureTime = now
-                        session.controlFaceCaptures.push(capture)
-                    }
-                }
-                session.ui.trigger({"type": FaceCaptureEventType.FACE_CAPTURED, "capture": capture})
-                if (faceDetectionCallback) {
-                    faceDetectionCallback(capture)
-                }
-            }),
-            filter((capture: LiveFaceCapture) => {
-                return capture.face && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED
-            }),
-            mergeMap(session.createFaceCapture),
-            tap((faceCapture: LiveFaceCapture) => {
-                if (faceCaptureCallback) {
-                    faceCaptureCallback(faceCapture)
-                }
-            }),
-            take(settings.faceCaptureCount),
-            takeWhile(() => {
-                return new Date().getTime() < session.startTime + settings.maxDuration * 1000
-            }),
-            toArray(),
-            tap(() => {
-                session.ui.trigger({"type":FaceCaptureEventType.CAPTURE_FINISHED})
-            }),
-            mergeMap(session.resultFromCaptures),
-            map((result: LivenessDetectionSessionResult) => {
-                if (result.faceCaptures.length < settings.faceCaptureCount) {
-                    throw new Error("Session timed out")
-                }
-                return result
-            }),
-            (observable: Observable<LivenessDetectionSessionResult>) => this.livenessDetectionSessionResultObservable(observable, session)
-        ))
-    }
-
     private livenessDetectionSessionResultObservable = (observable: Observable<LivenessDetectionSessionResult>, session: LivenessDetectionSession): Observable<LivenessDetectionSessionResult> => {
         return new Observable<LivenessDetectionSessionResult>(subscriber => {
             const subcription: Subscription = observable.subscribe({
@@ -201,7 +213,7 @@ export class FaceDetection {
                     emitRxEvent(subscriber, {"type": "complete"})
                 }
             })
-            session.ui.on(FaceCaptureEventType.CANCEL, () => {
+            session.ui.on(LivenessDetectionSessionEventType.CANCEL, () => {
                 emitRxEvent(subscriber, {"type": "complete"})
             })
             return () => {
@@ -214,6 +226,7 @@ export class FaceDetection {
 
 /**
  * Result of a liveness detection session
+ * @category Face detection
  */
 export class LivenessDetectionSessionResult {
     /**
@@ -227,7 +240,7 @@ export class LivenessDetectionSessionResult {
     /**
      * Array of face captures collected during the session
      */
-    readonly faceCaptures: Array<LiveFaceCapture>
+    readonly faceCaptures: Array<FaceCapture>
 
     readonly videoURL: string
 
@@ -236,7 +249,7 @@ export class LivenessDetectionSessionResult {
      * @param startTime Date that represents the time the session was started
      * @internal
      */
-    constructor(startTime: Date, faceCaptures?: LiveFaceCapture[], videoURL?: string) {
+    constructor(startTime: Date, faceCaptures?: FaceCapture[], videoURL?: string) {
         this.startTime = startTime
         this.faceCaptures = faceCaptures ? faceCaptures : []
         this.duration = (new Date().getTime() - startTime.getTime())/1000
@@ -249,6 +262,7 @@ export class LivenessDetectionSessionResult {
  * Extents of a face within a view
  * @remarks
  * Used by liveness detection session to determine the area where to show the face in relation to the containing view
+ * @category Face detection
  */
 export class FaceExtents {
     /**
@@ -271,9 +285,10 @@ export class FaceExtents {
 }
 
 /**
- * Face capture settings
+ * Liveness detection session settings
+ * @category Face detection
  */
-export class FaceCaptureSettings {
+export class LivenessDetectionSessionSettings {
     /**
      * Whether to use the device's front-facing (selfie) camera
      * @defaultValue `true`
@@ -362,7 +377,7 @@ export class FaceCaptureSettings {
      * Set your own function if you wish to supply your own graphical user interface for the session.
      * @returns Function that supplies an instance of `FaceCaptureUI`
      */
-    createUI: () => FaceCaptureUI = () => new VerIDFaceCaptureUI(this)
+    createUI: () => LivenessDetectionSessionUI = () => new VerIDLivenessDetectionSessionUI(this)
 
     /**
      * @param imageSize Image size
@@ -385,6 +400,7 @@ export class FaceCaptureSettings {
 
 /**
  * Face detected in an image
+ * @category Face detection
  */
 export class Face {
     /**
@@ -414,8 +430,9 @@ export class Face {
 
 /**
  * Capture of a live face
+ * @category Face detection
  */
-export class LiveFaceCapture {
+export class FaceCapture {
     /**
      * Image in which the face was detected
      */
@@ -437,13 +454,6 @@ export class LiveFaceCapture {
      * @internal
      */
     faceAngle?: Angle
-    /**
-     * `true` if face is present
-     * 
-     * Indicates that the face has been present in a number of consecutive frames
-     * @internal
-     */
-    isFacePresent?: boolean
     /**
      * Face alignment status at time of capture
      * @internal
