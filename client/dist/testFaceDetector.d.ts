@@ -15,7 +15,7 @@ export declare class TestFaceDetector implements FaceDetector, FaceRequirementLi
     private valueBetween;
     private jitterValue;
     private jitterFace;
-    detectFace(source: FaceDetectionSource): Promise<FaceCapture>;
+    readonly detectFace: (source: FaceDetectionSource) => Promise<FaceCapture>;
 }
 /**
  * @category Face detection testing

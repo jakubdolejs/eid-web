@@ -34,6 +34,7 @@ const setup = (config) => {
         settings.useFrontCamera = false;
         const session = new MockLivenessDetectionSession(settings);
         session.faceDetector = testFaceDetector;
+        session.registerFaceRequirementListener(testFaceDetector);
         faceDetection.captureFaces(session).subscribe({
             next: (result) => {
                 showPage("result");

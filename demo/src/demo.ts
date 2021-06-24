@@ -18,7 +18,7 @@ function setup(config: DemoConfiguration) {
     const faceDetection = new FaceDetection(config.serverURL)
     const idCapture = new IdCapture(settings, config.serverURL)
     const faceRecognition = new FaceRecognition(config.serverURL)
-    const scoreThreshold = 3.0
+    const scoreThreshold = 2.5
 
     let backPageResult: IdCaptureResult
     let frontPageResult: IdCaptureResult

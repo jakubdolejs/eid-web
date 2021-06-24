@@ -43,7 +43,7 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
         face.angle.pitch = this.jitterValue(face.angle.pitch, delta)
     }
 
-    detectFace(source: FaceDetectionSource): Promise<FaceCapture> {
+    readonly detectFace = (source: FaceDetectionSource): Promise<FaceCapture> => {
         return new Promise((resolve, reject) => {
             let image: HTMLImageElement = new Image()
             let face: Face
@@ -56,7 +56,7 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
                 const progress = Math.min((now - this.lastRequestTime.getTime()) / this.turnDurationMs, 1)
                 if (progress == 1) {
                     face = this.face = this.requestedFace
-                } else {
+                } else if (this.requestedFace) {
                     face.bounds.x = this.valueBetween(this.face.bounds.x, this.requestedFace.bounds.x, progress)
                     face.bounds.y = this.valueBetween(this.face.bounds.y, this.requestedFace.bounds.y, progress)
                     face.bounds.width = this.valueBetween(this.face.bounds.width, this.requestedFace.bounds.width, progress)
@@ -66,15 +66,19 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
                 }
             }
             const nameParts: string[] = []
-            if (this.requestedFace.angle.pitch > 0) {
-                nameParts.push("up")
-            }
-            if (this.requestedFace.angle.yaw < 0) {
-                nameParts.push("left")
-            } else if (this.requestedFace.angle.yaw > 0) {
-                nameParts.push("right")
-            } else {
+            if (!this.requestedFace) {
                 nameParts.push("straight")
+            } else {
+                if (this.requestedFace.angle.pitch > 0) {
+                    nameParts.push("up")
+                }
+                if (this.requestedFace.angle.yaw < 0) {
+                    nameParts.push("left")
+                } else if (this.requestedFace.angle.yaw > 0) {
+                    nameParts.push("right")
+                } else {
+                    nameParts.push("straight")
+                }
             }
             image.onload = async () => {
                 const size = await sizeOfImageSource(source.element)

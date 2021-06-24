@@ -21063,76 +21063,81 @@ class TestFaceDetector {
             face.angle.yaw = this.jitterValue(face.angle.yaw, delta);
             face.angle.pitch = this.jitterValue(face.angle.pitch, delta);
         };
+        this.detectFace = (source) => {
+            return new Promise((resolve, reject) => {
+                let image = new Image();
+                let face;
+                if (!this.face) {
+                    this.face = this.requestedFace;
+                }
+                face = this.face;
+                if (this.lastRequestTime) {
+                    const now = new Date().getTime();
+                    const progress = Math.min((now - this.lastRequestTime.getTime()) / this.turnDurationMs, 1);
+                    if (progress == 1) {
+                        face = this.face = this.requestedFace;
+                    }
+                    else if (this.requestedFace) {
+                        face.bounds.x = this.valueBetween(this.face.bounds.x, this.requestedFace.bounds.x, progress);
+                        face.bounds.y = this.valueBetween(this.face.bounds.y, this.requestedFace.bounds.y, progress);
+                        face.bounds.width = this.valueBetween(this.face.bounds.width, this.requestedFace.bounds.width, progress);
+                        face.bounds.height = this.valueBetween(this.face.bounds.height, this.requestedFace.bounds.height, progress);
+                        face.angle.yaw = this.valueBetween(this.face.angle.yaw, this.requestedFace.angle.yaw, progress);
+                        face.angle.pitch = this.valueBetween(this.face.angle.pitch, this.requestedFace.angle.pitch, progress);
+                    }
+                }
+                const nameParts = [];
+                if (!this.requestedFace) {
+                    nameParts.push("straight");
+                }
+                else {
+                    if (this.requestedFace.angle.pitch > 0) {
+                        nameParts.push("up");
+                    }
+                    if (this.requestedFace.angle.yaw < 0) {
+                        nameParts.push("left");
+                    }
+                    else if (this.requestedFace.angle.yaw > 0) {
+                        nameParts.push("right");
+                    }
+                    else {
+                        nameParts.push("straight");
+                    }
+                }
+                image.onload = () => __awaiter(this, void 0, void 0, function* () {
+                    const size = yield (0,_utils__WEBPACK_IMPORTED_MODULE_1__.sizeOfImageSource)(source.element);
+                    let scale = 1;
+                    if (size.width / size.height > image.naturalWidth / image.naturalHeight) {
+                        // The source image is "fatter", constrain height and crop the width
+                        scale = size.height / image.naturalHeight;
+                    }
+                    else {
+                        scale = size.width / image.naturalWidth;
+                    }
+                    this.canvas.width = size.width;
+                    this.canvas.height = size.height;
+                    this.canvas.getContext("2d").drawImage(image, size.width / 2 - image.naturalWidth * scale / 2, size.height / 2 - image.naturalHeight * scale / 2, image.naturalWidth * scale, image.naturalHeight * scale);
+                    this.canvas.toBlob(blob => {
+                        image.onload = () => {
+                            URL.revokeObjectURL(image.src);
+                            if (face) {
+                                this.jitterFace(face);
+                            }
+                            resolve(new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceCapture(image, face));
+                        };
+                        image.src = URL.createObjectURL(blob);
+                    });
+                });
+                image.onerror = (ev) => {
+                    reject(ev);
+                };
+                image.src = "/images/" + nameParts.join("-") + ".jpg";
+            });
+        };
         this.canvas = document.createElement("canvas");
     }
     valueBetween(origin, destination, progress) {
         return origin + (destination - origin) * progress;
-    }
-    detectFace(source) {
-        return new Promise((resolve, reject) => {
-            let image = new Image();
-            let face;
-            if (!this.face) {
-                this.face = this.requestedFace;
-            }
-            face = this.face;
-            if (this.lastRequestTime) {
-                const now = new Date().getTime();
-                const progress = Math.min((now - this.lastRequestTime.getTime()) / this.turnDurationMs, 1);
-                if (progress == 1) {
-                    face = this.face = this.requestedFace;
-                }
-                else {
-                    face.bounds.x = this.valueBetween(this.face.bounds.x, this.requestedFace.bounds.x, progress);
-                    face.bounds.y = this.valueBetween(this.face.bounds.y, this.requestedFace.bounds.y, progress);
-                    face.bounds.width = this.valueBetween(this.face.bounds.width, this.requestedFace.bounds.width, progress);
-                    face.bounds.height = this.valueBetween(this.face.bounds.height, this.requestedFace.bounds.height, progress);
-                    face.angle.yaw = this.valueBetween(this.face.angle.yaw, this.requestedFace.angle.yaw, progress);
-                    face.angle.pitch = this.valueBetween(this.face.angle.pitch, this.requestedFace.angle.pitch, progress);
-                }
-            }
-            const nameParts = [];
-            if (this.requestedFace.angle.pitch > 0) {
-                nameParts.push("up");
-            }
-            if (this.requestedFace.angle.yaw < 0) {
-                nameParts.push("left");
-            }
-            else if (this.requestedFace.angle.yaw > 0) {
-                nameParts.push("right");
-            }
-            else {
-                nameParts.push("straight");
-            }
-            image.onload = () => __awaiter(this, void 0, void 0, function* () {
-                const size = yield (0,_utils__WEBPACK_IMPORTED_MODULE_1__.sizeOfImageSource)(source.element);
-                let scale = 1;
-                if (size.width / size.height > image.naturalWidth / image.naturalHeight) {
-                    // The source image is "fatter", constrain height and crop the width
-                    scale = size.height / image.naturalHeight;
-                }
-                else {
-                    scale = size.width / image.naturalWidth;
-                }
-                this.canvas.width = size.width;
-                this.canvas.height = size.height;
-                this.canvas.getContext("2d").drawImage(image, size.width / 2 - image.naturalWidth * scale / 2, size.height / 2 - image.naturalHeight * scale / 2, image.naturalWidth * scale, image.naturalHeight * scale);
-                this.canvas.toBlob(blob => {
-                    image.onload = () => {
-                        URL.revokeObjectURL(image.src);
-                        if (face) {
-                            this.jitterFace(face);
-                        }
-                        resolve(new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.FaceCapture(image, face));
-                    };
-                    image.src = URL.createObjectURL(blob);
-                });
-            });
-            image.onerror = (ev) => {
-                reject(ev);
-            };
-            image.src = "/images/" + nameParts.join("-") + ".jpg";
-        });
     }
 }
 /**
