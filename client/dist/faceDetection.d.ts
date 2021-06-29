@@ -44,6 +44,7 @@ export declare class FaceDetection {
      * @hidden
      */
     livenessDetectionSession(settings?: LivenessDetectionSessionSettings, faceDetectionCallback?: FaceCaptureCallback, faceCaptureCallback?: FaceCaptureCallback, faceRequirementListener?: FaceRequirementListener): Observable<LivenessDetectionSessionResult>;
+    private onFaceCapture;
     private onVideoPlay;
     private liveFaceCapture;
     private checkLivenessSessionAvailability;

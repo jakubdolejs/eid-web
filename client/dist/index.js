@@ -16999,36 +16999,6 @@ function take(count) {
 
 /***/ }),
 
-/***/ "./node_modules/rxjs/dist/esm5/internal/operators/takeWhile.js":
-/*!*********************************************************************!*\
-  !*** ./node_modules/rxjs/dist/esm5/internal/operators/takeWhile.js ***!
-  \*********************************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "takeWhile": () => (/* binding */ takeWhile)
-/* harmony export */ });
-/* harmony import */ var _util_lift__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../util/lift */ "./node_modules/rxjs/dist/esm5/internal/util/lift.js");
-/* harmony import */ var _OperatorSubscriber__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./OperatorSubscriber */ "./node_modules/rxjs/dist/esm5/internal/operators/OperatorSubscriber.js");
-
-
-function takeWhile(predicate, inclusive) {
-    if (inclusive === void 0) { inclusive = false; }
-    return (0,_util_lift__WEBPACK_IMPORTED_MODULE_0__.operate)(function (source, subscriber) {
-        var index = 0;
-        source.subscribe(new _OperatorSubscriber__WEBPACK_IMPORTED_MODULE_1__.OperatorSubscriber(subscriber, function (value) {
-            var result = predicate(value, index++);
-            (result || inclusive) && subscriber.next(value);
-            !result && subscriber.complete();
-        }));
-    });
-}
-//# sourceMappingURL=takeWhile.js.map
-
-/***/ }),
-
 /***/ "./node_modules/rxjs/dist/esm5/internal/operators/tap.js":
 /*!***************************************************************!*\
   !*** ./node_modules/rxjs/dist/esm5/internal/operators/tap.js ***!
@@ -18302,8 +18272,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/filter.js");
 /* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/mergeMap.js");
 /* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/take.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/takeWhile.js");
-/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/toArray.js");
+/* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! rxjs/operators */ "./node_modules/rxjs/dist/esm5/internal/operators/toArray.js");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 /* harmony import */ var _faceRecognition__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./faceRecognition */ "./src/faceRecognition.ts");
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./types */ "./src/types.ts");
@@ -18360,6 +18329,31 @@ class FaceDetection {
      * @param serviceURL Base URL of the server that accepts the face detection and comparison calls
      */
     constructor(serviceURL, faceDetectorFactory) {
+        this.onFaceCapture = (session, capture) => {
+            try {
+                if (capture.face) {
+                    const now = new Date().getTime();
+                    if (session.lastCaptureTime == null && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED) {
+                        session.lastCaptureTime = now;
+                    }
+                    else if (session.lastCaptureTime != null && (capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED || now - session.lastCaptureTime >= session.settings.controlFaceCaptureInterval)) {
+                        session.lastCaptureTime = now;
+                        session.controlFaceCaptures.push(capture);
+                        if (session.controlFaceCaptures.length > session.settings.maxControlFaceCount) {
+                            session.controlFaceCaptures.shift();
+                        }
+                    }
+                }
+                setTimeout(() => {
+                    session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture });
+                    if (session.faceDetectionCallback) {
+                        session.faceDetectionCallback(capture);
+                    }
+                });
+            }
+            catch (error) {
+            }
+        };
         this.livenessDetectionSessionResultObservable = (observable, session) => {
             return new rxjs__WEBPACK_IMPORTED_MODULE_6__.Observable(subscriber => {
                 const subcription = observable.subscribe({
@@ -18427,41 +18421,35 @@ class FaceDetection {
         if (!session.faceRecognition) {
             session.faceRecognition = this.faceRecognition;
         }
-        let lastCaptureTime = null;
         return (this.liveFaceCapture(session).pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((capture) => {
             capture.requestedBearing = session.requestedBearing;
             return capture;
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFaceAlignment), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectSpoofAttempt), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((capture) => {
-            if (capture.face && session.controlFaceCaptures.length < session.settings.maxControlFaceCount) {
-                const now = new Date().getTime();
-                if (lastCaptureTime == null && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED) {
-                    lastCaptureTime = now;
-                }
-                else if (lastCaptureTime != null && capture.faceAlignmentStatus != _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED && now - lastCaptureTime >= session.settings.controlFaceCaptureInterval) {
-                    lastCaptureTime = now;
-                    session.controlFaceCaptures.push(capture);
-                }
-            }
-            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture });
-            if (session.faceDetectionCallback) {
-                session.faceDetectionCallback(capture);
-            }
+            this.onFaceCapture(session, capture);
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.filter)((capture) => {
             return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.createFaceCapture), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((faceCapture) => {
-            if (session.faceCaptureCallback) {
-                session.faceCaptureCallback(faceCapture);
+            try {
+                setTimeout(() => {
+                    if (session.faceCaptureCallback) {
+                        session.faceCaptureCallback(faceCapture);
+                    }
+                });
             }
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.take)(session.settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.takeWhile)(() => {
-            return new Date().getTime() < session.startTime + session.settings.maxDuration * 1000;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_14__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)(() => {
-            session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CAPTURE_FINISHED });
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((result) => {
-            if (result.faceCaptures.length < session.settings.faceCaptureCount) {
+            catch (error) {
+            }
+            if (new Date().getTime() - session.startTime > session.settings.maxDuration * 1000) {
                 throw new Error("Session timed out");
             }
-            return result;
-        }), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.take)(session.settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)(() => {
+            try {
+                setTimeout(() => {
+                    session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CAPTURE_FINISHED });
+                });
+            }
+            catch (error) {
+            }
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
     }
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
@@ -20254,6 +20242,10 @@ class LivenessDetectionSession {
         this.controlFaceCaptures = [];
         this.faceDetectionCallback = null;
         this.faceCaptureCallback = null;
+        /**
+         * @internal
+         */
+        this.lastCaptureTime = null;
         this.faceAlignmentStatus = _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.FOUND;
         this.fixTime = null;
         this.alignedFaceCount = 0;

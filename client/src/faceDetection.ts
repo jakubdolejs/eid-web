@@ -71,7 +71,6 @@ export class FaceDetection {
         if (!session.faceRecognition) {
             session.faceRecognition = this.faceRecognition
         }
-        let lastCaptureTime: number = null
 
         return <Observable<LivenessDetectionSessionResult>>(this.liveFaceCapture(session).pipe(
             map((capture: FaceCapture): FaceCapture => {
@@ -82,44 +81,36 @@ export class FaceDetection {
             map(session.detectFaceAlignment),
             map(session.detectSpoofAttempt),
             tap((capture: FaceCapture) => {
-                if (capture.face && session.controlFaceCaptures.length < session.settings.maxControlFaceCount) {
-                    const now = new Date().getTime()
-                    if (lastCaptureTime == null && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
-                        lastCaptureTime = now
-                    } else if (lastCaptureTime != null && capture.faceAlignmentStatus != FaceAlignmentStatus.ALIGNED && now - lastCaptureTime >= session.settings.controlFaceCaptureInterval) {
-                        lastCaptureTime = now
-                        session.controlFaceCaptures.push(capture)
-                    }
-                }
-                session.ui.trigger({"type": LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture})
-                if (session.faceDetectionCallback) {
-                    session.faceDetectionCallback(capture)
-                }
+                this.onFaceCapture(session, capture)
             }),
             filter((capture: FaceCapture) => {
                 return capture.face && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED
             }),
             mergeMap(session.createFaceCapture),
             tap((faceCapture: FaceCapture) => {
-                if (session.faceCaptureCallback) {
-                    session.faceCaptureCallback(faceCapture)
+                try {
+                    setTimeout(() => {
+                        if (session.faceCaptureCallback) {
+                            session.faceCaptureCallback(faceCapture)
+                        }
+                    })
+                } catch (error) {
+                }
+                if (new Date().getTime() - session.startTime > session.settings.maxDuration * 1000) {
+                    throw new Error("Session timed out")
                 }
             }),
             take(session.settings.faceCaptureCount),
-            takeWhile(() => {
-                return new Date().getTime() < session.startTime + session.settings.maxDuration * 1000
-            }),
             toArray(),
             tap(() => {
-                session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
+                try {
+                    setTimeout(() => {
+                        session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
+                    })
+                } catch (error) {
+                }
             }),
             mergeMap(session.resultFromCaptures),
-            map((result: LivenessDetectionSessionResult) => {
-                if (result.faceCaptures.length < session.settings.faceCaptureCount) {
-                    throw new Error("Session timed out")
-                }
-                return result
-            }),
             (observable: Observable<LivenessDetectionSessionResult>) => this.livenessDetectionSessionResultObservable(observable, session)
         ))
     }
@@ -140,6 +131,31 @@ export class FaceDetection {
             session.registerFaceRequirementListener(faceRequirementListener)
         }
         return this.captureFaces(session)
+    }
+
+    private onFaceCapture = (session: LivenessDetectionSession, capture: FaceCapture): void => {
+        try {
+            if (capture.face) {
+                const now = new Date().getTime()
+                if (session.lastCaptureTime == null && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
+                    session.lastCaptureTime = now
+                } else if (session.lastCaptureTime != null && (capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED || now - session.lastCaptureTime >= session.settings.controlFaceCaptureInterval)) {
+                    session.lastCaptureTime = now
+                    session.controlFaceCaptures.push(capture)
+                    if (session.controlFaceCaptures.length > session.settings.maxControlFaceCount) {
+                        session.controlFaceCaptures.shift()
+                    }
+                }
+            }
+            setTimeout(() => {
+                session.ui.trigger({"type": LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture})
+                if (session.faceDetectionCallback) {
+                    session.faceDetectionCallback(capture)
+                }
+            })
+        } catch (error) {
+            
+        }
     }
 
     private onVideoPlay(session: LivenessDetectionSession, subscriber: Subscriber<FaceCapture>): () => void {

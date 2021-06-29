@@ -20,6 +20,10 @@ export declare class LivenessDetectionSession {
     faceDetector: FaceDetector;
     faceDetectionCallback: FaceCaptureCallback;
     faceCaptureCallback: FaceCaptureCallback;
+    /**
+     * @internal
+     */
+    lastCaptureTime: number;
     private readonly faceBuffer;
     private faceAlignmentStatus;
     private fixTime;

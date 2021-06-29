@@ -21,6 +21,10 @@ export class LivenessDetectionSession {
     public faceDetector: FaceDetector
     public faceDetectionCallback: FaceCaptureCallback = null
     public faceCaptureCallback: FaceCaptureCallback = null
+    /**
+     * @internal
+     */
+    lastCaptureTime: number = null
 
     private readonly faceBuffer: CircularBuffer<Face>
     private faceAlignmentStatus: FaceAlignmentStatus = FaceAlignmentStatus.FOUND
