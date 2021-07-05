@@ -60,7 +60,6 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
     private eventListeners: {[k in LivenessDetectionSessionEventType]?: (event: LivenessDetectionSessionEvent) => void} = {}
     private hasFaceBeenAligned = false
     private processingIndicator: HTMLDivElement
-    private angleBar: HTMLDivElement
     readonly video: HTMLVideoElement
     readonly settings: LivenessDetectionSessionSettings
 
@@ -126,25 +125,16 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         this.processingIndicator.style.margin = "0px auto"
         this.processingIndicator.style.left = "16px"
         this.processingIndicator.style.right = "16px"
-
-        this.angleBar = document.createElement("div")
-        this.angleBar.style.position = "absolute"
-        this.angleBar.style.right = "0px"
-        this.angleBar.style.bottom = "0px"
-        this.angleBar.style.width = "2px"
-        this.angleBar.style.height = "0%"
         
         this.videoContainer.appendChild(this.video)
         this.videoContainer.appendChild(this.cameraOverlayCanvas)
         this.videoContainer.appendChild(this.processingIndicator)
-        this.videoContainer.appendChild(this.angleBar)
         this.videoContainer.appendChild(this.cancelButton)
     }
 
     trigger(event: LivenessDetectionSessionEvent) {
         switch (event.type) {
             case LivenessDetectionSessionEventType.FACE_CAPTURED:
-                this.drawFaceAlignmentProgress(event.capture)
                 this.drawDetectedFace(event.capture)
                 break
             case LivenessDetectionSessionEventType.CLOSE:
@@ -167,26 +157,6 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         } else {
             delete this.eventListeners[eventType]
         }
-    }
-
-    private drawFaceAlignmentProgress = (capture: FaceCapture): void => {
-        let barColor: string
-        if (!this.hasFaceBeenAligned) {
-            barColor = "#FFFFFF"
-        } else if (capture.angleTrajectory !== null) {
-            if (capture.angleTrajectory > 0.75) {
-                barColor = "#00FF00"
-            } else if (capture.angleTrajectory > 0.5) {
-                barColor = "#FF9900"
-            } else {
-                barColor = "#FF0000"
-            }
-        } else {
-            barColor = "#FF0000"
-        }
-        this.angleBar.style.height = "100%"
-        this.angleBar.style.backgroundColor = barColor
-        this.angleBar.style.height = (100-capture.angleDistance*100)+"%"
     }
 
     private drawDetectedFace = (capture: FaceCapture): void => {

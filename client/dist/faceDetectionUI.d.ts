@@ -50,13 +50,11 @@ export declare class VerIDLivenessDetectionSessionUI implements LivenessDetectio
     private eventListeners;
     private hasFaceBeenAligned;
     private processingIndicator;
-    private angleBar;
     readonly video: HTMLVideoElement;
     readonly settings: LivenessDetectionSessionSettings;
     constructor(settings: LivenessDetectionSessionSettings);
     trigger(event: LivenessDetectionSessionEvent): void;
     on<Event extends LivenessDetectionSessionEvent>(eventType: LivenessDetectionSessionEventType, callback: (event: Event) => void): void;
-    private drawFaceAlignmentProgress;
     private drawDetectedFace;
     private cleanup;
     private showCaptureFinished;
