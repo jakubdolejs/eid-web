@@ -78,10 +78,6 @@ export declare class IdCaptureSessionSettings {
      */
     pages: DocumentPages;
     /**
-     * Indicates whether the session should save the images obtained from the camera that have been used in successful capture
-     */
-    saveCapturedImages: boolean;
-    /**
      * Session timeout in milliseconds
      */
     timeout: number;
@@ -96,5 +92,5 @@ export declare class IdCaptureSessionSettings {
      * @param timeout Session timeout in milliseconds (default = infinity)
      * @param saveCapturedImages Indicates whether the session should save the images obtained from the camera that have been used in successful capture (default = `false`)
      */
-    constructor(pages?: DocumentPages, timeout?: number, saveCapturedImages?: boolean);
+    constructor(pages?: DocumentPages, timeout?: number);
 }

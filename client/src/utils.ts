@@ -684,6 +684,58 @@ export function blobFromImageSource(imageSource: ImageSource): Promise<Blob> {
 
 /**
  * 
+ * @param canvas Canvas to extract the blob from
+ * @returns Promise resolving to a blob containing the canvas image
+ */
+export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+    if (!canvas) {
+        return Promise.reject(new Error("Invalid canvas"))
+    }
+    return new Promise((resolve) => {
+        canvas.toBlob(blob => {
+            resolve(blob)
+        })
+    })
+}
+
+/**
+ * Resize image
+ * @param image Blob containing an image 
+ * @param maxSize The image will be scaled so that its longer side is at most maxSize
+ * @returns Promise resolving to a blob containing the resized image
+ * @internal
+ */
+export async function resizeImage(image: ImageData, maxSize: number): Promise<ImageData> {
+    let scale: number = Math.min(maxSize / Math.max(image.width, image.height), 1)
+    if (scale <= 1) {
+        return image
+    }
+    let canvas = document.createElement("canvas")
+    canvas.width = image.width
+    canvas.height = image.height
+    let context = canvas.getContext("2d")
+    context.putImageData(image, 0, 0)
+    const blob = await canvasToBlob(canvas)
+    const imgSrc = URL.createObjectURL(blob)
+    try {
+        const width = image.width * scale
+        const height = image.height * scale
+        const img = new Image()
+        img.src = imgSrc
+        await img.decode()
+        canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        context = canvas.getContext("2d")
+        context.drawImage(img, 0, 0, width, height)
+        return context.getImageData(0, 0, width, height)
+    } finally {
+        URL.revokeObjectURL(imgSrc)
+    }
+}
+
+/**
+ * 
  * @param imageSource 
  * @returns 
  * @internal

@@ -19692,6 +19692,8 @@ class IdCapture {
             const recognizer = yield (0,_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createBlinkIdCombinedRecognizer)(wasmSDK);
             const recognizerSettings = yield recognizer.currentSettings();
             recognizerSettings.returnFullDocumentImage = true;
+            recognizerSettings.fullDocumentImageExtensionFactors = new _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.ExtensionFactors(0.1, 0.1, 0.1, 0.1);
+            recognizerSettings.fullDocumentImageDpi = 600;
             yield recognizer.updateSettings(recognizerSettings);
             return recognizer;
         });
@@ -19738,63 +19740,29 @@ class IdCapture {
     }
     convertToIdCaptureResult(result) {
         return __awaiter(this, void 0, void 0, function* () {
-            let imageData = null;
-            if (result.result.fullDocumentImage) {
-                imageData = result.result.fullDocumentImage.rawImage;
+            const idCaptureResult = new _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureResult(result.result, result.pages);
+            let face;
+            try {
+                const img = yield idCaptureResult.documentImage(_types__WEBPACK_IMPORTED_MODULE_3__.DocumentSide.FRONT, true, 640);
+                face = yield this.faceRecognition.detectRecognizableFace(img, null);
             }
-            else if (result.result.fullDocumentFrontImage) {
-                imageData = result.result.fullDocumentFrontImage.rawImage;
+            catch (error) {
+                face = null;
             }
-            const idCaptureResult = {
-                "pages": result.pages,
-                "result": result.result,
-                "face": null
-            };
-            if (imageData) {
-                const img = yield this.imageDataToImage(imageData, 640);
-                let face;
-                try {
-                    face = yield this.faceRecognition.detectRecognizableFace(img, null);
-                }
-                catch (error) {
-                    face = null;
-                }
-                idCaptureResult.face = face;
-            }
-            if (result.successFrame) {
-                idCaptureResult.capturedImage = {
-                    data: result.successFrame.successFrame,
-                    orientation: result.successFrame.frameOrientation
-                };
-            }
+            idCaptureResult.face = face;
             return idCaptureResult;
         });
     }
     getResultFromRecognizer(recognizer) {
         return __awaiter(this, void 0, void 0, function* () {
-            let recognizerName;
-            let result;
-            let successFrameResult;
-            if (recognizer.wrappedRecognizer) {
-                successFrameResult = yield recognizer.getResult();
-                if (successFrameResult.state != _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.RecognizerResultState.Empty) {
-                    result = (yield recognizer.wrappedRecognizer.getResult());
-                    recognizerName = recognizer.wrappedRecognizer.recognizerName;
-                }
-                else {
-                    throw new Error("Invalid recognizer state");
-                }
-            }
-            else {
-                result = (yield recognizer.getResult());
-                recognizerName = recognizer.recognizerName;
-            }
+            let recognizerName = recognizer.recognizerName;
+            let result = yield recognizer.getResult();
             let pages;
-            if (recognizerName == "BlinkIdRecognizer") {
-                pages = _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT;
-            }
-            else if (recognizerName == "IdBarcodeRecognizer") {
+            if (recognizerName == "IdBarcodeRecognizer" || (recognizerName == "BlinkIdRecognizer" && result.barcode && result.barcode.barcodeData && result.barcode.barcodeData.stringData && result.barcode.barcodeData.stringData.length > 0)) {
                 pages = _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.BACK;
+            }
+            else if (recognizerName == "BlinkIdRecognizer") {
+                pages = _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT;
             }
             else {
                 pages = _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK;
@@ -19804,9 +19772,6 @@ class IdCapture {
                     pages: pages,
                     result: result
                 };
-                if (successFrameResult) {
-                    combinedResult.successFrame = successFrameResult;
-                }
                 return combinedResult;
             }
             else {
@@ -19834,8 +19799,8 @@ class IdCapture {
                     try {
                         let combinedResult = yield this.getResultFromRecognizer(recognizer);
                         if (combinedResult.result.state == _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.RecognizerResultState.Valid) {
-                            recognizers = this.removeRecognizer(recognizer, recognizers);
-                            videoRecognizer.getRecognizerRunner().reconfigureRecognizers(recognizers, false);
+                            // recognizers = this.removeRecognizer(recognizer, recognizers)
+                            // videoRecognizer.getRecognizerRunner().reconfigureRecognizers(recognizers, false)
                             callback(null, combinedResult);
                             return;
                         }
@@ -19843,12 +19808,11 @@ class IdCapture {
                     catch (err) {
                         if (err && err.message == "Invalid recognizer state") {
                             videoRecognizer.resumeRecognition(false);
-                            return;
                         }
                         else {
                             callback(err);
-                            return;
                         }
+                        return;
                     }
                 }
                 videoRecognizer.resumeRecognition(false);
@@ -19909,17 +19873,7 @@ class IdCapture {
     createRecognizers(wasmSDK, settings) {
         return __awaiter(this, void 0, void 0, function* () {
             const recognizers = [];
-            if (settings.saveCapturedImages) {
-                if (settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT || settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK) {
-                    const blinkRecognizer = yield this.createBlinkIdRecognizer(wasmSDK);
-                    recognizers.push(yield (0,_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createSuccessFrameGrabberRecognizer)(wasmSDK, blinkRecognizer));
-                }
-                if (settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.BACK || settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK) {
-                    const barcodeRecognizer = yield this.createBarcodeRecognizer(wasmSDK);
-                    recognizers.push(yield (0,_microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.createSuccessFrameGrabberRecognizer)(wasmSDK, barcodeRecognizer));
-                }
-            }
-            else if (settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK) {
+            if (settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK) {
                 recognizers.push(yield this.createBlinkIdCombinedRecognizer(wasmSDK));
             }
             else if (settings.pages == _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT) {
@@ -20011,6 +19965,7 @@ class IdCapture {
                 ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.LOADED });
                 try {
                     recognizers = yield this.createRecognizers(wasmSDK, settings);
+                    const pageCount = recognizers.length;
                     recognizerRunner = yield this.getRecognizerRunner(wasmSDK, Object.values(recognizers));
                     yield recognizerRunner.setMetadataCallbacks(this.createMetadataCallbacks(ui));
                     videoRecognizer = yield _microblink_blinkid_in_browser_sdk_es_blinkid_sdk__WEBPACK_IMPORTED_MODULE_0__.VideoRecognizer.createVideoRecognizerFromCameraStream(ui.video, recognizerRunner);
@@ -20024,12 +19979,14 @@ class IdCapture {
                                 }
                                 const result = yield this.convertToIdCaptureResult(combinedResult);
                                 (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "next", "value": result });
-                                if (emissionCount++ < recognizers.length - 1) {
+                                if (++emissionCount < pageCount) {
                                     ui.on(_types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_STARTED, () => {
-                                        videoRecognizer.resumeRecognition(false);
-                                    });
-                                    setTimeout(() => {
-                                        ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.NEXT_PAGE_REQUESTED });
+                                        if (videoRecognizer) {
+                                            videoRecognizer.resumeRecognition(true);
+                                            setTimeout(() => {
+                                                ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.NEXT_PAGE_REQUESTED });
+                                            });
+                                        }
                                     });
                                 }
                                 else {
@@ -20106,7 +20063,7 @@ class IdCaptureSessionSettings {
      * @param timeout Session timeout in milliseconds (default = infinity)
      * @param saveCapturedImages Indicates whether the session should save the images obtained from the camera that have been used in successful capture (default = `false`)
      */
-    constructor(pages = _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK, timeout = Number.POSITIVE_INFINITY, saveCapturedImages = false) {
+    constructor(pages = _types__WEBPACK_IMPORTED_MODULE_3__.DocumentPages.FRONT_AND_BACK, timeout = Number.POSITIVE_INFINITY) {
         /**
          * Create ID capture UI
          * @returns Function that creates an instance of the IdCaptureUI interface
@@ -20114,7 +20071,6 @@ class IdCaptureSessionSettings {
         this.createUI = () => new VerIDIdCaptureUI();
         this.pages = pages;
         this.timeout = timeout;
-        this.saveCapturedImages = saveCapturedImages;
     }
 }
 
@@ -21123,12 +21079,25 @@ class TestFaceDetectorFactory {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "DocumentPages": () => (/* binding */ DocumentPages),
+/* harmony export */   "DocumentSide": () => (/* binding */ DocumentSide),
+/* harmony export */   "IdCaptureResult": () => (/* binding */ IdCaptureResult),
 /* harmony export */   "Warning": () => (/* binding */ Warning),
 /* harmony export */   "IdCaptureEventType": () => (/* binding */ IdCaptureEventType),
 /* harmony export */   "Axis": () => (/* binding */ Axis),
 /* harmony export */   "FaceAlignmentStatus": () => (/* binding */ FaceAlignmentStatus),
 /* harmony export */   "Bearing": () => (/* binding */ Bearing)
 /* harmony export */ });
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
 /**
  * @category ID capture
  */
@@ -21138,6 +21107,63 @@ var DocumentPages;
     DocumentPages["BACK"] = "back";
     DocumentPages["FRONT_AND_BACK"] = "front and back";
 })(DocumentPages || (DocumentPages = {}));
+/**
+ * @category ID capture
+ */
+var DocumentSide;
+(function (DocumentSide) {
+    DocumentSide["FRONT"] = "front";
+    DocumentSide["BACK"] = "back";
+})(DocumentSide || (DocumentSide = {}));
+/**
+ * @category ID capture
+ */
+class IdCaptureResult {
+    constructor(result, pages, face) {
+        this.result = result;
+        this.pages = pages;
+        this.face = face;
+    }
+    documentImage(side, cropToDocument = false, maxSize) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let imageData;
+            if (side == DocumentSide.FRONT && this.result.fullDocumentFrontImage) {
+                imageData = this.result.fullDocumentFrontImage.rawImage;
+            }
+            else if (side == DocumentSide.FRONT && this.result.fullDocumentImage) {
+                imageData = this.result.fullDocumentImage.rawImage;
+            }
+            else if (side == DocumentSide.BACK && this.result.fullDocumentBackImage) {
+                imageData = this.result.fullDocumentBackImage.rawImage;
+            }
+            else {
+                throw new Error("Image unavailable");
+            }
+            let dx = 0;
+            let dy = 0;
+            let width = imageData.width;
+            let height = imageData.height;
+            if (cropToDocument) {
+                dx = 0 - width / 12;
+                dy = 0 - height / 12;
+                width /= 1.2;
+                height /= 1.2;
+            }
+            else if (!maxSize) {
+                return imageData;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext("2d");
+            context.putImageData(imageData, dx, dy);
+            if (!maxSize) {
+                return context.getImageData(0, 0, width, height);
+            }
+            return (0,_utils__WEBPACK_IMPORTED_MODULE_0__.resizeImage)(context.getImageData(0, 0, width, height), maxSize);
+        });
+    }
+}
 class Warning {
     constructor(code, description) {
         this.code = code;
@@ -21271,6 +21297,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "AngleSmoothing": () => (/* binding */ AngleSmoothing),
 /* harmony export */   "clamp": () => (/* binding */ clamp),
 /* harmony export */   "blobFromImageSource": () => (/* binding */ blobFromImageSource),
+/* harmony export */   "canvasToBlob": () => (/* binding */ canvasToBlob),
+/* harmony export */   "resizeImage": () => (/* binding */ resizeImage),
 /* harmony export */   "canvasFromImageSource": () => (/* binding */ canvasFromImageSource),
 /* harmony export */   "imageFromImageSource": () => (/* binding */ imageFromImageSource),
 /* harmony export */   "sizeOfImageSource": () => (/* binding */ sizeOfImageSource)
@@ -21831,6 +21859,59 @@ function blobFromImageSource(imageSource) {
 }
 /**
  *
+ * @param canvas Canvas to extract the blob from
+ * @returns Promise resolving to a blob containing the canvas image
+ */
+function canvasToBlob(canvas) {
+    if (!canvas) {
+        return Promise.reject(new Error("Invalid canvas"));
+    }
+    return new Promise((resolve) => {
+        canvas.toBlob(blob => {
+            resolve(blob);
+        });
+    });
+}
+/**
+ * Resize image
+ * @param image Blob containing an image
+ * @param maxSize The image will be scaled so that its longer side is at most maxSize
+ * @returns Promise resolving to a blob containing the resized image
+ * @internal
+ */
+function resizeImage(image, maxSize) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let scale = Math.min(maxSize / Math.max(image.width, image.height), 1);
+        if (scale <= 1) {
+            return image;
+        }
+        let canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        let context = canvas.getContext("2d");
+        context.putImageData(image, 0, 0);
+        const blob = yield canvasToBlob(canvas);
+        const imgSrc = URL.createObjectURL(blob);
+        try {
+            const width = image.width * scale;
+            const height = image.height * scale;
+            const img = new Image();
+            img.src = imgSrc;
+            yield img.decode();
+            canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            context = canvas.getContext("2d");
+            context.drawImage(img, 0, 0, width, height);
+            return context.getImageData(0, 0, width, height);
+        }
+        finally {
+            URL.revokeObjectURL(imgSrc);
+        }
+    });
+}
+/**
+ *
  * @param imageSource
  * @returns
  * @internal
@@ -22358,8 +22439,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Axis": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.Axis),
 /* harmony export */   "Bearing": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.Bearing),
 /* harmony export */   "DocumentPages": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.DocumentPages),
+/* harmony export */   "DocumentSide": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.DocumentSide),
 /* harmony export */   "FaceAlignmentStatus": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus),
 /* harmony export */   "IdCaptureEventType": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.IdCaptureEventType),
+/* harmony export */   "IdCaptureResult": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.IdCaptureResult),
 /* harmony export */   "Warning": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_2__.Warning),
 /* harmony export */   "Angle": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.Angle),
 /* harmony export */   "AngleBearingEvaluation": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.AngleBearingEvaluation),
@@ -22371,9 +22454,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Smoothing": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.Smoothing),
 /* harmony export */   "blobFromImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.blobFromImageSource),
 /* harmony export */   "canvasFromImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.canvasFromImageSource),
+/* harmony export */   "canvasToBlob": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.canvasToBlob),
 /* harmony export */   "clamp": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.clamp),
 /* harmony export */   "emitRxEvent": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.emitRxEvent),
 /* harmony export */   "imageFromImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.imageFromImageSource),
+/* harmony export */   "resizeImage": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.resizeImage),
 /* harmony export */   "sizeOfImageSource": () => (/* reexport safe */ _utils__WEBPACK_IMPORTED_MODULE_3__.sizeOfImageSource),
 /* harmony export */   "IdCapture": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCapture),
 /* harmony export */   "IdCaptureSessionSettings": () => (/* reexport safe */ _idCapture__WEBPACK_IMPORTED_MODULE_4__.IdCaptureSessionSettings),
@@ -22424,6 +22509,7 @@ var __webpack_exports__Axis = __webpack_exports__.Axis;
 var __webpack_exports__Bearing = __webpack_exports__.Bearing;
 var __webpack_exports__CircularBuffer = __webpack_exports__.CircularBuffer;
 var __webpack_exports__DocumentPages = __webpack_exports__.DocumentPages;
+var __webpack_exports__DocumentSide = __webpack_exports__.DocumentSide;
 var __webpack_exports__Face = __webpack_exports__.Face;
 var __webpack_exports__FaceAlignmentStatus = __webpack_exports__.FaceAlignmentStatus;
 var __webpack_exports__FaceCapture = __webpack_exports__.FaceCapture;
@@ -22432,6 +22518,7 @@ var __webpack_exports__FaceExtents = __webpack_exports__.FaceExtents;
 var __webpack_exports__FaceRecognition = __webpack_exports__.FaceRecognition;
 var __webpack_exports__IdCapture = __webpack_exports__.IdCapture;
 var __webpack_exports__IdCaptureEventType = __webpack_exports__.IdCaptureEventType;
+var __webpack_exports__IdCaptureResult = __webpack_exports__.IdCaptureResult;
 var __webpack_exports__IdCaptureSessionSettings = __webpack_exports__.IdCaptureSessionSettings;
 var __webpack_exports__IdCaptureSettings = __webpack_exports__.IdCaptureSettings;
 var __webpack_exports__LivenessDetectionSession = __webpack_exports__.LivenessDetectionSession;
@@ -22452,12 +22539,14 @@ var __webpack_exports__VerIDLivenessDetectionSessionUI = __webpack_exports__.Ver
 var __webpack_exports__Warning = __webpack_exports__.Warning;
 var __webpack_exports__blobFromImageSource = __webpack_exports__.blobFromImageSource;
 var __webpack_exports__canvasFromImageSource = __webpack_exports__.canvasFromImageSource;
+var __webpack_exports__canvasToBlob = __webpack_exports__.canvasToBlob;
 var __webpack_exports__clamp = __webpack_exports__.clamp;
 var __webpack_exports__emitRxEvent = __webpack_exports__.emitRxEvent;
 var __webpack_exports__estimateFaceAngle = __webpack_exports__.estimateFaceAngle;
 var __webpack_exports__generateQRCode = __webpack_exports__.generateQRCode;
 var __webpack_exports__imageFromImageSource = __webpack_exports__.imageFromImageSource;
+var __webpack_exports__resizeImage = __webpack_exports__.resizeImage;
 var __webpack_exports__sizeOfImageSource = __webpack_exports__.sizeOfImageSource;
-export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCapture as FaceCapture, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LivenessDetectionSession as LivenessDetectionSession, __webpack_exports__LivenessDetectionSessionEventType as LivenessDetectionSessionEventType, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__LivenessDetectionSessionSettings as LivenessDetectionSessionSettings, __webpack_exports__MockLivenessDetectionSession as MockLivenessDetectionSession, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__TestFaceDetector as TestFaceDetector, __webpack_exports__TestFaceDetectorFactory as TestFaceDetectorFactory, __webpack_exports__VerIDFaceDetector as VerIDFaceDetector, __webpack_exports__VerIDFaceDetectorFactory as VerIDFaceDetectorFactory, __webpack_exports__VerIDLivenessDetectionSessionUI as VerIDLivenessDetectionSessionUI, __webpack_exports__Warning as Warning, __webpack_exports__blobFromImageSource as blobFromImageSource, __webpack_exports__canvasFromImageSource as canvasFromImageSource, __webpack_exports__clamp as clamp, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle, __webpack_exports__generateQRCode as generateQRCode, __webpack_exports__imageFromImageSource as imageFromImageSource, __webpack_exports__sizeOfImageSource as sizeOfImageSource };
+export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__DocumentSide as DocumentSide, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCapture as FaceCapture, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureResult as IdCaptureResult, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LivenessDetectionSession as LivenessDetectionSession, __webpack_exports__LivenessDetectionSessionEventType as LivenessDetectionSessionEventType, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__LivenessDetectionSessionSettings as LivenessDetectionSessionSettings, __webpack_exports__MockLivenessDetectionSession as MockLivenessDetectionSession, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__TestFaceDetector as TestFaceDetector, __webpack_exports__TestFaceDetectorFactory as TestFaceDetectorFactory, __webpack_exports__VerIDFaceDetector as VerIDFaceDetector, __webpack_exports__VerIDFaceDetectorFactory as VerIDFaceDetectorFactory, __webpack_exports__VerIDLivenessDetectionSessionUI as VerIDLivenessDetectionSessionUI, __webpack_exports__Warning as Warning, __webpack_exports__blobFromImageSource as blobFromImageSource, __webpack_exports__canvasFromImageSource as canvasFromImageSource, __webpack_exports__canvasToBlob as canvasToBlob, __webpack_exports__clamp as clamp, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle, __webpack_exports__generateQRCode as generateQRCode, __webpack_exports__imageFromImageSource as imageFromImageSource, __webpack_exports__resizeImage as resizeImage, __webpack_exports__sizeOfImageSource as sizeOfImageSource };
 
 //# sourceMappingURL=index.js.map

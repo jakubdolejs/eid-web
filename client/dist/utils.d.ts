@@ -274,6 +274,20 @@ export declare function clamp(a: number, limit: number): number;
 export declare function blobFromImageSource(imageSource: ImageSource): Promise<Blob>;
 /**
  *
+ * @param canvas Canvas to extract the blob from
+ * @returns Promise resolving to a blob containing the canvas image
+ */
+export declare function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob>;
+/**
+ * Resize image
+ * @param image Blob containing an image
+ * @param maxSize The image will be scaled so that its longer side is at most maxSize
+ * @returns Promise resolving to a blob containing the resized image
+ * @internal
+ */
+export declare function resizeImage(image: ImageData, maxSize: number): Promise<ImageData>;
+/**
+ *
  * @param imageSource
  * @returns
  * @internal

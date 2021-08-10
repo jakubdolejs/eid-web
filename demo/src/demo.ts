@@ -9,7 +9,10 @@ import {
     NormalDistribution, 
     Rect, 
     RecognizableFace,
-    DocumentPages } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
+    DocumentPages, 
+    LivenessDetectionSession,
+    DocumentSide,
+    imageFromImageSource} from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 type DemoConfiguration = {licenceKey: string, serverURL: string}
 
@@ -20,8 +23,7 @@ function setup(config: DemoConfiguration) {
     const faceRecognition = new FaceRecognition(config.serverURL)
     const scoreThreshold = 2.5
 
-    let backPageResult: IdCaptureResult
-    let frontPageResult: IdCaptureResult
+    let idCaptureResult: IdCaptureResult
 
     function hideAllPages() {
         document.querySelectorAll(".page").forEach(item => {
@@ -48,14 +50,14 @@ function setup(config: DemoConfiguration) {
     }
 
     (document.querySelector("#facecapture a.start") as HTMLAnchorElement).onclick = () => {
-        faceDetection.livenessDetectionSession().subscribe({
+        faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
             next: (result) => {
                 const liveFace = result.faceCaptures[0].face
                 result.faceCaptures[0].faceImage.then(img => {
                     document.querySelector("#result .liveFace").innerHTML = ""
                     document.querySelector("#result .liveFace").appendChild(img)
                 })
-                faceRecognition.compareFaceTemplates(frontPageResult.face.template, liveFace.template).then((score: number) => {
+                faceRecognition.compareFaceTemplates(idCaptureResult.face.template, liveFace.template).then((score: number) => {
                     const scoreString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(score)
                     const likelihood = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 3, "maximumFractionDigits": 3, "style": "percent"}).format(new NormalDistribution().cumulativeProbability(score))
                     const scoreThresholdString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(scoreThreshold)
@@ -78,23 +80,14 @@ function setup(config: DemoConfiguration) {
     }
 
     (document.querySelector("#error a.retry") as HTMLAnchorElement).onclick = () => {
-        if (frontPageResult && backPageResult) {
+        if (idCaptureResult) {
             showPage("facecapture")
         } else {
             showPage("idcapture")
         }
     }
 
-    function dataURLFromImageData(imageData: ImageData): string {
-        const canvas = document.createElement("canvas")
-        canvas.width = imageData.width
-        canvas.height = imageData.height
-        const ctx = canvas.getContext("2d")
-        ctx.putImageData(imageData, 0, 0)
-        return canvas.toDataURL()
-    }
-
-    function faceImageDataURLFromImageData(imageData: ImageData, face: RecognizableFace): string {
+    function faceImageFromImageData(imageData: ImageData, face: RecognizableFace): Promise<HTMLImageElement> {
         const cardFaceCanvas = document.createElement("canvas")
         const faceRect: Rect = new Rect(face.x, face.y, face.width, face.height)
         faceRect.x = Math.max(0, faceRect.x)
@@ -109,33 +102,18 @@ function setup(config: DemoConfiguration) {
         cardFaceCanvas.height = faceRect.height / 100 * imageData.height
         const cardCanvasContext = cardFaceCanvas.getContext("2d")
         cardCanvasContext.putImageData(imageData, 0 - faceRect.x / 100 * imageData.width, 0 - faceRect.y / 100 * imageData.height)
-        return cardFaceCanvas.toDataURL()
+        return imageFromImageSource(cardFaceCanvas)
     }
 
-    function imageDataFromIdCaptureResult(result: IdCaptureResult): ImageData {
-        if (result.result.fullDocumentFrontImage) {
-            return result.result.fullDocumentFrontImage.rawImage
-        } else if (result.result.fullDocumentImage) {
-            return result.result.fullDocumentImage.rawImage
-        }
-        return null
-    }
-
-    function addIDCardImages(result: IdCaptureResult): void {
-        const imageData: ImageData = imageDataFromIdCaptureResult(result)
-        if (imageData) {
-            const dataURL = dataURLFromImageData(imageData)
-            document.querySelectorAll(".card div").forEach(div => {
-                div.innerHTML = ""
-                const img = new Image()
-                img.src = dataURL
-                div.appendChild(img)
-            })
-            const cardFaceImage = new Image()
-            cardFaceImage.src = faceImageDataURLFromImageData(imageData, result.face)
-            document.querySelector("#result .cardFace").innerHTML = ""
-            document.querySelector("#result .cardFace").appendChild(cardFaceImage)
-        }
+    async function addIDCardImages(result: IdCaptureResult): Promise<void> {
+        const cardImageData: ImageData = await result.documentImage(DocumentSide.FRONT, true, 640)
+        document.querySelectorAll(".card div").forEach(async (div) => {
+            div.innerHTML = ""
+            div.appendChild(await imageFromImageSource(cardImageData))
+        })
+        const cardFaceImage = await faceImageFromImageData(cardImageData, result.face)
+        document.querySelector("#result .cardFace").innerHTML = ""
+        document.querySelector("#result .cardFace").appendChild(cardFaceImage)
     }
 
     function addIDCardDetails(result: IdCaptureResult): void {
@@ -159,27 +137,23 @@ function setup(config: DemoConfiguration) {
     }
 
     (document.querySelector("#idcapture a.start") as HTMLAnchorElement).onclick = () => {
-        frontPageResult = backPageResult = null
-        const subscription = idCapture.captureIdCard(new IdCaptureSessionSettings(DocumentPages.FRONT_AND_BACK, 60000, true)).subscribe({
+        idCaptureResult = null
+        const subscription = idCapture.captureIdCard(new IdCaptureSessionSettings(DocumentPages.FRONT_AND_BACK, 60000)).subscribe({
             next: (result: IdCaptureResult) => {
-                if (result.pages == DocumentPages.FRONT || result.pages == DocumentPages.FRONT_AND_BACK) {
-                    if (!result.face) {
-                        showError("Failed to detect a face on the ID card")
-                        subscription.unsubscribe()
-                        return
-                    }
-                    addIDCardImages(result)
-                    frontPageResult = result
-                } else {
-                    addIDCardDetails(result)
-                    backPageResult = result                    
+                if (!result.face) {
+                    showError("Failed to detect a face on the ID card")
+                    subscription.unsubscribe()
+                    return
                 }
+                addIDCardImages(result)
+                addIDCardDetails(result)
+                idCaptureResult = result
             },
             error: (error: any) => {
                 showError("ID capture failed");
             },
             complete: () => {
-                if (frontPageResult && backPageResult) {
+                if (idCaptureResult) {
                     showPage("facecapture")
                 }
             }

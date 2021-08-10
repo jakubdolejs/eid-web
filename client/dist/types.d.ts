@@ -1,4 +1,4 @@
-import { BlinkIdCombinedRecognizerResult, BlinkIdRecognizerResult, IdBarcodeRecognizerResult, BlinkIdCombinedRecognizer, BlinkIdRecognizer, IdBarcodeRecognizer, ImageOrientation, SuccessFrameGrabberRecognizer } from "@microblink/blinkid-in-browser-sdk";
+import { BlinkIdCombinedRecognizerResult, BlinkIdRecognizerResult, IdBarcodeRecognizerResult, BlinkIdCombinedRecognizer, BlinkIdRecognizer, IdBarcodeRecognizer, SuccessFrameGrabberRecognizer } from "@microblink/blinkid-in-browser-sdk";
 import { FaceCapture } from "./faceDetection";
 import { Angle, Rect } from "./utils";
 /**
@@ -148,15 +148,20 @@ export declare enum DocumentPages {
 /**
  * @category ID capture
  */
-export declare type IdCaptureResult = {
+export declare enum DocumentSide {
+    FRONT = "front",
+    BACK = "back"
+}
+/**
+ * @category ID capture
+ */
+export declare class IdCaptureResult {
     face?: RecognizableFace;
     pages: DocumentPages;
     result: SupportedRecognizerResult;
-    capturedImage?: {
-        data: ImageData;
-        orientation: ImageOrientation;
-    };
-};
+    constructor(result: SupportedRecognizerResult, pages: DocumentPages, face?: RecognizableFace);
+    documentImage(side: DocumentSide, cropToDocument?: boolean, maxSize?: number): Promise<ImageData>;
+}
 export declare class Warning {
     readonly code: number;
     readonly description: string;

@@ -5,11 +5,10 @@ import {
     BlinkIdCombinedRecognizer, 
     BlinkIdRecognizer, 
     IdBarcodeRecognizer, 
-    ImageOrientation,
     SuccessFrameGrabberRecognizer
 } from "@microblink/blinkid-in-browser-sdk"
 import { FaceCapture } from "./faceDetection"
-import { Angle, Rect } from "./utils"
+import { Angle, blobFromImageSource, Rect, resizeImage } from "./utils"
 
 /**
  * @category ID capture
@@ -171,13 +170,57 @@ export enum DocumentPages {
 /**
  * @category ID capture
  */
-export type IdCaptureResult = {
+export enum DocumentSide {
+    FRONT = "front",
+    BACK = "back"
+}
+
+/**
+ * @category ID capture
+ */
+export class IdCaptureResult {
     face?: RecognizableFace
     pages: DocumentPages
     result: SupportedRecognizerResult
-    capturedImage?: {
-        data: ImageData
-        orientation: ImageOrientation
+
+    constructor(result: SupportedRecognizerResult, pages: DocumentPages, face?: RecognizableFace) {
+        this.result = result
+        this.pages = pages
+        this.face = face
+    }
+
+    async documentImage(side: DocumentSide, cropToDocument: boolean = false, maxSize?: number): Promise<ImageData> {
+        let imageData: ImageData
+        if (side == DocumentSide.FRONT && (<BlinkIdCombinedRecognizerResult>this.result).fullDocumentFrontImage) {
+            imageData = (<BlinkIdCombinedRecognizerResult>this.result).fullDocumentFrontImage.rawImage
+        } else if (side == DocumentSide.FRONT && (<BlinkIdRecognizerResult>this.result).fullDocumentImage) {
+            imageData = (<BlinkIdRecognizerResult>this.result).fullDocumentImage.rawImage
+        } else if (side == DocumentSide.BACK && (<BlinkIdCombinedRecognizerResult>this.result).fullDocumentBackImage) {
+            imageData = (<BlinkIdCombinedRecognizerResult>this.result).fullDocumentBackImage.rawImage
+        } else {
+            throw new Error("Image unavailable")
+        }
+        let dx: number = 0
+        let dy: number = 0
+        let width: number = imageData.width
+        let height: number = imageData.height
+        if (cropToDocument) {
+            dx = 0 - width / 12
+            dy = 0 - height / 12
+            width /= 1.2
+            height /= 1.2
+        } else if (!maxSize) {
+            return imageData
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const context = canvas.getContext("2d")
+        context.putImageData(imageData, dx, dy)
+        if (!maxSize) {
+            return context.getImageData(0, 0, width, height)
+        }
+        return resizeImage(context.getImageData(0, 0, width, height), maxSize)
     }
 }
 
