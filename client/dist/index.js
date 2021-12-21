@@ -18471,11 +18471,34 @@ class FaceDetection {
     onVideoPlay(session, subscriber) {
         return () => __awaiter(this, void 0, void 0, function* () {
             var e_1, _a;
+            let frameCount = 0;
+            let fps = null;
             const detectFaceAfterInterval = (interval) => {
                 return new Promise((resolve, reject) => {
                     setTimeout(() => __awaiter(this, void 0, void 0, function* () {
                         try {
-                            resolve(yield session.faceDetector.detectFace({ element: session.ui.video, mirrored: session.settings.useFrontCamera }));
+                            const startTime = new Date().getTime();
+                            const faceCapture = yield session.faceDetector.detectFace({ element: session.ui.video, mirrored: session.settings.useFrontCamera });
+                            if (frameCount > 2 && frameCount < 10) {
+                                const detectionDuration = new Date().getTime() - startTime;
+                                const currentFPS = 1000 / detectionDuration;
+                                if (fps === null) {
+                                    fps = currentFPS;
+                                }
+                                else {
+                                    fps += currentFPS;
+                                    fps /= 2;
+                                }
+                                if (fps < session.settings.minFPS) {
+                                    reject(new Error("Device too slow: " + fps.toFixed(1) + " FPS (required " + session.settings.minFPS + " FPS)"));
+                                    return;
+                                }
+                            }
+                            else {
+                                fps = null;
+                            }
+                            frameCount++;
+                            resolve(faceCapture);
                         }
                         catch (error) {
                             reject(error);
@@ -18677,6 +18700,12 @@ class LivenessDetectionSessionSettings {
             faceRect.y = imageSize.height / 2 - faceRect.height / 2;
             return faceRect;
         };
+        /**
+         * Minimum face detection speed in frames per second.
+         * If the device cannot detect faces fast enough the session will fail with an error.
+         * @defaultValue `5`
+         */
+        this.minFPS = 5;
     }
 }
 /**

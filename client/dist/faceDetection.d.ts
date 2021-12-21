@@ -191,6 +191,12 @@ export declare class LivenessDetectionSessionSettings {
      * @returns Boundary of where the session expects a face in a given image size.
      */
     readonly expectedFaceRect: (imageSize: Size) => Rect;
+    /**
+     * Minimum face detection speed in frames per second.
+     * If the device cannot detect faces fast enough the session will fail with an error.
+     * @defaultValue `5`
+     */
+    minFPS: number;
 }
 /**
  * Face detected in an image

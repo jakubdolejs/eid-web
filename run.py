@@ -1,5 +1,4 @@
-import subprocess
-from http.server import BaseHTTPRequestHandler, HTTPServer, SimpleHTTPRequestHandler
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 import sys, getopt
 
 port = 8080
@@ -10,20 +9,6 @@ for opt, arg in opts:
         port = arg
     elif opt in ("-s", "--subdomain"):
         subdomain = arg
-
-
-print("Compiling library")
-subprocess.call(["npx", "webpack"], cwd="client")
-
-print("Compiling demo")
-subprocess.call(["npx", "tsc"], cwd="demo")
-
-print("Starting ngrok")
-ngrok_args = ["ngrok", "http"]
-if subdomain:
-    ngrok_args.append(f"-subdomain={subdomain}")
-ngrok_args.append(f"{port}")
-subprocess.run(ngrok_args, capture_output=True, text=True)
 
 print(f"Starting server on port {port}")
 class RequestHandler(SimpleHTTPRequestHandler):
