@@ -1,3 +1,5 @@
+'use strict';
+
 import { 
     BlinkIdCombinedRecognizerResult, 
     BlinkIdRecognizerResult, 
@@ -8,7 +10,7 @@ import {
     SuccessFrameGrabberRecognizer
 } from "@microblink/blinkid-in-browser-sdk"
 import { FaceCapture } from "./faceDetection"
-import { Angle, blobFromImageSource, Rect, resizeImage } from "./utils"
+import { Angle, Rect, resizeImage } from "./utils"
 
 /**
  * @category ID capture
@@ -189,7 +191,7 @@ export class IdCaptureResult {
         this.face = face
     }
 
-    async documentImage(side: DocumentSide, cropToDocument: boolean = false, maxSize?: number): Promise<ImageData> {
+    documentImage(side: DocumentSide, cropToDocument: boolean = false, maxSize?: number): Promise<ImageData> {
         let imageData: ImageData
         if (side == DocumentSide.FRONT && (<BlinkIdCombinedRecognizerResult>this.result).fullDocumentFrontImage) {
             imageData = (<BlinkIdCombinedRecognizerResult>this.result).fullDocumentFrontImage.rawImage
@@ -210,7 +212,7 @@ export class IdCaptureResult {
             width /= 1.2
             height /= 1.2
         } else if (!maxSize) {
-            return imageData
+            return Promise.resolve(imageData)
         }
         const canvas = document.createElement("canvas")
         canvas.width = width
@@ -218,7 +220,7 @@ export class IdCaptureResult {
         const context = canvas.getContext("2d")
         context.putImageData(imageData, dx, dy)
         if (!maxSize) {
-            return context.getImageData(0, 0, width, height)
+            return Promise.resolve(context.getImageData(0, 0, width, height))
         }
         return resizeImage(context.getImageData(0, 0, width, height), maxSize)
     }

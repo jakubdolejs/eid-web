@@ -18,7 +18,6 @@ export declare class FaceRecognition {
      * @param serviceURL Base URL of the server that accepts the face detection and comparison calls
      */
     constructor(serviceURL?: string);
-    private blobFromImage;
     detectRecognizableFacesInImages(images: RecognizableFaceDetectionInput): Promise<RecognizableFaceDetectionOutput>;
     /**
      * Detect a face that can be used for face recognition
@@ -38,7 +37,6 @@ export declare class FaceRecognition {
     createRecognizableFace(image: HTMLImageElement | string, faceRect?: Rect): Promise<RecognizableFace>;
     private faceCoordinatesToPixels;
     private adjustImageCropRect;
-    private cropImage;
     /**
      * Compare face templates and return similarity score
      * @param template1 Face template

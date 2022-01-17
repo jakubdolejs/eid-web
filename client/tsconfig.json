@@ -6,7 +6,8 @@
         "sourceMap": true,
         "declaration": true,
         "moduleResolution": "node",
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "lib": ["es2015", "es2016", "dom", "es2018.promise"]
     },  
     "include": [  
         "./src/**/*"

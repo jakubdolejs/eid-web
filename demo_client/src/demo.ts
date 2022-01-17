@@ -1,3 +1,5 @@
+'use strict';
+
 import { 
     FaceDetection, 
     IdCapture, 
@@ -12,9 +14,23 @@ import {
     DocumentPages, 
     LivenessDetectionSession,
     DocumentSide,
-    imageFromImageSource} from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
+    blobFromImageSource
+} from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
-type DemoConfiguration = {licenceKey: string, serverURL: string}
+type DemoConfiguration = {licenceKey: string, serverURL?: string}
+
+async function imageFromImageData(imageData: ImageData, cropRect?: Rect): Promise<HTMLImageElement> {
+    const blob = await blobFromImageSource(imageData, cropRect)
+    const img: HTMLImageElement = document.createElement("img")
+    const src = URL.createObjectURL(blob)
+    img.src = src
+    try {
+        await img.decode()
+        return img
+    } finally {
+        URL.revokeObjectURL(src)
+    }
+}
 
 function setup(config: DemoConfiguration) {
     const settings = new IdCaptureSettings(config.licenceKey, "/node_modules/@appliedrecognition/ver-id-browser/resources/")
@@ -49,28 +65,42 @@ function setup(config: DemoConfiguration) {
         }
     }
 
+    function takeHeapSnapshot() {
+        if ("takeHeapSnapshot" in console) {
+            // @ts-ignore: Webkit
+            console.takeHeapSnapshot()
+        }
+    }
+
     (document.querySelector("#facecapture a.start") as HTMLAnchorElement).onclick = () => {
+        takeHeapSnapshot()
         faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
             next: (result) => {
                 const liveFace = result.faceCaptures[0].face
-                result.faceCaptures[0].faceImage.then(img => {
+                const img = document.createElement("img")
+                img.src = URL.createObjectURL(result.faceCaptures[0].faceImage)
+                img.decode().then(() => {
                     document.querySelector("#result .liveFace").innerHTML = ""
                     document.querySelector("#result .liveFace").appendChild(img)
-                })
-                faceRecognition.compareFaceTemplates(idCaptureResult.face.template, liveFace.template).then((score: number) => {
-                    const scoreString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(score)
-                    const likelihood = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 3, "maximumFractionDigits": 3, "style": "percent"}).format(new NormalDistribution().cumulativeProbability(score))
-                    const scoreThresholdString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(scoreThreshold)
-                    let msg: string
-                    if (score > scoreThreshold) {
-                        msg = "<h1 class=\"pass\">Pass</h1><p>The face matching score "+scoreString+" indicates a likelihood of "+likelihood+" that the person on the ID card is the same person as the one in the selfie. We recommend a threshold of "+scoreThresholdString+" for a positive identification when comparing faces from identity cards.</p>"
-                    } else {
-                        msg = "<h1 class=\"warning\">Warning</h1><p>The face matching score "+scoreString+" indicates that the person on the ID card is likely NOT the same person as the one in the selfie. We recommend a threshold of "+scoreThresholdString+" for a positive identification when comparing faces from identity cards.</p>"
-                    }
-                    document.querySelector("#result .score").innerHTML = msg
-                    showPage("result")
+                    faceRecognition.compareFaceTemplates(idCaptureResult.face.template, liveFace.template).then((score: number) => {
+                        const scoreString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(score)
+                        const likelihood = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 3, "maximumFractionDigits": 3, "style": "percent"}).format(new NormalDistribution().cumulativeProbability(score))
+                        const scoreThresholdString = new Intl.NumberFormat("en-US", {"minimumFractionDigits": 1, "maximumFractionDigits": 1}).format(scoreThreshold)
+                        let msg: string
+                        if (score > scoreThreshold) {
+                            msg = "<h1 class=\"pass\">Pass</h1><p>The face matching score "+scoreString+" indicates a likelihood of "+likelihood+" that the person on the ID card is the same person as the one in the selfie. We recommend a threshold of "+scoreThresholdString+" for a positive identification when comparing faces from identity cards.</p>"
+                        } else {
+                            msg = "<h1 class=\"warning\">Warning</h1><p>The face matching score "+scoreString+" indicates that the person on the ID card is likely NOT the same person as the one in the selfie. We recommend a threshold of "+scoreThresholdString+" for a positive identification when comparing faces from identity cards.</p>"
+                        }
+                        document.querySelector("#result .score").innerHTML = msg
+                        showPage("result")
+                    }).catch((error: any) => {
+                        showError("Face comparison failed")
+                    })
                 }).catch((error: any) => {
-                    showError("Face comparison failed")
+                    showError("Failed to decode face image")
+                }).finally(() => {
+                    URL.revokeObjectURL(img.src)
                 })
             },
             error: (error: any) => {
@@ -88,28 +118,25 @@ function setup(config: DemoConfiguration) {
     }
 
     function faceImageFromImageData(imageData: ImageData, face: RecognizableFace): Promise<HTMLImageElement> {
-        const cardFaceCanvas = document.createElement("canvas")
         const faceRect: Rect = new Rect(face.x, face.y, face.width, face.height)
-        faceRect.x = Math.max(0, faceRect.x)
-        faceRect.y = Math.max(0, faceRect.y)
+        faceRect.x = Math.max(0, faceRect.x / 100 * imageData.width)
+        faceRect.y = Math.max(0, faceRect.y / 100 * imageData.height)
         if (faceRect.x + faceRect.width > 100) {
             faceRect.width = 100 - faceRect.x
         }
         if (faceRect.y + faceRect.height > 100) {
             faceRect.height = 100 - faceRect.y
         }
-        cardFaceCanvas.width = faceRect.width / 100 * imageData.width
-        cardFaceCanvas.height = faceRect.height / 100 * imageData.height
-        const cardCanvasContext = cardFaceCanvas.getContext("2d")
-        cardCanvasContext.putImageData(imageData, 0 - faceRect.x / 100 * imageData.width, 0 - faceRect.y / 100 * imageData.height)
-        return imageFromImageSource(cardFaceCanvas)
+        faceRect.width = faceRect.width / 100 * imageData.width
+        faceRect.height = faceRect.height / 100 * imageData.height
+        return imageFromImageData(imageData, faceRect)
     }
 
     async function addIDCardImages(result: IdCaptureResult): Promise<void> {
         const cardImageData: ImageData = await result.documentImage(DocumentSide.FRONT, true, 640)
         document.querySelectorAll(".card div").forEach(async (div) => {
             div.innerHTML = ""
-            div.appendChild(await imageFromImageSource(cardImageData))
+            div.appendChild(await imageFromImageData(cardImageData))
         })
         const cardFaceImage = await faceImageFromImageData(cardImageData, result.face)
         document.querySelector("#result .cardFace").innerHTML = ""
@@ -176,7 +203,7 @@ function setup(config: DemoConfiguration) {
     showPage("idcapture")
 }
 
-window.onload = () => {
+document.addEventListener("DOMContentLoaded", () => {
     fetch("/config.json").then(response => {
         return response.json()
     }).then((config: DemoConfiguration) => {
@@ -184,4 +211,4 @@ window.onload = () => {
     }).catch(error => {
         alert("Failed to read configuration file")
     })
-}
+})

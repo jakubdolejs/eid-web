@@ -1,3 +1,5 @@
+'use strict';
+
 import { Point, Angle, clamp } from "./utils"
 
 /**
@@ -14,6 +16,6 @@ export function estimateFaceAngle(landmarks: Point[]): Angle {
     noseTip.y -= 0.3125
     const dest: Angle = new Angle()
     dest.yaw = clamp(45 * noseTip.x, 90) * 2
-    dest.pitch = clamp(45 * (noseTip.y - 0.225775), 90) * 2
+    dest.pitch = clamp(45 * (noseTip.y - 0.3), 90) * 2
     return dest
 }

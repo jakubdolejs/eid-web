@@ -1,0 +1,97 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "../client"
+        },
+        {
+            "path": "../demo_client"
+        },
+        {
+            "path": "../demo_server"
+        }
+    ],
+    "launch": {
+        "configurations": [
+            {
+                "name": "Launch demo server",
+                "type": "node",
+                "request": "launch",
+                "cwd": "${workspaceFolder:demo_server}",
+                "runtimeExecutable": "deno",
+                "runtimeArgs": ["run", "--inspect-brk", "-A", "server.ts"],
+                "preLaunchTask": "Launch Ngrok",
+                "attachSimplePort": 9229,
+                "env": {
+                    "VERID_SERVER_URL": "${input:serverURL}",
+                    "PORT": "8090"
+                }
+            }
+        ],
+        "compounds": [],
+        "inputs": [
+            {
+                "id": "serverURL",
+                "type": "pickString",
+                "description": "Ver-ID identity API server URL",
+                "options": [
+                    "https://front-back.id-check.ver-id.com",
+                    "http://localhost:8080"
+                ]
+            }
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Launch Ngrok",
+                "type": "shell",
+                "command": "./startNgrok.sh",
+                "args": [
+                    "8090",
+                    "${input:subdomain}"
+                ],
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "dependsOn": ["Stop Ngrok", "Build"],
+                "dependsOrder": "parallel"
+            },{
+                "label": "Stop Ngrok",
+                "type": "shell",
+                "command": "./stopNgrok.sh",
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                }
+            },{
+                "label": "Build",
+                "type": "shell",
+                "command": "${workspaceFolder}/build.sh",
+                "args": [
+                    "${input:mbLicenceKey}"
+                ],
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "group": {
+                    "kind": "build",
+                    "isDefault": true
+                }
+            }
+        ],
+        "inputs": [
+            {
+                "id": "subdomain",
+                "type": "promptString",
+                "description": "Ngrok subdomain"
+            },{
+                "id": "mbLicenceKey",
+                "type": "promptString",
+                "description": "Microblink browser SDK licence key (leave blank if not using ID capture or if already set)"
+            }
+        ]
+    }
+}

@@ -1,3 +1,5 @@
+'use strict';
+
 import { Point, Angle, clamp } from "./utils"
 
 /**

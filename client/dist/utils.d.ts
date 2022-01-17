@@ -271,7 +271,7 @@ export declare function clamp(a: number, limit: number): number;
  * @returns
  * @internal
  */
-export declare function blobFromImageSource(imageSource: ImageSource): Promise<Blob>;
+export declare function blobFromImageSource(imageSource: ImageSource, cropRect?: Rect): Promise<Blob>;
 /**
  *
  * @param canvas Canvas to extract the blob from
@@ -286,18 +286,20 @@ export declare function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob>;
  * @internal
  */
 export declare function resizeImage(image: ImageData, maxSize: number): Promise<ImageData>;
+export declare function cropImage(imageSource: ImageSource, cropRect: Rect): Promise<Blob>;
 /**
  *
  * @param imageSource
  * @returns
  * @internal
  */
-export declare function canvasFromImageSource(imageSource: ImageSource): Promise<HTMLCanvasElement>;
+export declare function canvasFromImageSource(imageSource: ImageSource, cropRect?: Rect): Promise<HTMLCanvasElement>;
 /**
  *
  * @param imageSource
  * @returns
  * @internal
+ * @deprecated
  */
 export declare function imageFromImageSource(imageSource: ImageSource): Promise<HTMLImageElement>;
 /**
@@ -307,4 +309,5 @@ export declare function imageFromImageSource(imageSource: ImageSource): Promise<
  * @internal
  */
 export declare function sizeOfImageSource(imageSource: ImageSource): Promise<Size>;
+export declare function loadImage(src: string, image?: HTMLImageElement): Promise<HTMLImageElement>;
 export {};

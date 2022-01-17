@@ -1,11 +1,11 @@
 {
   "name": "@appliedrecognition/ver-id-browser",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Ver-ID live face detection running in a browser",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=14"
+    "node": ">=16 <17"
   },
   "directories": {
     "doc": "docs"

@@ -1,14 +1,16 @@
 {  
     "compilerOptions": {
-        "outDir": "./js",
+        "outDir": "../demo_server/js",
         "target": "ES2015",
         "sourceMap": true,
         "moduleResolution": "Node",
         "declaration": true,
         "esModuleInterop": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "lib": ["es2015", "es2016", "dom", "es2018.promise"]
     },  
-    "include": [  
+    "include": [
+        "./src",
         "./src/**/*"
     ]
 }

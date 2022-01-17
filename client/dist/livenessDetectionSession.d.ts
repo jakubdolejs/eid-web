@@ -23,7 +23,7 @@ export declare class LivenessDetectionSession {
     /**
      * @internal
      */
-    lastCaptureTime: number;
+    lastCaptureTime: number | null;
     private readonly faceBuffer;
     private faceAlignmentStatus;
     private fixTime;

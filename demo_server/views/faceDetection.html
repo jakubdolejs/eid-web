@@ -3,11 +3,13 @@
     <head>
         <title>Ver-ID in-browser demo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script type="module" src="/js/faceDetectionDemo.js"></script>
         <link rel="stylesheet" href="/css/demo.css" />
     </head>
     <body>
         <div id="content">
+            <div id="loading" class="page">
+                <p>Loading configuration</p>
+            </div>
             <div id="facecapture" class="page">
                 <a class="start button" href="javascript:void(0)">Capture live face</a>
             </div>
@@ -25,4 +27,5 @@
             </div>
         </div>
     </body>
+    <script type="module" src="/js/faceDetectionDemo.js"></script>
 </html>

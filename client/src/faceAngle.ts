@@ -1,3 +1,5 @@
+'use strict';
+
 import { LandmarkStandardization } from "./landmarkStandardization"
 import { Point, Angle } from "./utils"
 

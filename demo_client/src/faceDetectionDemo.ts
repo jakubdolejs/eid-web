@@ -1,49 +1,61 @@
+'use strict';
+
 import { 
-    FaceDetection, LivenessDetectionSession, LivenessDetectionSessionSettings
+    FaceDetection, LivenessDetectionSession
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 type DemoConfiguration = {serverURL: string}
 
-type PageID = "facecapture" | "result" | "error"
+type PageID = "loading" | "facecapture" | "result" | "error"
+
+function hideAllPages() {
+    document.querySelectorAll(".page").forEach(item => {
+        (item as HTMLElement).style.display = "none"
+    });
+}
+
+function takeHeapSnapshot() {
+    if ("takeHeapSnapshot" in console) {
+        // @ts-ignore: Webkit
+        console.takeHeapSnapshot()
+    }
+}
+
+function showPage(id: PageID) {
+    hideAllPages();
+    (document.querySelector("#"+id) as HTMLElement).style.display = "block"
+}
+
+function showError(error?: string) {
+    showPage("error");
+    const reason: HTMLElement = document.querySelector("#error .reason")
+    if (error) {
+        reason.innerText = error
+        reason.style.display = "block"
+    } else {
+        reason.innerText = ""
+        reason.style.display = "none"
+    }
+}
 
 const setup = (config: DemoConfiguration) => {
     const faceDetection = new FaceDetection(config.serverURL)
 
-    function hideAllPages() {
-        document.querySelectorAll(".page").forEach(item => {
-            (item as HTMLElement).style.display = "none"
-        });
-    }
-
-    function showPage(id: PageID) {
-        hideAllPages();
-        (document.querySelector("#"+id) as HTMLElement).style.display = "block"
-    }
-
-    function showError(error?: string) {
-        showPage("error");
-        const reason: HTMLElement = document.querySelector("#error .reason")
-        if (error) {
-            reason.innerText = error
-            reason.style.display = "block"
-        } else {
-            reason.innerText = ""
-            reason.style.display = "none"
-        }
-    }
-
     const onStart = () => {
+        takeHeapSnapshot()
         showPage("facecapture")
         faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
             next: (result) => {
                 showPage("result")
                 if (result.faceCaptures.length > 0) {
                     const img: HTMLImageElement = document.querySelector("#result img")
-                    result.faceCaptures[0].faceImage.then(image => {
+                    img.src = URL.createObjectURL(result.faceCaptures[0].faceImage)
+                    img.decode().then(() => {
                         img.style.display = "inline-block"
-                        img.src = image.src
-                    }).catch(error => {
+                    }).catch(() => {
                         img.style.display = "none"
+                    }).finally(() => {
+                        URL.revokeObjectURL(img.src)
                     })
                 }
             },
@@ -55,6 +67,9 @@ const setup = (config: DemoConfiguration) => {
                     text += ": "+error
                 }
                 showError(text)
+            },
+            complete: () => {
+                takeHeapSnapshot()
             }
         })
     }
@@ -66,7 +81,8 @@ const setup = (config: DemoConfiguration) => {
     showPage("facecapture")
 }
 
-window.onload = () => {
+(() => {
+    showPage("loading")
     fetch("/config.json").then(response => {
         return response.json()
     }).then((config: DemoConfiguration) => {
@@ -74,4 +90,4 @@ window.onload = () => {
     }).catch(error => {
         alert("Failed to read configuration file")
     })
-}
+})()
