@@ -271,6 +271,7 @@ export declare class FaceCapture {
      */
     readonly faceImage: Blob;
     readonly imageSize: Size;
+    readonly time: number;
     /**
      * Constructor
      * @param image Image in which the face was detected

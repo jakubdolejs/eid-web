@@ -8,15 +8,14 @@ import {
     LivenessDetectionSessionSettings
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
-type DemoConfiguration = {serverURL: string}
 
 type PageID = "facecapture" | "result" | "error"
 
-const setup = async (config: DemoConfiguration) => {
+(async () => {
     
     const faceDetectorFactory: TestFaceDetectorFactory = new TestFaceDetectorFactory()
     const testFaceDetector: TestFaceDetector = (await faceDetectorFactory.createFaceDetector()) as TestFaceDetector
-    const faceDetection = new FaceDetection(config.serverURL, {"createFaceDetector": () => {
+    const faceDetection = new FaceDetection(null, {"createFaceDetector": () => {
         return Promise.resolve(testFaceDetector)
     }})
 
@@ -82,14 +81,4 @@ const setup = async (config: DemoConfiguration) => {
     });
 
     showPage("facecapture")
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    fetch("/config.json").then(response => {
-        return response.json()
-    }).then((config: DemoConfiguration) => {
-        setup(config)
-    }).catch(error => {
-        alert("Failed to read configuration file")
-    })
-})
+})()

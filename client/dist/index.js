@@ -18346,7 +18346,7 @@ class FaceDetection {
                     }
                 }
             }
-            setTimeout(() => {
+            Promise.resolve().then(() => {
                 session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture });
                 if (session.faceDetectionCallback) {
                     session.faceDetectionCallback(capture);
@@ -18421,13 +18421,6 @@ class FaceDetection {
         if (!session.faceRecognition) {
             session.faceRecognition = this.faceRecognition;
         }
-        let captureCallbackTimeout;
-        function clearCallbackTimeout() {
-            if (captureCallbackTimeout !== undefined) {
-                clearTimeout(captureCallbackTimeout);
-                captureCallbackTimeout = undefined;
-            }
-        }
         return (this.liveFaceCapture(session).pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((capture) => {
             capture.requestedBearing = session.requestedBearing;
             return capture;
@@ -18436,32 +18429,19 @@ class FaceDetection {
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.filter)((capture) => {
             return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.createFaceCapture), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((faceCapture) => {
-            try {
-                clearCallbackTimeout();
-                captureCallbackTimeout = setTimeout(() => {
-                    if (session.faceCaptureCallback) {
-                        session.faceCaptureCallback(faceCapture);
-                    }
-                });
-            }
-            catch (_error) {
-            }
+            Promise.resolve().then(() => {
+                if (session.faceCaptureCallback) {
+                    session.faceCaptureCallback(faceCapture);
+                }
+            });
             if (new Date().getTime() - session.startTime > session.settings.maxDuration * 1000) {
                 throw new Error("Session timed out");
             }
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_12__.take)(session.settings.faceCaptureCount), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_13__.toArray)(), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)(() => {
-            try {
-                clearCallbackTimeout();
-                captureCallbackTimeout = setTimeout(() => {
-                    session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CAPTURE_FINISHED });
-                });
-            }
-            catch (_error) {
-            }
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)({
-            next: clearCallbackTimeout,
-            error: clearCallbackTimeout
-        }), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
+            Promise.resolve().then(() => {
+                session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CAPTURE_FINISHED });
+            });
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
     }
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
@@ -18486,43 +18466,33 @@ class FaceDetection {
             session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.LOADED });
             let frameCount = 0;
             let fps = null;
-            const detectFaceAfterInterval = (interval) => {
-                return new Promise((resolve, reject) => {
-                    setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                        try {
-                            const startTime = new Date().getTime();
-                            const faceCapture = yield session.faceDetector.detectFace({ element: session.ui.video, mirrored: session.settings.useFrontCamera });
-                            if (frameCount > 2 && frameCount < 10) {
-                                const detectionDuration = new Date().getTime() - startTime;
-                                const currentFPS = 1000 / detectionDuration;
-                                if (fps === null) {
-                                    fps = currentFPS;
-                                }
-                                else {
-                                    fps += currentFPS;
-                                    fps /= 2;
-                                }
-                                if (fps < session.settings.minFPS) {
-                                    reject(new Error("Device too slow: " + fps.toFixed(1) + " FPS (required " + session.settings.minFPS + " FPS)"));
-                                    return;
-                                }
-                            }
-                            else {
-                                fps = null;
-                            }
-                            frameCount++;
-                            resolve(faceCapture);
-                        }
-                        catch (error) {
-                            reject(error);
-                        }
-                    }), interval);
-                });
-            };
+            const detectFace = () => __awaiter(this, void 0, void 0, function* () {
+                const startTime = new Date().getTime();
+                const faceCapture = yield session.faceDetector.detectFace({ element: session.ui.video, mirrored: session.settings.useFrontCamera });
+                if (frameCount > 2 && frameCount < 10) {
+                    const detectionDuration = new Date().getTime() - startTime;
+                    const currentFPS = 1000 / detectionDuration;
+                    if (fps === null) {
+                        fps = currentFPS;
+                    }
+                    else {
+                        fps += currentFPS;
+                        fps /= 2;
+                    }
+                    if (fps < session.settings.minFPS) {
+                        throw new Error("Device too slow: " + fps.toFixed(1) + " FPS (required " + session.settings.minFPS + " FPS)");
+                    }
+                }
+                else {
+                    fps = null;
+                }
+                frameCount++;
+                return faceCapture;
+            });
             function detectSingleFace() {
                 return __asyncGenerator(this, arguments, function* detectSingleFace_1() {
                     while (!subscriber.closed && !session.ui.video.paused && !session.ui.video.ended) {
-                        yield yield __await(yield __await(detectFaceAfterInterval(0)));
+                        yield yield __await(yield __await(detectFace()));
                     }
                 });
             }
@@ -18754,10 +18724,11 @@ class FaceCapture {
         this.face = face;
         this.imageSize = imageSize;
         this.faceImage = faceImage;
+        this.time = Date.now();
     }
     static create(image, face) {
         return __awaiter(this, void 0, void 0, function* () {
-            const faceImage = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.cropImage)(image, face.bounds);
+            const faceImage = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.cropImage)(image, face ? face.bounds : null);
             const imageSize = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.sizeOfImageSource)(image);
             return new FaceCapture(image, face, imageSize, faceImage);
         });
@@ -19213,7 +19184,7 @@ class FaceRecognition {
             if (response.status != 200) {
                 throw new Error("Failed to detect recognizable faces");
             }
-            const json = yield response.json();
+            const json = (yield response.json()).filter((entry) => entry.face != null);
             const out = {};
             json.forEach((entry) => {
                 const face = entry.face;
@@ -19249,6 +19220,9 @@ class FaceRecognition {
                 throw new Error("Failed to extract recognition template from face");
             }
             const json = yield response.json();
+            if (!json.x || !json.y || !json.width || !json.height || !json.template) {
+                throw new Error("Failed to detect face in image");
+            }
             const imageSize = yield (0,_utils__WEBPACK_IMPORTED_MODULE_0__.sizeOfImageSource)(image);
             const cropRect = this.adjustImageCropRect(imageSize, faceRect);
             const facePixelRect = this.faceCoordinatesToPixels(json, imageSize, cropRect);
@@ -19898,14 +19872,6 @@ class IdCapture {
             }
         };
     }
-    clearTimeouts() {
-        clearTimeout(this.nextPageTimeout);
-        clearTimeout(this.captureEndTimeout);
-        clearTimeout(this.loadFailureTimeout);
-        this.nextPageTimeout = undefined;
-        this.captureEndTimeout = undefined;
-        this.loadFailureTimeout = undefined;
-    }
     /**
      * Capture ID card using the device camera
      * @param settings Session settings
@@ -19976,11 +19942,7 @@ class IdCapture {
                                     ui.on(_types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_STARTED, () => {
                                         if (videoRecognizer) {
                                             videoRecognizer.resumeRecognition(true);
-                                            if (this.nextPageTimeout !== undefined) {
-                                                clearTimeout(this.nextPageTimeout);
-                                                this.nextPageTimeout = undefined;
-                                            }
-                                            this.nextPageTimeout = setTimeout(() => {
+                                            requestAnimationFrame(() => {
                                                 ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.NEXT_PAGE_REQUESTED });
                                             });
                                         }
@@ -20011,7 +19973,7 @@ class IdCapture {
                     (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
                 }
             })).catch(error => {
-                this.loadFailureTimeout = setTimeout(() => {
+                requestAnimationFrame(() => {
                     ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.LOADING_FAILED });
                 });
                 (0,_utils__WEBPACK_IMPORTED_MODULE_2__.emitRxEvent)(subscriber, { "type": "error", "error": error });
@@ -20025,12 +19987,7 @@ class IdCapture {
                 disposeVideoRecognizer();
                 disposeRecognizerRunner();
                 this.unregisterLoadListener(progressListener);
-                if (this.captureEndTimeout !== undefined) {
-                    clearTimeout(this.captureEndTimeout);
-                    this.captureEndTimeout = undefined;
-                }
-                this.captureEndTimeout = setTimeout(() => {
-                    this.clearTimeouts();
+                requestAnimationFrame(() => {
                     ui.trigger({ type: _types__WEBPACK_IMPORTED_MODULE_3__.IdCaptureEventType.CAPTURE_ENDED });
                 });
             };
@@ -20140,6 +20097,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/from.js");
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/of.js");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/dist/esm5/internal/observable/throwError.js");
 /* harmony import */ var _faceDetection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./faceDetection */ "./src/faceDetection.ts");
 /* harmony import */ var _faceDetectionUI__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./faceDetectionUI */ "./src/faceDetectionUI.ts");
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./types */ "./src/types.ts");
@@ -20392,10 +20350,15 @@ class LivenessDetectionSession {
             let promise = Promise.resolve();
             if (this.controlFaceCaptures.length > 0) {
                 const faceDetectionInput = {};
-                let i = 1;
-                this.controlFaceCaptures.forEach(capture => {
-                    faceDetectionInput["image_" + (i++)] = { image: capture.image, faceRect: capture.face.bounds };
-                });
+                try {
+                    let i = 1;
+                    this.controlFaceCaptures.forEach(capture => {
+                        faceDetectionInput["image_" + (i++)] = { image: capture.image, faceRect: capture.face.bounds };
+                    });
+                }
+                catch (error) {
+                    return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(() => error);
+                }
                 promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response) => {
                     if (Object.values(response).length == 0) {
                         return this.settings.controlFaceSimilarityThreshold;
@@ -20407,6 +20370,9 @@ class LivenessDetectionSession {
                     }
                 });
             }
+            captures.sort((a, b) => {
+                return a.time - b.time;
+            });
             if (this.settings.recordSessionVideo && this.mediaRecorder) {
                 promise = promise.then(() => this.getVideoURL()).then(videoURL => new _faceDetection__WEBPACK_IMPORTED_MODULE_0__.LivenessDetectionSessionResult(new Date(this.startTime), captures, videoURL));
             }
@@ -20450,7 +20416,7 @@ class LivenessDetectionSession {
             if (!this.closed) {
                 this.closed = true;
                 this.cleanup();
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                     this.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_1__.LivenessDetectionSessionEventType.CLOSE });
                 });
             }

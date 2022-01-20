@@ -9,9 +9,6 @@ export declare class IdCapture {
     private readonly loadBlinkWasmModule;
     private percentLoaded;
     private loadListeners;
-    private nextPageTimeout;
-    private captureEndTimeout;
-    private loadFailureTimeout;
     constructor(settings: IdCaptureSettings, serviceURL?: string);
     private onLoadProgressCallback;
     private registerLoadListener;
@@ -38,7 +35,6 @@ export declare class IdCapture {
     private getRecognizerRunner;
     private createRecognizers;
     private createMetadataCallbacks;
-    private clearTimeouts;
     /**
      * Capture ID card using the device camera
      * @param settings Session settings

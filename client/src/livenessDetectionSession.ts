@@ -1,6 +1,6 @@
 'use strict';
 
-import { Observable, from, of } from "rxjs"
+import { Observable, from, of, throwError } from "rxjs"
 import { FaceRecognition } from "./faceRecognition"
 import { Face, LivenessDetectionSessionSettings, FaceCapture, LivenessDetectionSessionResult } from "./faceDetection"
 import { LivenessDetectionSessionEventType, LivenessDetectionSessionUI } from "./faceDetectionUI"
@@ -279,10 +279,14 @@ export class LivenessDetectionSession {
         let promise: Promise<any> = Promise.resolve()
         if (this.controlFaceCaptures.length > 0) {
             const faceDetectionInput: RecognizableFaceDetectionInput = {}
-            let i = 1
-            this.controlFaceCaptures.forEach(capture => {
-                faceDetectionInput["image_"+(i++)] = {image: capture.image, faceRect: capture.face.bounds}
-            })
+            try {
+                let i = 1
+                this.controlFaceCaptures.forEach(capture => {
+                    faceDetectionInput["image_"+(i++)] = {image: capture.image, faceRect: capture.face.bounds}
+                })
+            } catch (error) {
+                return throwError(() => error)
+            }
             promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response: RecognizableFaceDetectionOutput) => {
                 if (Object.values(response).length == 0) {
                     return this.settings.controlFaceSimilarityThreshold
@@ -294,6 +298,9 @@ export class LivenessDetectionSession {
                 }
             })
         }
+        captures.sort((a: FaceCapture, b: FaceCapture) => {
+            return a.time - b.time
+        })
         if (this.settings.recordSessionVideo && this.mediaRecorder) {
             promise = promise.then(() => this.getVideoURL()).then(videoURL => new LivenessDetectionSessionResult(new Date(this.startTime), captures, videoURL))
         } else {
@@ -339,7 +346,7 @@ export class LivenessDetectionSession {
         if (!this.closed) {
             this.closed = true
             this.cleanup()
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 this.ui.trigger({"type":LivenessDetectionSessionEventType.CLOSE})
             })
         }

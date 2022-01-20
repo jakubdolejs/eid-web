@@ -734,7 +734,7 @@ export async function resizeImage(image: ImageData, maxSize: number): Promise<Im
     }
 }
 
-export async function cropImage(imageSource: ImageSource, cropRect: Rect): Promise<Blob> {
+export async function cropImage(imageSource: ImageSource, cropRect?: Rect): Promise<Blob> {
     const canvas = await canvasFromImageSource(imageSource, cropRect)
     return canvasToBlob(canvas)
 }

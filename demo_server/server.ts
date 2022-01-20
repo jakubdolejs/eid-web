@@ -1,5 +1,6 @@
 import { serve, Status, STATUS_TEXT } from "https://deno.land/std@0.119.0/http/mod.ts";
 import { resolve, parse, join } from "https://deno.land/std@0.119.0/path/mod.ts"
+import { engineFactory } from "https://deno.land/x/view_engine@v1.5.0/mod.ts"
 
 async function forwardRequest(req: Request): Promise<Response> {
     try {
@@ -38,7 +39,7 @@ async function handler(req: Request): Promise<Response> {
             if (!file.startsWith(cwd)) {
                 throw new Error("Invalid file path")
             }
-            const content = await Deno.readFile(file)
+            let content = await Deno.readFile(file)
             const headers: {headers:{"Content-Type"?:string}} = {"headers": {}}
             if (file.endsWith(".json")) {
                 headers.headers["Content-Type"] = "application/json"
@@ -50,8 +51,17 @@ async function handler(req: Request): Promise<Response> {
                 headers.headers["Content-Type"] = "text/css"
             } else if (file.endsWith(".html") || file.endsWith(".htm")) {
                 headers.headers["Content-Type"] = "text/html"
+                if (file.endsWith("index.html") && microblinkLicenceKey) {
+                    let html = textDecoder.decode(content)
+                    html = ejsEngine(html, {
+                        "microblinkLicenceKey": microblinkLicenceKey
+                    })
+                    content = textEncoder.encode(html)
+                }
             } else if (file.endsWith(".wasm")) {
                 headers.headers["Content-Type"] = "application/wasm"
+            } else if (file.endsWith(".mp4")) {
+                headers.headers["Content-Type"] = "video/mp4"
             }
             return new Response(content, headers)
         } catch (error) {
@@ -65,7 +75,10 @@ if (!veridServerUrl) {
     console.error("Error: Environment variable VERID_SERVER_URL is not set. See ../README.md for details.")
     Deno.exit(1)
 }
-
+const microblinkLicenceKey = Deno.env.get("MICROBLINK_LICENCE_KEY")
+const ejsEngine = engineFactory.getEjsEngine()
+const textDecoder = new TextDecoder("utf-8")
+const textEncoder = new TextEncoder()
 const port = parseInt(Deno.env.get("PORT") || "8090")
 serve(handler,{"port": port})
 console.log(`Server listening on port ${port}`)

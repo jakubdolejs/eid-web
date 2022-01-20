@@ -3,7 +3,10 @@
     <head>
         <title>Ver-ID in-browser demo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script type="module" src="/js/demo.js"></script>
+        <script type="text/javascript">
+            window.microblinkLicenceKey = "<%= microblinkLicenceKey %>"
+        </script>
+        <script type="module" async src="/js/demo.js"></script>
         <link rel="stylesheet" href="/css/demo.css" />
     </head>
     <body>

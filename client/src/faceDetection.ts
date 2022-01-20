@@ -74,15 +74,6 @@ export class FaceDetection {
             session.faceRecognition = this.faceRecognition
         }
 
-        let captureCallbackTimeout: ReturnType<typeof setTimeout> | undefined
-
-        function clearCallbackTimeout() {
-            if (captureCallbackTimeout !== undefined) {
-                clearTimeout(captureCallbackTimeout)
-                captureCallbackTimeout = undefined
-            }
-        }
-
         return <Observable<LivenessDetectionSessionResult>>(this.liveFaceCapture(session).pipe(
             map((capture: FaceCapture): FaceCapture => {
                 capture.requestedBearing = session.requestedBearing
@@ -99,15 +90,11 @@ export class FaceDetection {
             }),
             mergeMap(session.createFaceCapture),
             tap((faceCapture: FaceCapture) => {
-                try {
-                    clearCallbackTimeout()
-                    captureCallbackTimeout = setTimeout(() => {
-                        if (session.faceCaptureCallback) {
-                            session.faceCaptureCallback(faceCapture)
-                        }
-                    })
-                } catch (_error) {
-                }
+                Promise.resolve().then(() => {
+                    if (session.faceCaptureCallback) {
+                        session.faceCaptureCallback(faceCapture)
+                    }
+                })
                 if (new Date().getTime() - session.startTime > session.settings.maxDuration * 1000) {
                     throw new Error("Session timed out")
                 }
@@ -115,19 +102,11 @@ export class FaceDetection {
             take(session.settings.faceCaptureCount),
             toArray(),
             tap(() => {
-                try {
-                    clearCallbackTimeout()
-                    captureCallbackTimeout = setTimeout(() => {
-                        session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
-                    })
-                } catch (_error) {
-                }
+                Promise.resolve().then(() => {
+                    session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
+                })
             }),
             mergeMap(session.resultFromCaptures),
-            tap({
-                next: clearCallbackTimeout,
-                error: clearCallbackTimeout
-            }),
             (observable: Observable<LivenessDetectionSessionResult>) => this.livenessDetectionSessionResultObservable(observable, session)
         ))
     }
@@ -163,7 +142,7 @@ export class FaceDetection {
                 }
             }
         }
-        setTimeout(() => {
+        Promise.resolve().then(() => {
             session.ui.trigger({"type": LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture})
             if (session.faceDetectionCallback) {
                 session.faceDetectionCallback(capture)
@@ -176,40 +155,31 @@ export class FaceDetection {
             session.ui.trigger({"type": LivenessDetectionSessionEventType.LOADED})
             let frameCount = 0
             let fps: number | null = null
-            const detectFaceAfterInterval = (interval: number): Promise<FaceCapture> => {
-                return new Promise((resolve, reject) => {
-                    setTimeout(async () => {
-                        try {
-                            const startTime = new Date().getTime()
-                            const faceCapture = await session.faceDetector.detectFace({element: session.ui.video, mirrored: session.settings.useFrontCamera})
-                            if (frameCount > 2 && frameCount < 10) {
-                                const detectionDuration = new Date().getTime() - startTime
-                                const currentFPS = 1000 / detectionDuration
-                                if (fps === null) {
-                                    fps = currentFPS
-                                } else {
-                                    fps += currentFPS
-                                    fps /= 2
-                                }
-                                if (fps < session.settings.minFPS) {
-                                    reject(new Error("Device too slow: "+fps.toFixed(1)+" FPS (required "+session.settings.minFPS+" FPS)"))
-                                    return
-                                }
-                            } else {
-                                fps = null
-                            }
-                            frameCount ++
-                            resolve(faceCapture)
-                        } catch (error) {
-                            reject(error)
-                        }
-                    }, interval)
-                })
+            const detectFace = async (): Promise<FaceCapture> => {
+                const startTime = new Date().getTime()
+                const faceCapture = await session.faceDetector.detectFace({element: session.ui.video, mirrored: session.settings.useFrontCamera})
+                if (frameCount > 2 && frameCount < 10) {
+                    const detectionDuration = new Date().getTime() - startTime
+                    const currentFPS = 1000 / detectionDuration
+                    if (fps === null) {
+                        fps = currentFPS
+                    } else {
+                        fps += currentFPS
+                        fps /= 2
+                    }
+                    if (fps < session.settings.minFPS) {
+                        throw new Error("Device too slow: "+fps.toFixed(1)+" FPS (required "+session.settings.minFPS+" FPS)")
+                    }
+                } else {
+                    fps = null
+                }
+                frameCount ++
+                return faceCapture
             }
 
             async function* detectSingleFace() {
                 while (!subscriber.closed && !session.ui.video.paused && !session.ui.video.ended) {
-                    yield await detectFaceAfterInterval(0)
+                    yield await detectFace()
                 }
             }
 
@@ -537,6 +507,7 @@ export class FaceCapture {
      */
     readonly faceImage: Blob
     readonly imageSize: Size
+    readonly time: number
 
     /**
      * Constructor
@@ -549,10 +520,11 @@ export class FaceCapture {
         this.face = face
         this.imageSize = imageSize
         this.faceImage = faceImage
+        this.time = Date.now()
     }
 
     static async create(image: Blob, face: Face): Promise<FaceCapture> {
-        const faceImage = await cropImage(image, face.bounds)
+        const faceImage = await cropImage(image, face ? face.bounds : null)
         const imageSize = await sizeOfImageSource(image)
         return new FaceCapture(image, face, imageSize, faceImage)
     }

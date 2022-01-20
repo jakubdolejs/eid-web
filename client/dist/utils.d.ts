@@ -286,7 +286,7 @@ export declare function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob>;
  * @internal
  */
 export declare function resizeImage(image: ImageData, maxSize: number): Promise<ImageData>;
-export declare function cropImage(imageSource: ImageSource, cropRect: Rect): Promise<Blob>;
+export declare function cropImage(imageSource: ImageSource, cropRect?: Rect): Promise<Blob>;
 /**
  *
  * @param imageSource

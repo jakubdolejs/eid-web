@@ -399,9 +399,6 @@ export class IdCapture {
     private readonly loadBlinkWasmModule: Promise<WasmSDK>
     private percentLoaded = 0
     private loadListeners: Set<ProgressListener> = new Set()
-    private nextPageTimeout: ReturnType<typeof setTimeout> | undefined
-    private captureEndTimeout: ReturnType<typeof setTimeout> | undefined
-    private loadFailureTimeout: ReturnType<typeof setTimeout> | undefined
 
     constructor(settings: IdCaptureSettings, serviceURL?: string) {
         this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : settings.serviceURL
@@ -618,15 +615,6 @@ export class IdCapture {
         }
     }
 
-    private clearTimeouts() {
-        clearTimeout(this.nextPageTimeout)
-        clearTimeout(this.captureEndTimeout)
-        clearTimeout(this.loadFailureTimeout)
-        this.nextPageTimeout = undefined
-        this.captureEndTimeout = undefined
-        this.loadFailureTimeout = undefined
-    }
-
     /**
      * Capture ID card using the device camera
      * @param settings Session settings
@@ -694,11 +682,7 @@ export class IdCapture {
                                     ui.on(IdCaptureEventType.CAPTURE_STARTED, () => {
                                         if (videoRecognizer) {
                                             videoRecognizer.resumeRecognition(true)
-                                            if (this.nextPageTimeout !== undefined) {
-                                                clearTimeout(this.nextPageTimeout)
-                                                this.nextPageTimeout = undefined
-                                            }
-                                            this.nextPageTimeout = setTimeout(() => {
+                                            requestAnimationFrame(() => {
                                                 ui.trigger({type: IdCaptureEventType.NEXT_PAGE_REQUESTED})
                                             })
                                         }
@@ -726,7 +710,7 @@ export class IdCapture {
                     emitRxEvent(subscriber, {"type": "error", "error": error})
                 }
             }).catch(error => {
-                this.loadFailureTimeout = setTimeout(() => {
+                requestAnimationFrame(() => {
                     ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
                 })
                 emitRxEvent(subscriber, {"type": "error", "error": error})
@@ -740,12 +724,7 @@ export class IdCapture {
                 disposeVideoRecognizer()
                 disposeRecognizerRunner()
                 this.unregisterLoadListener(progressListener)
-                if (this.captureEndTimeout !== undefined) {
-                    clearTimeout(this.captureEndTimeout)
-                    this.captureEndTimeout = undefined
-                }
-                this.captureEndTimeout = setTimeout(() => {
-                    this.clearTimeouts()
+                requestAnimationFrame(() => {
                     ui.trigger({type:IdCaptureEventType.CAPTURE_ENDED})
                 })
             }

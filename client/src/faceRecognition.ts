@@ -51,7 +51,7 @@ export class FaceRecognition {
         if (response.status != 200) {
             throw new Error("Failed to detect recognizable faces")
         }
-        const json: {name: string, face: RecognizableFace}[] = await response.json()
+        const json: {name: string, face: RecognizableFace}[] = (await response.json()).filter((entry: {face?: RecognizableFace|null}) => entry.face != null)
         const out: RecognizableFaceDetectionOutput = {}
         json.forEach((entry) => {
             const face = entry.face
@@ -86,6 +86,9 @@ export class FaceRecognition {
             throw new Error("Failed to extract recognition template from face")
         }
         const json: RecognizableFace = await response.json()
+        if (!json.x || !json.y || !json.width || !json.height || !json.template) {
+            throw new Error("Failed to detect face in image")
+        }
         const imageSize = await sizeOfImageSource(image)
         const cropRect = this.adjustImageCropRect(imageSize, faceRect)
         const facePixelRect = this.faceCoordinatesToPixels(json, imageSize, cropRect)
