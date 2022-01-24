@@ -1,7 +1,7 @@
 'use strict';
 
 import { 
-    FaceDetection, LivenessDetectionSession, LivenessDetectionSessionResult
+    FaceDetection, LivenessDetectionSession, LivenessDetectionSessionResult, LivenessDetectionSessionSettings
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 type PageID = "loading" | "facecapture" | "result" | "error"
@@ -33,7 +33,15 @@ const faceDetection = new FaceDetection()
 
 const onStart = () => {
     showPage("facecapture")
-    faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
+    const settings: LivenessDetectionSessionSettings = new LivenessDetectionSessionSettings()
+    if (window["options"]) {
+        for (const opt in window["options"]) {
+            if (opt in settings) {
+                settings[opt] = window["options"][opt]
+            }
+        }
+    }
+    faceDetection.captureFaces(new LivenessDetectionSession(settings)).subscribe({
         next: (result: LivenessDetectionSessionResult) => {
             showPage("result")
             if (result.faceCaptures.length > 0) {

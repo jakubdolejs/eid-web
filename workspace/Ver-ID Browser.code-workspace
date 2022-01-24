@@ -28,7 +28,10 @@
                     "VERID_SERVER_URL": "${input:serverURL}",
                     "PORT": "8090",
                     "MICROBLINK_LICENCE_KEY": "${input:microblinkLicenceKey}"
-                }
+                },
+                "args": [
+                    "--minFPS=3"
+                ]
             }
         ],
         "compounds": [],

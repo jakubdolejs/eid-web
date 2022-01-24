@@ -45,6 +45,13 @@ type PageID = "facecapture" | "result" | "error"
     const onStart = () => {
         showPage("facecapture")
         const settings = new LivenessDetectionSessionSettings()
+        if (window["options"]) {
+            for (const opt in window["options"]) {
+                if (opt in settings) {
+                    settings[opt] = window["options"][opt]
+                }
+            }
+        }
         settings.useFrontCamera = false
         const session = new MockLivenessDetectionSession(settings)
         session.faceDetector = testFaceDetector

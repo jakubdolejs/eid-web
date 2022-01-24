@@ -14,7 +14,8 @@ import {
     DocumentPages, 
     LivenessDetectionSession,
     DocumentSide,
-    blobFromImageSource
+    blobFromImageSource,
+    LivenessDetectionSessionSettings
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
 async function imageFromImageData(imageData: ImageData, cropRect?: Rect): Promise<HTMLImageElement> {
@@ -30,7 +31,7 @@ async function imageFromImageData(imageData: ImageData, cropRect?: Rect): Promis
     }
 }
 
-const settings = new IdCaptureSettings(window["microblinkLicenceKey"], "/node_modules/@appliedrecognition/ver-id-browser/resources/")
+const settings = new IdCaptureSettings(window["options"] ? window["options"]["microblinkLicenceKey"] : "", "/node_modules/@appliedrecognition/ver-id-browser/resources/")
 const faceDetection = new FaceDetection()
 const idCapture = new IdCapture(settings)
 const faceRecognition = new FaceRecognition()
@@ -63,7 +64,15 @@ function showError(error?: string) {
 }
 
 (document.querySelector("#facecapture a.start") as HTMLAnchorElement).onclick = () => {
-    faceDetection.captureFaces(new LivenessDetectionSession()).subscribe({
+    const livenessDetectionSettings: LivenessDetectionSessionSettings = new LivenessDetectionSessionSettings()
+    if (window["options"]) {
+        for (const opt in window["options"]) {
+            if (opt in settings) {
+                livenessDetectionSettings[opt] = window["options"][opt]
+            }
+        }
+    }
+    faceDetection.captureFaces(new LivenessDetectionSession(livenessDetectionSettings)).subscribe({
         next: (result) => {
             const liveFace = result.faceCaptures[0].face
             const img = document.createElement("img")
