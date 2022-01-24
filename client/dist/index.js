@@ -18686,9 +18686,9 @@ class LivenessDetectionSessionSettings {
         /**
          * Minimum face detection speed in frames per second.
          * If the device cannot detect faces fast enough the session will fail with an error.
-         * @defaultValue `5`
+         * @defaultValue `3.5`
          */
-        this.minFPS = 5;
+        this.minFPS = 3.5;
     }
 }
 /**
