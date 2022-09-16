@@ -18424,7 +18424,9 @@ class FaceDetection {
         return (this.liveFaceCapture(session).pipe((0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)((capture) => {
             capture.requestedBearing = session.requestedBearing;
             return capture;
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFaceAlignment), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectSpoofAttempt), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((capture) => {
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFacePresence), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_8__.map)(session.detectFaceAlignment), 
+        //map(session.detectSpoofAttempt),
+        (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_9__.tap)((capture) => {
             this.onFaceCapture(session, capture);
         }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_10__.filter)((capture) => {
             return capture.face && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED;
@@ -18441,7 +18443,7 @@ class FaceDetection {
             Promise.resolve().then(() => {
                 session.ui.trigger({ "type": _faceDetectionUI__WEBPACK_IMPORTED_MODULE_3__.LivenessDetectionSessionEventType.CAPTURE_FINISHED });
             });
-        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
+        }), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.resultFromCaptures), (0,rxjs_operators__WEBPACK_IMPORTED_MODULE_11__.mergeMap)(session.checkLiveness), (observable) => this.livenessDetectionSessionResultObservable(observable, session)));
     }
     /**
      * Create a liveness detection session. Subscribe to the returned Observable to start the session and to receive results.
@@ -19212,7 +19214,7 @@ class FaceRecognition {
                 "mode": "cors",
                 "cache": "no-cache",
                 "headers": {
-                    "Content-Type": "image/jpeg"
+                    "Content-Type": body.type
                 },
                 "body": body
             });
@@ -20083,6 +20085,45 @@ class LandmarkStandardization {
 
 /***/ }),
 
+/***/ "./src/livenessCheck.ts":
+/*!******************************!*\
+  !*** ./src/livenessCheck.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "LivenessCheck": () => (/* binding */ LivenessCheck)
+/* harmony export */ });
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+class LivenessCheck {
+    checkLiveness(image) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const body = yield this.createLivenessCheckRequestBody(image);
+                const headers = yield this.createLivenessCheckRequestHeaders();
+                const response = yield fetch("/check_liveness", { "method": "POST", "cache": "no-cache", "body": JSON.stringify(body), "headers": headers });
+                return this.parseLivenessCheckResponse(response);
+            }
+            catch (error) {
+                throw new Error("Liveness check failed: " + (error === null || error === void 0 ? void 0 : error.message));
+            }
+        });
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/livenessDetectionSession.ts":
 /*!*****************************************!*\
   !*** ./src/livenessDetectionSession.ts ***!
@@ -20129,6 +20170,7 @@ class LivenessDetectionSession {
         this.controlFaceCaptures = [];
         this.faceDetectionCallback = null;
         this.faceCaptureCallback = null;
+        this.livenessCheck = null;
         /**
          * @internal
          */
@@ -20172,14 +20214,14 @@ class LivenessDetectionSession {
                 };
             }
             if (constraints.width) {
-                const videoWidth = 480;
+                const videoHeight = 720;
                 if (typeof (getUserMediaOptions.video) === "boolean") {
                     getUserMediaOptions.video = {
-                        "width": videoWidth
+                        "height": videoHeight
                     };
                 }
                 else {
-                    getUserMediaOptions.video.width = videoWidth;
+                    getUserMediaOptions.video.height = videoHeight;
                 }
             }
             const stream = yield navigator.mediaDevices.getUserMedia(getUserMediaOptions);
@@ -20346,6 +20388,25 @@ class LivenessDetectionSession {
         /**
          * @internal
          */
+        this.checkLiveness = (result) => {
+            if (!this.livenessCheck) {
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_5__.of)(result);
+            }
+            const capture = result.faceCaptures.find(capture => capture.requestedBearing == _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT);
+            if (!capture) {
+                return (0,rxjs__WEBPACK_IMPORTED_MODULE_6__.throwError)(() => new Error("Failed to extract face capture"));
+            }
+            return (0,rxjs__WEBPACK_IMPORTED_MODULE_4__.from)(this.livenessCheck.checkLiveness(capture.image).then(score => {
+                result.livenessScore = score;
+                if (score < 0.5) {
+                    throw new Error("Liveness check failed (score " + score.toFixed(2) + ")");
+                }
+                return result;
+            }));
+        };
+        /**
+         * @internal
+         */
         this.resultFromCaptures = (captures) => {
             let promise = Promise.resolve();
             if (this.controlFaceCaptures.length > 0) {
@@ -20361,6 +20422,9 @@ class LivenessDetectionSession {
                 }
                 promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response) => {
                     if (Object.values(response).length == 0) {
+                        return this.settings.controlFaceSimilarityThreshold;
+                    }
+                    if (captures.filter(capture => capture.face && capture.face.template && capture.faceAlignmentStatus == _types__WEBPACK_IMPORTED_MODULE_2__.FaceAlignmentStatus.ALIGNED).length == 0) {
                         return this.settings.controlFaceSimilarityThreshold;
                     }
                     return this.compareControlFacesToCaptureFaces(response, captures);
@@ -20584,7 +20648,7 @@ class LivenessDetectionSession {
      * @internal
      */
     get requestedBearing() {
-        return this.bearingIterator.value;
+        return this.bearingIterator.value || _types__WEBPACK_IMPORTED_MODULE_2__.Bearing.STRAIGHT;
     }
     get isClosed() {
         return this.closed;
@@ -21038,6 +21102,61 @@ class TestFaceDetectorFactory {
                 return entry[1].decode();
             }));
             return Promise.resolve(new TestFaceDetector(images));
+        });
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/trustmaticLivenessCheck.ts":
+/*!****************************************!*\
+  !*** ./src/trustmaticLivenessCheck.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "TrustmaticLivenessCheck": () => (/* binding */ TrustmaticLivenessCheck)
+/* harmony export */ });
+/* harmony import */ var _livenessCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./livenessCheck */ "./src/livenessCheck.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+class TrustmaticLivenessCheck extends _livenessCheck__WEBPACK_IMPORTED_MODULE_0__.LivenessCheck {
+    createLivenessCheckRequestBody(image) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const canvas = yield (0,_utils__WEBPACK_IMPORTED_MODULE_1__.canvasFromImageSource)(image);
+            const dataURL = canvas.toDataURL();
+            return {
+                "faceImageBase": dataURL,
+                "sessionId": crypto["randomUUID"]()
+            };
+        });
+    }
+    createLivenessCheckRequestHeaders() {
+        return Promise.resolve({
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        });
+    }
+    parseLivenessCheckResponse(response) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const json = yield response.json();
+            if (json.hasError) {
+                throw json.error;
+            }
+            return json.score;
         });
     }
 }
@@ -22446,7 +22565,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "TestFaceDetector": () => (/* reexport safe */ _testFaceDetector__WEBPACK_IMPORTED_MODULE_10__.TestFaceDetector),
 /* harmony export */   "TestFaceDetectorFactory": () => (/* reexport safe */ _testFaceDetector__WEBPACK_IMPORTED_MODULE_10__.TestFaceDetectorFactory),
 /* harmony export */   "LivenessDetectionSession": () => (/* reexport safe */ _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_11__.LivenessDetectionSession),
-/* harmony export */   "MockLivenessDetectionSession": () => (/* reexport safe */ _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_11__.MockLivenessDetectionSession)
+/* harmony export */   "MockLivenessDetectionSession": () => (/* reexport safe */ _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_11__.MockLivenessDetectionSession),
+/* harmony export */   "LivenessCheck": () => (/* reexport safe */ _livenessCheck__WEBPACK_IMPORTED_MODULE_12__.LivenessCheck),
+/* harmony export */   "TrustmaticLivenessCheck": () => (/* reexport safe */ _trustmaticLivenessCheck__WEBPACK_IMPORTED_MODULE_13__.TrustmaticLivenessCheck)
 /* harmony export */ });
 /* harmony import */ var _faceDetection__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./faceDetection */ "./src/faceDetection.ts");
 /* harmony import */ var _faceRecognition__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./faceRecognition */ "./src/faceRecognition.ts");
@@ -22460,6 +22581,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _faceDetectionUI__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./faceDetectionUI */ "./src/faceDetectionUI.ts");
 /* harmony import */ var _testFaceDetector__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./testFaceDetector */ "./src/testFaceDetector.ts");
 /* harmony import */ var _livenessDetectionSession__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./livenessDetectionSession */ "./src/livenessDetectionSession.ts");
+/* harmony import */ var _livenessCheck__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./livenessCheck */ "./src/livenessCheck.ts");
+/* harmony import */ var _trustmaticLivenessCheck__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./trustmaticLivenessCheck */ "./src/trustmaticLivenessCheck.ts");
+
+
 
 
 
@@ -22494,6 +22619,7 @@ var __webpack_exports__IdCaptureEventType = __webpack_exports__.IdCaptureEventTy
 var __webpack_exports__IdCaptureResult = __webpack_exports__.IdCaptureResult;
 var __webpack_exports__IdCaptureSessionSettings = __webpack_exports__.IdCaptureSessionSettings;
 var __webpack_exports__IdCaptureSettings = __webpack_exports__.IdCaptureSettings;
+var __webpack_exports__LivenessCheck = __webpack_exports__.LivenessCheck;
 var __webpack_exports__LivenessDetectionSession = __webpack_exports__.LivenessDetectionSession;
 var __webpack_exports__LivenessDetectionSessionEventType = __webpack_exports__.LivenessDetectionSessionEventType;
 var __webpack_exports__LivenessDetectionSessionResult = __webpack_exports__.LivenessDetectionSessionResult;
@@ -22506,6 +22632,7 @@ var __webpack_exports__RectSmoothing = __webpack_exports__.RectSmoothing;
 var __webpack_exports__Smoothing = __webpack_exports__.Smoothing;
 var __webpack_exports__TestFaceDetector = __webpack_exports__.TestFaceDetector;
 var __webpack_exports__TestFaceDetectorFactory = __webpack_exports__.TestFaceDetectorFactory;
+var __webpack_exports__TrustmaticLivenessCheck = __webpack_exports__.TrustmaticLivenessCheck;
 var __webpack_exports__VerIDFaceDetector = __webpack_exports__.VerIDFaceDetector;
 var __webpack_exports__VerIDFaceDetectorFactory = __webpack_exports__.VerIDFaceDetectorFactory;
 var __webpack_exports__VerIDLivenessDetectionSessionUI = __webpack_exports__.VerIDLivenessDetectionSessionUI;
@@ -22522,6 +22649,6 @@ var __webpack_exports__imageFromImageSource = __webpack_exports__.imageFromImage
 var __webpack_exports__loadImage = __webpack_exports__.loadImage;
 var __webpack_exports__resizeImage = __webpack_exports__.resizeImage;
 var __webpack_exports__sizeOfImageSource = __webpack_exports__.sizeOfImageSource;
-export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__DocumentSide as DocumentSide, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCapture as FaceCapture, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureResult as IdCaptureResult, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LivenessDetectionSession as LivenessDetectionSession, __webpack_exports__LivenessDetectionSessionEventType as LivenessDetectionSessionEventType, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__LivenessDetectionSessionSettings as LivenessDetectionSessionSettings, __webpack_exports__MockLivenessDetectionSession as MockLivenessDetectionSession, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__TestFaceDetector as TestFaceDetector, __webpack_exports__TestFaceDetectorFactory as TestFaceDetectorFactory, __webpack_exports__VerIDFaceDetector as VerIDFaceDetector, __webpack_exports__VerIDFaceDetectorFactory as VerIDFaceDetectorFactory, __webpack_exports__VerIDLivenessDetectionSessionUI as VerIDLivenessDetectionSessionUI, __webpack_exports__Warning as Warning, __webpack_exports__blobFromImageSource as blobFromImageSource, __webpack_exports__canvasFromImageSource as canvasFromImageSource, __webpack_exports__canvasToBlob as canvasToBlob, __webpack_exports__clamp as clamp, __webpack_exports__cropImage as cropImage, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle, __webpack_exports__generateQRCode as generateQRCode, __webpack_exports__imageFromImageSource as imageFromImageSource, __webpack_exports__loadImage as loadImage, __webpack_exports__resizeImage as resizeImage, __webpack_exports__sizeOfImageSource as sizeOfImageSource };
+export { __webpack_exports__Angle as Angle, __webpack_exports__AngleBearingEvaluation as AngleBearingEvaluation, __webpack_exports__AngleSmoothing as AngleSmoothing, __webpack_exports__Axis as Axis, __webpack_exports__Bearing as Bearing, __webpack_exports__CircularBuffer as CircularBuffer, __webpack_exports__DocumentPages as DocumentPages, __webpack_exports__DocumentSide as DocumentSide, __webpack_exports__Face as Face, __webpack_exports__FaceAlignmentStatus as FaceAlignmentStatus, __webpack_exports__FaceCapture as FaceCapture, __webpack_exports__FaceDetection as FaceDetection, __webpack_exports__FaceExtents as FaceExtents, __webpack_exports__FaceRecognition as FaceRecognition, __webpack_exports__IdCapture as IdCapture, __webpack_exports__IdCaptureEventType as IdCaptureEventType, __webpack_exports__IdCaptureResult as IdCaptureResult, __webpack_exports__IdCaptureSessionSettings as IdCaptureSessionSettings, __webpack_exports__IdCaptureSettings as IdCaptureSettings, __webpack_exports__LivenessCheck as LivenessCheck, __webpack_exports__LivenessDetectionSession as LivenessDetectionSession, __webpack_exports__LivenessDetectionSessionEventType as LivenessDetectionSessionEventType, __webpack_exports__LivenessDetectionSessionResult as LivenessDetectionSessionResult, __webpack_exports__LivenessDetectionSessionSettings as LivenessDetectionSessionSettings, __webpack_exports__MockLivenessDetectionSession as MockLivenessDetectionSession, __webpack_exports__NormalDistribution as NormalDistribution, __webpack_exports__Point as Point, __webpack_exports__Rect as Rect, __webpack_exports__RectSmoothing as RectSmoothing, __webpack_exports__Smoothing as Smoothing, __webpack_exports__TestFaceDetector as TestFaceDetector, __webpack_exports__TestFaceDetectorFactory as TestFaceDetectorFactory, __webpack_exports__TrustmaticLivenessCheck as TrustmaticLivenessCheck, __webpack_exports__VerIDFaceDetector as VerIDFaceDetector, __webpack_exports__VerIDFaceDetectorFactory as VerIDFaceDetectorFactory, __webpack_exports__VerIDLivenessDetectionSessionUI as VerIDLivenessDetectionSessionUI, __webpack_exports__Warning as Warning, __webpack_exports__blobFromImageSource as blobFromImageSource, __webpack_exports__canvasFromImageSource as canvasFromImageSource, __webpack_exports__canvasToBlob as canvasToBlob, __webpack_exports__clamp as clamp, __webpack_exports__cropImage as cropImage, __webpack_exports__emitRxEvent as emitRxEvent, __webpack_exports__estimateFaceAngle as estimateFaceAngle, __webpack_exports__generateQRCode as generateQRCode, __webpack_exports__imageFromImageSource as imageFromImageSource, __webpack_exports__loadImage as loadImage, __webpack_exports__resizeImage as resizeImage, __webpack_exports__sizeOfImageSource as sizeOfImageSource };
 
 //# sourceMappingURL=index.js.map

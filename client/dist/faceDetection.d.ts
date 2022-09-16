@@ -68,6 +68,7 @@ export declare class LivenessDetectionSessionResult {
      */
     readonly faceCaptures: Array<FaceCapture>;
     readonly videoURL: string;
+    livenessScore?: number;
     /**
      * Constructor
      * @param startTime Date that represents the time the session was started

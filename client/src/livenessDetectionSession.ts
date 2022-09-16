@@ -7,6 +7,7 @@ import { LivenessDetectionSessionEventType, LivenessDetectionSessionUI } from ".
 import { Axis, Bearing, FaceAlignmentStatus, FaceRequirements, RecognizableFaceDetectionInput, RecognizableFaceDetectionOutput, Size, FaceRequirementListener, FaceCaptureCallback, RecognizableFace } from "./types"
 import { Angle, AngleBearingEvaluation, AngleSmoothing, CircularBuffer, Rect, RectSmoothing } from "./utils"
 import { FaceDetector } from "./faceDetector"
+import { LivenessCheck } from "./livenessCheck"
 
 /**
  * @category Face detection
@@ -23,6 +24,7 @@ export class LivenessDetectionSession {
     public faceDetector: FaceDetector
     public faceDetectionCallback: FaceCaptureCallback = null
     public faceCaptureCallback: FaceCaptureCallback = null
+    public livenessCheck: LivenessCheck = null
     /**
      * @internal
      */
@@ -77,7 +79,7 @@ export class LivenessDetectionSession {
      * @internal
      */
     get requestedBearing(): Bearing {
-        return this.bearingIterator.value
+        return this.bearingIterator.value || Bearing.STRAIGHT
     }
     /**
      * @internal
@@ -98,13 +100,13 @@ export class LivenessDetectionSession {
             }
         }
         if (constraints.width) {
-            const videoWidth = 480
+            const videoHeight = 720
             if (typeof(getUserMediaOptions.video) === "boolean") {
                 getUserMediaOptions.video = {
-                    "width": videoWidth
+                    "height": videoHeight
                 }
             } else {
-                getUserMediaOptions.video.width = videoWidth
+                getUserMediaOptions.video.height = videoHeight
             }
         }
         const stream = await navigator.mediaDevices.getUserMedia(getUserMediaOptions)
@@ -275,6 +277,26 @@ export class LivenessDetectionSession {
     /**
      * @internal
      */
+    readonly checkLiveness = (result: LivenessDetectionSessionResult): Observable<LivenessDetectionSessionResult> => {
+        if (!this.livenessCheck) {
+            return of(result)
+        }
+        const capture = result.faceCaptures.find(capture => capture.requestedBearing == Bearing.STRAIGHT)
+        if (!capture) {
+            return throwError(() => new Error("Failed to extract face capture"))
+        }
+        return from(this.livenessCheck.checkLiveness(capture.image).then(score => {
+            result.livenessScore = score
+            if (score < 0.5) {
+                throw new Error("Liveness check failed (score "+score.toFixed(2)+")")
+            }
+            return result
+        }))
+    }
+
+    /**
+     * @internal
+     */
     readonly resultFromCaptures = (captures: FaceCapture[]): Observable<LivenessDetectionSessionResult> => {
         let promise: Promise<any> = Promise.resolve()
         if (this.controlFaceCaptures.length > 0) {
@@ -289,6 +311,9 @@ export class LivenessDetectionSession {
             }
             promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response: RecognizableFaceDetectionOutput) => {
                 if (Object.values(response).length == 0) {
+                    return this.settings.controlFaceSimilarityThreshold
+                }
+                if (captures.filter(capture => capture.face && capture.face.template && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED).length == 0) {
                     return this.settings.controlFaceSimilarityThreshold
                 }
                 return this.compareControlFacesToCaptureFaces(response, captures)

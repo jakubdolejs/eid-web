@@ -3,14 +3,41 @@ import { resolve, parse, join } from "https://deno.land/std@0.119.0/path/mod.ts"
 import { engineFactory } from "https://deno.land/x/view_engine@v1.5.0/mod.ts"
 import { parse as parseArgs } from "https://deno.land/std@0.119.0/flags/mod.ts"
 
+let trustmaticSettings: {
+    username: string,
+    password: string,
+    endpoint: string
+}|undefined
+
+if (Deno.env.get("TRUSTMATIC_USERNAME") && Deno.env.get("TRUSTMATIC_PASSWORD") && Deno.env.get("TRUSTMATIC_ENDPOINT")) {
+    trustmaticSettings = {
+        username: Deno.env.get("TRUSTMATIC_USERNAME") as string,
+        password: Deno.env.get("TRUSTMATIC_PASSWORD") as string,
+        endpoint: Deno.env.get("TRUSTMATIC_ENDPOINT") as string
+    }
+}
+
 async function forwardRequest(req: Request): Promise<Response> {
     try {
         const serverUrl = new URL(veridServerUrl)
-        const url = new URL(req.url)
-        url.protocol = serverUrl.protocol
-        url.host = serverUrl.host
-        url.port = serverUrl.port
-        const response = await fetch(url.toString(), {"method": "POST", "body": req.body, "headers": req.headers})
+        let headers: Headers = new Headers(req.headers)
+        let url = new URL(req.url)
+        if (url.pathname == "/check_liveness") {
+            if (trustmaticSettings) {
+                // If we have Trustmatic credentials use them to forward the call to the Trustmatic API
+                url = new URL(trustmaticSettings.endpoint)
+                headers.append("Authorization", "Basic "+btoa(trustmaticSettings.username + ":" + trustmaticSettings.password))
+            } else {
+                // Otherwise return success on liveness check
+                let body: {sessionId: string} = await req.json()
+                return new Response(JSON.stringify({"sessionId": body.sessionId, "hasError": false, "score": 1.0}), {"status": Status.OK, "statusText": STATUS_TEXT.get(Status.OK)})
+            }
+        } else {
+            url.protocol = serverUrl.protocol
+            url.host = serverUrl.host
+            url.port = serverUrl.port
+        }
+        const response = await fetch(url.toString(), {"method": "POST", "body": req.body, "headers": headers})
         return response
     } catch (error) {
         return new Response(JSON.stringify(error), {"status": Status.InternalServerError, "statusText": STATUS_TEXT.get(Status.InternalServerError)})
@@ -19,7 +46,7 @@ async function forwardRequest(req: Request): Promise<Response> {
 
 async function handler(req: Request): Promise<Response> {
     const url = new URL(req.url);
-    if (req.method.toLowerCase() == "post" && (url.pathname == "/" || url.pathname == "" || url.pathname == "/detect_face" || url.pathname == "/compare_faces")) {
+    if (req.method.toLowerCase() == "post" && (url.pathname == "/" || url.pathname == "" || url.pathname == "/detect_face" || url.pathname == "/compare_faces" || url.pathname == "/check_liveness")) {
         return forwardRequest(req)
     } else {
         try {

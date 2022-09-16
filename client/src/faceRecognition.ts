@@ -78,7 +78,7 @@ export class FaceRecognition {
             "mode": "cors",
             "cache": "no-cache",
             "headers": {
-                "Content-Type": "image/jpeg"
+                "Content-Type": body.type
             },
             "body": body
         })

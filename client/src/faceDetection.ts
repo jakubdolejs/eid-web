@@ -81,7 +81,7 @@ export class FaceDetection {
             }),
             map(session.detectFacePresence),
             map(session.detectFaceAlignment),
-            map(session.detectSpoofAttempt),
+            //map(session.detectSpoofAttempt),
             tap((capture: FaceCapture) => {
                 this.onFaceCapture(session, capture)
             }),
@@ -107,6 +107,7 @@ export class FaceDetection {
                 })
             }),
             mergeMap(session.resultFromCaptures),
+            mergeMap(session.checkLiveness),
             (observable: Observable<LivenessDetectionSessionResult>) => this.livenessDetectionSessionResultObservable(observable, session)
         ))
     }
@@ -264,6 +265,8 @@ export class LivenessDetectionSessionResult {
     readonly faceCaptures: Array<FaceCapture>
 
     readonly videoURL: string
+
+    livenessScore?: number
 
     /**
      * Constructor
