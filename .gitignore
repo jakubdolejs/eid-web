@@ -2,3 +2,8 @@ node_modules
 docker-compose.yml
 id_api_config.json
 demo/config.json
+demo_server/demo_client
+demo_server/js
+config.json
+ngrok.log
+.env

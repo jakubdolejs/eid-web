@@ -1,18 +1,11 @@
-FROM node:15.14-alpine3.13 AS builder
+FROM node:16.13.2-alpine3.15 AS builder
 WORKDIR /build
 COPY . .
-WORKDIR /build/client
-RUN npm install
-RUN npx webpack
-WORKDIR /build/demo
-RUN npm install
-RUN npx tsc
+RUN ./workspace/build.sh
 
-FROM python:3
-RUN adduser --disabled-password app
-COPY --from=builder --chown=app:app /build/client /app/client
-COPY --from=builder --chown=app:app /build/demo /app/demo
-WORKDIR /app/demo
-RUN python -m pip install requests
-USER app
-ENTRYPOINT [ "python", "bootstrap.py" ]
+FROM denoland/deno:1.17.3
+COPY --from=builder --chown=deno:deno /build/client /app/client
+COPY --from=builder --chown=deno:deno /build/demo_server /app/demo_server
+USER deno
+WORKDIR /app/demo_server
+ENTRYPOINT [ "deno", "run", "--allow-all", "server.ts" ]

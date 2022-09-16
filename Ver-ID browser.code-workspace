@@ -1,0 +1,102 @@
+{
+    "folders": [
+		{
+			"path": "client"
+		},
+		{
+			"path": "demo_client"
+		},
+		{
+			"path": "demo_server"
+		}
+	],
+	"launch": {
+		"configurations": [
+			{
+				"name": "Launch demo server",
+				"type": "node",
+				"request": "launch",
+				"cwd": "${workspaceFolder:demo_server}",
+				"runtimeExecutable": "deno",
+				"runtimeArgs": ["run", "--inspect-brk", "-A", "server.ts"],
+				"preLaunchTask": "Build all",
+				"attachSimplePort": 9229
+			}
+		],
+		"compounds": []
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Build all",
+				"type": "shell",
+				"command": "pwd"
+			},{
+				"label": "Build library",
+				"type": "shell",
+				"command": "npx",
+				"args": ["webpack"],
+				"options": {
+					"cwd": "${workspaceFolder:client}"
+				},
+				"dependsOn": [
+					"Clean library"
+				]
+			},{
+				"label": "Clean library",
+				"type": "shell",
+				"command": "rm",
+				"args": ["-rf", "${workspaceFolder:client}/dist"]
+			},{
+				"label": "Build demo scripts",
+				"type": "shell",
+				"command": "npx",
+				"args": ["tsc", "--build", "tsconfig.json"],
+				"options": {
+					"cwd": "${workspaceFolder:demo_client}"
+				},
+				"dependsOn": [
+					"Clean demo scripts"
+				]
+			},{
+				"label": "Clean demo scripts",
+				"type": "shell",
+				"command": "rm",
+				"args": ["-rf", "${workspaceFolder:demo_server}/js"]
+			},{
+				"label": "Install demo client dependencies",
+				"type": "shell",
+				"command": "npm",
+				"args": ["install"],
+				"options": {
+					"cwd": "${workspaceFolder:demo_client}"
+				}
+			},{
+				"label": "Install demo server dependencies",
+				"type": "shell",
+				"command": "npm",
+				"args": ["install", "--production"],
+				"options": {
+					"cwd": "${workspaceFolder:demo_server}"
+				}
+			},{
+				"label": "Install library dependencies",
+				"type": "shell",
+				"command": "npm",
+				"args": ["install"],
+				"options": {
+					"cwd": "${workspaceFolder:client}"
+				}
+			},{
+				"label": "Install all dependencies",
+				"type": "shell",
+				"dependsOn": [
+					"Install library dependencies",
+					"Install demo client dependencies",
+					"Install demo server dependencies"
+				]
+			}
+		]
+	}
+}

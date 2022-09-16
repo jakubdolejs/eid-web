@@ -1,28 +1,26 @@
+'use strict';
+
 import { 
     FaceDetection,
     TestFaceDetector,
-    FaceDetector, 
-    FaceDetectorFactory,
+    TestFaceDetectorFactory,
     MockLivenessDetectionSession,
     LivenessDetectionSessionSettings
 } from "../node_modules/@appliedrecognition/ver-id-browser/index.js"
 
-type DemoConfiguration = {serverURL: string}
 
 type PageID = "facecapture" | "result" | "error"
 
-const setup = (config: DemoConfiguration) => {
+(async () => {
     
-    const testFaceDetector = new TestFaceDetector()
-    const faceDetectorFactory: FaceDetectorFactory = {
-        createFaceDetector: (): Promise<FaceDetector> => {
-            return Promise.resolve(testFaceDetector)
-        }
-    }
-    const faceDetection = new FaceDetection(config.serverURL, faceDetectorFactory)
+    const faceDetectorFactory: TestFaceDetectorFactory = new TestFaceDetectorFactory()
+    const testFaceDetector: TestFaceDetector = (await faceDetectorFactory.createFaceDetector()) as TestFaceDetector
+    const faceDetection = new FaceDetection(null, {"createFaceDetector": () => {
+        return Promise.resolve(testFaceDetector)
+    }})
 
     function hideAllPages() {
-        document.querySelectorAll(".page").forEach(item => {
+        document.querySelectorAll(".page").forEach((item: any) => {
             (item as HTMLElement).style.display = "none"
         });
     }
@@ -47,6 +45,13 @@ const setup = (config: DemoConfiguration) => {
     const onStart = () => {
         showPage("facecapture")
         const settings = new LivenessDetectionSessionSettings()
+        if (window["options"]) {
+            for (const opt in window["options"]) {
+                if (opt in settings) {
+                    settings[opt] = window["options"][opt]
+                }
+            }
+        }
         settings.useFrontCamera = false
         const session = new MockLivenessDetectionSession(settings)
         session.faceDetector = testFaceDetector
@@ -56,11 +61,13 @@ const setup = (config: DemoConfiguration) => {
                 showPage("result")
                 if (result.faceCaptures.length > 0) {
                     const img: HTMLImageElement = document.querySelector("#result img")
-                    result.faceCaptures[0].faceImage.then(image => {
+                    img.src = URL.createObjectURL(result.faceCaptures[0].faceImage)
+                    img.decode().then(() => {
                         img.style.display = "inline-block"
-                        img.src = image.src
-                    }).catch(error => {
+                    }).catch(() => {
                         img.style.display = "none"
+                    }).finally(() => {
+                        URL.revokeObjectURL(img.src)
                     })
                 }
             },
@@ -81,14 +88,4 @@ const setup = (config: DemoConfiguration) => {
     });
 
     showPage("facecapture")
-}
-
-window.onload = () => {
-    fetch("/config.json").then(response => {
-        return response.json()
-    }).then((config: DemoConfiguration) => {
-        setup(config)
-    }).catch(error => {
-        alert("Failed to read configuration file")
-    })
-}
+})()

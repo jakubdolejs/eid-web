@@ -1,8 +1,10 @@
+'use strict';
+
 import { Face, FaceCapture } from "./faceDetection"
 import * as faceapi from "face-api.js/build/es6"
 import { estimateFaceAngle } from "./faceAngle"
 import { estimateFaceAngle as estimateFaceAngleNoseTip } from "./faceAngleNoseTip"
-import { Angle, imageFromImageSource, Point, Rect, sizeOfImageSource } from "./utils"
+import { Angle, canvasFromImageSource, Point, Rect, sizeOfImageSource, blobFromImageSource } from "./utils"
 import { ImageSource, Size } from "./types"
 
 /**
@@ -25,13 +27,21 @@ export interface FaceDetectorFactory {
     createFaceDetector(): Promise<FaceDetector>
 }
 
+interface FaceApiFace {
+    landmarks: {
+        positions: {x:number,y:number}[]
+        getLeftEye(): Point[]
+        getRightEye(): Point[]
+    }
+}
+
 /**
  * @category Face detection
  */
 export class VerIDFaceDetector implements FaceDetector {
 
     detectFace = async (source: FaceDetectionSource): Promise<FaceCapture> => {
-        const src = source.element instanceof HTMLVideoElement || source.element instanceof HTMLImageElement || source.element instanceof HTMLCanvasElement ? source.element : await imageFromImageSource(source.element)
+        const src = source.element instanceof HTMLVideoElement || source.element instanceof HTMLImageElement || source.element instanceof HTMLCanvasElement ? source.element : await canvasFromImageSource(source.element)
         const faceApiFace = await faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({"inputSize": 128})).withFaceLandmarks()
         let face: Face
         if (faceApiFace) {
@@ -39,16 +49,16 @@ export class VerIDFaceDetector implements FaceDetector {
         } else {
             face = null
         }
-        const image = await imageFromImageSource(source.element)
-        return new FaceCapture(image, face)
+        const image: Blob = await blobFromImageSource(source.element)
+        return FaceCapture.create(image, face)
     }
 
-    private calculateFaceAngle(face: any): Angle {
-        const landmarks: Point[] = face.landmarks.positions.map(pt => new Point(pt.x, pt.y))
+    private calculateFaceAngle(face: FaceApiFace): Angle {
+        const landmarks: Point[] = face.landmarks.positions.map((pt: {x:number,y:number}) => new Point(pt.x, pt.y))
         return estimateFaceAngle(landmarks, estimateFaceAngleNoseTip)
     }
 
-    private faceApiFaceToVerIDFace(face: any, imageWidth: number, mirrorOutput: boolean = false): Face {
+    private faceApiFaceToVerIDFace(face: FaceApiFace, imageWidth: number, mirrorOutput = false): Face {
         const angle: Angle = this.calculateFaceAngle(face)
         const leftEye: Point[] = face.landmarks.getLeftEye()
         const rightEye: Point[] = face.landmarks.getRightEye()

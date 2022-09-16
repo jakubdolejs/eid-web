@@ -68,12 +68,13 @@ export declare class LivenessDetectionSessionResult {
      */
     readonly faceCaptures: Array<FaceCapture>;
     readonly videoURL: string;
+    livenessScore?: number;
     /**
      * Constructor
      * @param startTime Date that represents the time the session was started
      * @internal
      */
-    constructor(startTime: Date, faceCaptures?: FaceCapture[], videoURL?: string);
+    constructor(startTime: Date, faceCaptures?: FaceCapture[], videoURL?: string | undefined);
 }
 /**
  * Extents of a face within a view
@@ -128,7 +129,7 @@ export declare class LivenessDetectionSessionSettings {
      * Vertical (pitch) threshold where face is considered to be at an angle
      *
      * For example, a value of 15 indicates that a face with pitch -15 and below is oriented up and a face with pitch 15 or above is oriented down
-     * @defaultValue `12`
+     * @defaultValue `10`
      */
     pitchThreshold: number;
     /**
@@ -166,7 +167,7 @@ export declare class LivenessDetectionSessionSettings {
      * Background: Once the initial aligned face is detected the session will start capturing "control" faces at interval set in the `controlFaceCaptureInterval` property until `maxControlFaceCount` faces are collected or the session finishes.
      * These control faces are then compared to the aligned face to ensure that the person performing the liveness detection is the same person as the one on the aligned face.
      * This prevents attacks where a picture is presented to the camera and a live person finishes the liveness detection.
-     * @defaultValue `4.5`
+     * @defaultValue `3.7`
      */
     controlFaceSimilarityThreshold: number;
     /**
@@ -194,7 +195,7 @@ export declare class LivenessDetectionSessionSettings {
     /**
      * Minimum face detection speed in frames per second.
      * If the device cannot detect faces fast enough the session will fail with an error.
-     * @defaultValue `5`
+     * @defaultValue `3.5`
      */
     minFPS: number;
 }
@@ -231,7 +232,7 @@ export declare class FaceCapture {
     /**
      * Image in which the face was detected
      */
-    readonly image: HTMLImageElement;
+    readonly image: Blob;
     /**
      * Face or `null` if no face is detected in the image
      */
@@ -264,18 +265,20 @@ export declare class FaceCapture {
      * `1` means the face is moving straight towards the requested bearing.
      * `0` means the face is moving in the opposite direction than the requested bearing.
      */
-    angleTrajectory: number;
+    angleTrajectory: number | undefined;
     angleDistance: number;
-    private _faceImage?;
     /**
      * Image cropped to the bounds of the detected face
      */
-    get faceImage(): Promise<HTMLImageElement>;
+    readonly faceImage: Blob;
+    readonly imageSize: Size;
+    readonly time: number;
     /**
      * Constructor
      * @param image Image in which the face was detected
      * @param face Face or `null` if no face was detected in the image
      * @internal
      */
-    constructor(image: HTMLImageElement, face: Face);
+    private constructor();
+    static create(image: Blob, face: Face): Promise<FaceCapture>;
 }

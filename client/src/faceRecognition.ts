@@ -1,9 +1,11 @@
+'use strict';
+
 /**
  * Ver-ID face recognition
  * @packageDocumentation
  */
 
-import { blobFromImageSource, imageFromImageSource, Rect, sizeOfImageSource } from "./utils"
+import { blobFromImageSource, Rect, sizeOfImageSource } from "./utils"
 import { RecognizableFace, RecognizableFaceDetectionInput, RecognizableFaceDetectionOutput, Size, ImageSource } from "./types"
 
 /**
@@ -24,30 +26,7 @@ export class FaceRecognition {
     constructor(serviceURL?: string) {
         this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : ""
     }
-
-    private blobFromImage(image: ImageSource, cropRect?: Rect): Promise<Blob> {
-        if (!cropRect) {
-            return blobFromImageSource(image)
-        }
-        return new Promise(async (resolve, reject) => {
-            try {
-                const img = await imageFromImageSource(image)
-                const canvas = document.createElement("canvas")
-                canvas.width = cropRect.width
-                canvas.height = cropRect.height
-                const x = 0 - cropRect.x
-                const y = 0 - cropRect.y
-                const context = canvas.getContext("2d")
-                context.drawImage(img, x, y)
-                canvas.toBlob((blob: Blob) => {
-                    resolve(blob)
-                }, "image/jpeg", 0.95)
-            } catch(error) {
-                reject(error)
-            }
-        })
-    }
-
+    
     public async detectRecognizableFacesInImages(images: RecognizableFaceDetectionInput): Promise<RecognizableFaceDetectionOutput> {
         if (Object.values(images).length == 0) {
             return {}
@@ -60,7 +39,7 @@ export class FaceRecognition {
             const cropRect = this.adjustImageCropRect(imageSize, entry[1].faceRect)
             cropRects[entry[0]] = cropRect
             imageSizes[entry[0]] = imageSize
-            const blob = await this.blobFromImage(entry[1].image, cropRect)
+            const blob = await blobFromImageSource(entry[1].image, cropRect)
             formData.append(entry[0], blob)
         }))
         const response = await fetch(this.serviceURL+"/detect_face", {
@@ -72,7 +51,7 @@ export class FaceRecognition {
         if (response.status != 200) {
             throw new Error("Failed to detect recognizable faces")
         }
-        const json: {name: string, face: RecognizableFace}[] = await response.json()
+        const json: {name: string, face: RecognizableFace}[] = (await response.json()).filter((entry: {face?: RecognizableFace|null}) => entry.face != null)
         const out: RecognizableFaceDetectionOutput = {}
         json.forEach((entry) => {
             const face = entry.face
@@ -93,13 +72,13 @@ export class FaceRecognition {
      * @returns Promise that delivers a face that can be used for face recognition
      */
     public async detectRecognizableFace(image: ImageSource, faceRect?: Rect): Promise<RecognizableFace> {
-        const body: Blob = await this.blobFromImage(image, faceRect)
+        const body: Blob = await blobFromImageSource(image, faceRect)
         const response = await fetch(this.serviceURL+"/detect_face", {
             "method": "POST",
             "mode": "cors",
             "cache": "no-cache",
             "headers": {
-                "Content-Type": "image/jpeg"
+                "Content-Type": body.type
             },
             "body": body
         })
@@ -107,6 +86,9 @@ export class FaceRecognition {
             throw new Error("Failed to extract recognition template from face")
         }
         const json: RecognizableFace = await response.json()
+        if (!json.x || !json.y || !json.width || !json.height || !json.template) {
+            throw new Error("Failed to detect face in image")
+        }
         const imageSize = await sizeOfImageSource(image)
         const cropRect = this.adjustImageCropRect(imageSize, faceRect)
         const facePixelRect = this.faceCoordinatesToPixels(json, imageSize, cropRect)
@@ -162,51 +144,13 @@ export class FaceRecognition {
         return adjustedCropRect
     }
 
-    private cropImage(image: HTMLImageElement, cropRect?: Rect): Promise<[string,Rect]> {
-        return new Promise<[string,Rect]>((resolve, reject) => {
-            const onImageLoaded = () => {
-                try {
-                    const canvas: HTMLCanvasElement = document.createElement("canvas")
-                    if (cropRect) {
-                        cropRect.x = Math.max(cropRect.x - cropRect.width * 0.1, 0)
-                        cropRect.y = Math.max(cropRect.y - cropRect.height * 0.1, 0)
-                        cropRect.width *= 1.2
-                        cropRect.height *= 1.2
-                        if (cropRect.x + cropRect.width > image.width) {
-                            cropRect.width = image.width - cropRect.x
-                        }
-                        if (cropRect.y + cropRect.height > image.height) {
-                            cropRect.height = image.height - cropRect.y
-                        }
-                    } else {
-                        cropRect = new Rect(0, 0, image.width, image.height)
-                    }
-                    canvas.width = cropRect.width
-                    canvas.height = cropRect.height
-                    const ctx: CanvasRenderingContext2D = canvas.getContext("2d")
-                    ctx.drawImage(image, 0-cropRect.x, 0-cropRect.y)
-                    const jpeg: string = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/,"")
-                    resolve([jpeg, cropRect])
-                } catch (error) {
-                    reject(error)
-                }
-            }
-            if (image.complete) {
-                onImageLoaded()
-            } else {
-                image.onload = onImageLoaded
-                image.onerror = reject
-            }
-        })
-    }
-
     /**
      * Compare face templates and return similarity score
      * @param template1 Face template
      * @param template2 Face template
      * @returns Similarity score between the two templates
      */
-    public async compareFaceTemplates(template1: string, template2: string): Promise<number> {
+    public compareFaceTemplates(template1: string, template2: string): Promise<number> {
         if (!template1 || !template2) {
             throw new Error("Missing face templates")
         }

@@ -1,51 +1,115 @@
 # Ver-ID In-Browser Live Face Detection and ID Card Capture
 
-
-
 ## Requirements
-- [NodeJS](https://nodejs.org) 14.6 or newer
-- [Docker](https://docker.com)
+### General
+- [NodeJS](https://nodejs.org) version 16
 - [NPM](https://npmjs.com)
-- [AWS CLI](https://aws.amazon.com/cli)
 - [BlinkID In-browser SDK licence key](https://microblink.com/products/blinkid/in-browser-sdk) (if you're planning to capture ID cards)
 
-## Installation
+### Demo server
+- [Deno](https://deno.land)
+- [Ngrok](https://ngrok.com)
+- [Docker](https://docker.com)*
+- [AWS CLI](https://aws.amazon.com/cli)*
 
+*Only needed when running Ver-ID identity API locally
+
+
+## Building library and demo server
+1. Open the [workspace](./workspace) folder.
+2. Run (substitute `<your Microblink licence key>` for actual value or leave out if not using ID capture):
+
+    ```
+    ./build.sh <your Microblink licence key>
+    ```
+The above script will install the library and demo server dependencies, build the library and demo server browser client libraries and copy the executable code to the appropriate folders.
+
+## Running Ver-ID identity API server
+The demo server will need to reach an instance of Ver-ID identity API server. You can either run this locally using Docker or use a remote server provided by Applied Recognition. The latter must NOT be used in production or in commercial deployments.
+
+### Option 1: Run a local Ver-ID identity API server
 1. Request AWS access key and secret key from Applied Recognition
 2. Create an AWS profile with the credentials from the previous step (substitute ACME for your chosen profile name):
 
     ```
     aws --profile ACME configure
     ```
-1. Log in to AWS ECR repository:
+3. Log in to AWS ECR repository:
 
     ```
     aws --profile ACME ecr get-login-password | docker login -u AWS --password-stdin 725614911995.dkr.ecr.us-east-1.amazonaws.com
     ```
-1. Pull Docker images:
+4. Pull Docker images:
 
     ```
-    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_recauth:1.3.6
-    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_detcv:1.3.6
-    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/id_scanner:1.34.2
-    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/identity_api:1.9.0
+    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_detcv:1.5.0
+    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/id_scanner:2.0.0
+    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/identity_api:1.15.0
+    docker pull 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_models:ca87ef3
     ```
-2. In the project's root folder run:
-    
-    ```
-    npm install
-    ```
-3. Run the configuration script and follow the prompts:
+6. Create a file called .env in the project's root folder and set the content to (substitute `<your Microblink licensee name>` and `<your Microblink licence key>` for actual values):
 
     ```
-    npm start
+    LICENSEE=<your Microblink licensee name>
+    LICENSE_KEY=<your Microblink licence key>
     ```
+5. In the project's root folder run:
+
+    ```
+    docker-compose up -d
+    ```
+6. You can ensure that the Docker containers started successfully with this Docker command:
+
+    ```
+    docker ps
+    ```
+7. Set environment variables:
+
+    ```
+    export VERID_SERVER_URL=http://localhost:8080
+    export PORT=8090
+    ```
+
+### Option 2: Use Applied Recognition's Ver-ID identity API server
+
+1. Set environment variables:
+
+    ```
+    export VERID_SERVER_URL=https://front-back.id-check.ver-id.com
+    export PORT=8090
+    ```
+
+## Run demo server
+
+1. The client-side scripts can only run on a secure connection (https). This is a feature of the [media devices API](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices). To run the server locally we use an [Ngrok](https://ngrok.com) tunnel. 
+
+3. Navigate to the [workspace](./workspace) folder and run substituting `mysubdomain` for your ngrok subdomain:
+
+    ```
+    ./startNgrok.sh 8090 mysubdomain
+    ```
+3. Start the demo server:
+
+    ```
+    deno run --allow-all server.ts
+    ```
+4. You should now be able to access the demo server in a browser on the Ngrok URL, e.g., https://mysubdomain.ngrok.io.
+
+## Debugging in Visual Studio Code
+
+1. Open [./workspace/Ver-ID Browser.code-workspace](./workspace/Ver-ID Browser.code-workspace) in Visual Studio Code.
+
+2. Press Cmd+Shift+D to open the Run and Debug side bar.
+
+3. Select **Launch demo server (workspace)** from the debug toolbar at the top of the side bar and press the "play" button. This will build and launch the demo server.
+
+4. You will be prompted to select Ver-ID identity API server URL, Microblink licence key and later, as Ngrok starts, you will be prompted to enter your Ngrok subdomain.
+
+5. The debugger may pause automatically. If it happens press the play arrow button to continue the debugging.
+
+6. You should now be able to access the demo server in a browser on the Ngrok URL, e.g., https://mysubdomain.ngrok.io.
 
 ## Usage
-
-### Important note
-
-Please note that the client-side scripts can only run on a secure connection (https). This is a feature of the [media devices API](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices). Ensure that you're accessing your pages over https.
 
 ### Running a liveness detection session:
 
@@ -76,9 +140,19 @@ const subscription = faceDetection.captureFaces(livenessDetectionSession).subscr
         // Obtain a face template that can be used for face recognition
         const template = result.faceCaptures[0].face.template
         // Get the captured image cropped to the face bounding box
-        result.faceCaptures[0].faceImage.then((image) => {
-            document.body.appendChild(image)
-        })
+        const faceImageBlob = result.faceCaptures[0].faceImage
+        // Load the blob into an image element
+        const faceImageUrl = URL.createObjectURL(faceImageBlob)
+        const img = document.createElement("img")
+        img.onload = () => {
+            URL.revokeObjectURL(faceImageUrl)
+            document.body.appendChild(img)
+        }
+        img.onerror = () => {
+            URL.revokeObjectURL(faceImageUrl)
+            alert("Failed to load face image")
+        }
+        img.src = faceImageUrl
     },
     error: (error) => {
         // Session failed

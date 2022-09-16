@@ -1,10 +1,13 @@
-import { Observable, from, of } from "rxjs"
+'use strict';
+
+import { Observable, from, of, throwError } from "rxjs"
 import { FaceRecognition } from "./faceRecognition"
 import { Face, LivenessDetectionSessionSettings, FaceCapture, LivenessDetectionSessionResult } from "./faceDetection"
 import { LivenessDetectionSessionEventType, LivenessDetectionSessionUI } from "./faceDetectionUI"
-import { Axis, Bearing, FaceAlignmentStatus, FaceRequirements, RecognizableFaceDetectionInput, RecognizableFaceDetectionOutput, Size, FaceRequirementListener, FaceCaptureCallback } from "./types"
+import { Axis, Bearing, FaceAlignmentStatus, FaceRequirements, RecognizableFaceDetectionInput, RecognizableFaceDetectionOutput, Size, FaceRequirementListener, FaceCaptureCallback, RecognizableFace } from "./types"
 import { Angle, AngleBearingEvaluation, AngleSmoothing, CircularBuffer, Rect, RectSmoothing } from "./utils"
 import { FaceDetector } from "./faceDetector"
+import { LivenessCheck } from "./livenessCheck"
 
 /**
  * @category Face detection
@@ -21,15 +24,16 @@ export class LivenessDetectionSession {
     public faceDetector: FaceDetector
     public faceDetectionCallback: FaceCaptureCallback = null
     public faceCaptureCallback: FaceCaptureCallback = null
+    public livenessCheck: LivenessCheck = null
     /**
      * @internal
      */
-    lastCaptureTime: number = null
+    lastCaptureTime: number | null = null
 
     private readonly faceBuffer: CircularBuffer<Face>
     private faceAlignmentStatus: FaceAlignmentStatus = FaceAlignmentStatus.FOUND
-    private fixTime: number = null
-    private alignedFaceCount: number = 0
+    private fixTime: number | null = null
+    private alignedFaceCount = 0
     private angleHistory: Angle[] = []
     private bearingGenerator: IterableIterator<Bearing>
     private bearingIterator: IteratorResult<unknown, any>
@@ -40,8 +44,8 @@ export class LivenessDetectionSession {
     private readonly faceAngleSmoothing: AngleSmoothing = new AngleSmoothing(5)
     private hasFaceBeenAligned = false
     private mediaRecorder: MediaRecorder
-    private videoType: string
-    private faceRequirementListeners: Set<FaceRequirementListener> = new Set()
+    private videoType: string | undefined
+    private faceRequirementListeners: Set<FaceRequirementListener> = new Set<FaceRequirementListener>()
     private imageSize: Size
     private pendingFaceRequirementsNotificationBearing: Bearing = null
     private videoTrack: MediaStreamTrack
@@ -75,13 +79,13 @@ export class LivenessDetectionSession {
      * @internal
      */
     get requestedBearing(): Bearing {
-        return this.bearingIterator.value
+        return this.bearingIterator.value || Bearing.STRAIGHT
     }
     /**
      * @internal
      */
     readonly setupVideo = async (): Promise<void> => {
-        if (!navigator.mediaDevices) {
+        if (!("mediaDevices" in navigator)) {
             return Promise.reject(new Error("Unsupported browser"))
         }
 
@@ -96,13 +100,13 @@ export class LivenessDetectionSession {
             }
         }
         if (constraints.width) {
-            const videoWidth: number = 480
+            const videoHeight = 720
             if (typeof(getUserMediaOptions.video) === "boolean") {
                 getUserMediaOptions.video = {
-                    "width": videoWidth
+                    "height": videoHeight
                 }
             } else {
-                getUserMediaOptions.video.width = videoWidth
+                getUserMediaOptions.video.height = videoHeight
             }
         }
         const stream = await navigator.mediaDevices.getUserMedia(getUserMediaOptions)
@@ -114,7 +118,7 @@ export class LivenessDetectionSession {
         if ("srcObject" in this.ui.video) {
             this.ui.video.srcObject = stream;
         } else {
-            // @ts-ignore
+            // @ts-ignore: Alternative API
             this.ui.video.src = URL.createObjectURL(stream);
         }
         this.onVideoSize(videoSize)
@@ -215,10 +219,6 @@ export class LivenessDetectionSession {
             }
             this.faceBoundsSmoothing.removeFirstSample()
             this.faceAngleSmoothing.removeFirstSample()
-            const lastFace: Face = this.faceBuffer.lastElement
-            if (lastFace != null && this.hasFaceMovedTooFar(lastFace, capture.image)) {
-                throw new Error("Face moved too far")
-            }
         }
         capture.faceBounds = this.faceBoundsSmoothing.smoothedValue
         capture.faceAngle = this.faceAngleSmoothing.smoothedValue
@@ -265,7 +265,7 @@ export class LivenessDetectionSession {
     readonly createFaceCapture = (capture: FaceCapture): Observable<FaceCapture> => {
         if (capture.requestedBearing == Bearing.STRAIGHT && (!capture.face || !capture.face.template)) {
             const bounds: Rect = capture.face ? capture.face.bounds : null
-            return from(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then(recognizableFace => {
+            return from(this.faceRecognition.detectRecognizableFace(capture.image, bounds).then((recognizableFace: RecognizableFace) => {
                 capture.face.template = recognizableFace.template
                 return capture
             }))
@@ -277,25 +277,55 @@ export class LivenessDetectionSession {
     /**
      * @internal
      */
+    readonly checkLiveness = (result: LivenessDetectionSessionResult): Observable<LivenessDetectionSessionResult> => {
+        if (!this.livenessCheck) {
+            return of(result)
+        }
+        const capture = result.faceCaptures.find(capture => capture.requestedBearing == Bearing.STRAIGHT)
+        if (!capture) {
+            return throwError(() => new Error("Failed to extract face capture"))
+        }
+        return from(this.livenessCheck.checkLiveness(capture.image).then(score => {
+            result.livenessScore = score
+            if (score < 0.5) {
+                throw new Error("Liveness check failed (score "+score.toFixed(2)+")")
+            }
+            return result
+        }))
+    }
+
+    /**
+     * @internal
+     */
     readonly resultFromCaptures = (captures: FaceCapture[]): Observable<LivenessDetectionSessionResult> => {
         let promise: Promise<any> = Promise.resolve()
         if (this.controlFaceCaptures.length > 0) {
             const faceDetectionInput: RecognizableFaceDetectionInput = {}
-            let i = 1
-            this.controlFaceCaptures.forEach(capture => {
-                faceDetectionInput["image_"+(i++)] = {image: capture.image, faceRect: capture.face.bounds}
-            })
+            try {
+                let i = 1
+                this.controlFaceCaptures.forEach(capture => {
+                    faceDetectionInput["image_"+(i++)] = {image: capture.image, faceRect: capture.face.bounds}
+                })
+            } catch (error) {
+                return throwError(() => error)
+            }
             promise = this.faceRecognition.detectRecognizableFacesInImages(faceDetectionInput).then((response: RecognizableFaceDetectionOutput) => {
                 if (Object.values(response).length == 0) {
                     return this.settings.controlFaceSimilarityThreshold
                 }
+                if (captures.filter(capture => capture.face && capture.face.template && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED).length == 0) {
+                    return this.settings.controlFaceSimilarityThreshold
+                }
                 return this.compareControlFacesToCaptureFaces(response, captures)
-            }).then(score => {
+            }).then((score: number) => {
                 if (score < this.settings.controlFaceSimilarityThreshold) {
                     throw new Error("Detected possible spoof attempt")
                 }
             })
         }
+        captures.sort((a: FaceCapture, b: FaceCapture) => {
+            return a.time - b.time
+        })
         if (this.settings.recordSessionVideo && this.mediaRecorder) {
             promise = promise.then(() => this.getVideoURL()).then(videoURL => new LivenessDetectionSessionResult(new Date(this.startTime), captures, videoURL))
         } else {
@@ -341,7 +371,7 @@ export class LivenessDetectionSession {
         if (!this.closed) {
             this.closed = true
             this.cleanup()
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 this.ui.trigger({"type":LivenessDetectionSessionEventType.CLOSE})
             })
         }
@@ -391,7 +421,7 @@ export class LivenessDetectionSession {
                 }
                 fileReader.readAsDataURL(blob)
             }
-            this.mediaRecorder.onerror = (event) => {
+            this.mediaRecorder.onerror = () => {
                 reject(new Error("Failed to record video"))
             }
             this.mediaRecorder.stop()
@@ -419,7 +449,7 @@ export class LivenessDetectionSession {
             const endYaw: number = Math.max(previousAngle.yaw, currentAngle.yaw)
             const yawTolerance: number = this.angleBearingEvaluation.thresholdAngleToleranceForAxis(Axis.YAW)
             let movedTooFast: boolean = this.angleHistory.length > 1
-            for (let angle of this.angleHistory) {
+            for (const angle of this.angleHistory) {
                 if (angle.yaw > startYaw - yawTolerance && angle.yaw < endYaw + yawTolerance) {
                     movedTooFast = false
                 }
@@ -431,7 +461,7 @@ export class LivenessDetectionSession {
 
     private movedOpposite = (): boolean => {
         if (this.previousBearing != this.bearingIterator.value) {
-            for (let angle of this.angleHistory) {
+            for (const angle of this.angleHistory) {
                 if (!this.angleBearingEvaluation.isAngleBetweenBearings(angle, this.previousBearing, this.bearingIterator.value)) {
                     return true
                 }
@@ -443,7 +473,7 @@ export class LivenessDetectionSession {
     private areAllBufferedFacesAligned = (capture: FaceCapture): boolean => {
         for (let i=0; i<this.faceBuffer.length; i++) {
             const f: Face = this.faceBuffer.get(i)
-            if (!this.faceAngleMatchesRequirements(f.angle, this.faceRequirements(capture.image))) {
+            if (!this.faceAngleMatchesRequirements(f.angle, this.faceRequirements(capture.imageSize))) {
                 return false
             }
         }
@@ -457,7 +487,7 @@ export class LivenessDetectionSession {
             this.fixTime = now
         }
         // this.faces.enqueue(face)
-        if (this.faceAlignmentStatus == FaceAlignmentStatus.FOUND && this.isFaceFixedInImageSize(face.bounds, capture.image)) {
+        if (this.faceAlignmentStatus == FaceAlignmentStatus.FOUND && this.isFaceFixedInImageSize(face.bounds, capture.imageSize)) {
             this.fixTime = now
             this.faceAlignmentStatus = FaceAlignmentStatus.FIXED
         } else if (this.fixTime && now - this.fixTime > this.settings.pauseDuration && this.faceBuffer.isFull) {
@@ -476,14 +506,14 @@ export class LivenessDetectionSession {
         }
     }
 
-    private hasFaceMovedTooFar = (face: Face, imageSize: Size): boolean => {
+    private hasFaceMovedTooFar = (faceAngle: Angle, faceBounds: Rect, imageSize: Size): boolean => {
         const requestedAngle: number = this.angleBearingEvaluation.angleForBearing(this.bearingIterator.value).screenAngle
-        const detectedAngle: number = face.angle.screenAngle
+        const detectedAngle: number = faceAngle.screenAngle
         const deg45: number = 45 * (Math.PI/180)
-        const inset: number = Math.min(imageSize.width, imageSize.height) * 0.05
+        const inset: number = 0 - Math.min(imageSize.width, imageSize.height) * 0.05
         const rect: Rect = new Rect(0, 0, imageSize.width, imageSize.height)
         rect.inset(inset, inset)
-        return rect.contains(face.bounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45
+        return rect.contains(faceBounds) && detectedAngle > requestedAngle - deg45 && detectedAngle < requestedAngle + deg45
     }
 
     private recordAngleDistanceAndTrajectory = (capture: FaceCapture): void => {
@@ -514,9 +544,9 @@ export class LivenessDetectionSession {
         this.notifyFaceRequirementListeners(nextBearing)
         yield nextBearing
         for (let i=1; i<this.settings.faceCaptureCount; i++) {
-            let availableBearings = this.settings.bearings.filter(bearing => bearing != nextBearing && this.angleBearingEvaluation.angleForBearing(bearing).yaw != this.angleBearingEvaluation.angleForBearing(nextBearing).yaw)
+            let availableBearings = this.settings.bearings.filter((bearing: Bearing) => bearing != nextBearing && this.angleBearingEvaluation.angleForBearing(bearing).yaw != this.angleBearingEvaluation.angleForBearing(nextBearing).yaw)
             if (availableBearings.length == 0) {
-                availableBearings = this.settings.bearings.filter(bearing => bearing != nextBearing)
+                availableBearings = this.settings.bearings.filter((bearing: Bearing) => bearing != nextBearing)
             }
             if (availableBearings.length > 0) {
                 nextBearing = this.selectNextBearing(availableBearings)
@@ -535,7 +565,7 @@ export class LivenessDetectionSession {
             this.pendingFaceRequirementsNotificationBearing = bearing
             return
         }
-        for (let listener of this.faceRequirementListeners) {
+        for (const listener of this.faceRequirementListeners) {
             listener.onChange(this.faceRequirements(this.imageSize, bearing))
         }
     }
@@ -546,9 +576,9 @@ export class LivenessDetectionSession {
  */
 export class MockLivenessDetectionSession extends LivenessDetectionSession {
 
-    readonly setupVideo = async (): Promise<void> => {
-        const videoURL: string = "/images/camera_placeholder.mp4"
-        return new Promise(async (resolve, reject) => {
+    readonly setupVideo = (): Promise<void> => {
+        const videoURL = "/images/camera_placeholder.mp4"
+        return new Promise((resolve, reject) => {
             this.ui.video.onloadedmetadata = () => {
                 const videoSize = {
                     width: this.ui.video.videoWidth,
@@ -562,21 +592,20 @@ export class MockLivenessDetectionSession extends LivenessDetectionSession {
             this.ui.video.onerror = () => {
                 reject(new Error("Failed to load video from "+videoURL))
             }
-            try {
-                const response: Response = await fetch(videoURL)
-                if (response.status != 200) {
+            fetch(videoURL).then(response => {
+                if (!response.ok) {
                     throw new Error("Received status "+response.status+" when fetching video")
                 }
-                const videoBlob: Blob = await response.blob()
+                return response.blob()
+            }).then(videoBlob => {
                 if ("srcObject" in this.ui.video) {
                     this.ui.video.srcObject = videoBlob;
                 } else {
-                    // @ts-ignore
+                    // @ts-ignore: Alternative API
                     this.ui.video.src = URL.createObjectURL(videoBlob);
                 }
-            } catch (error) {
-                reject(error)
-            }
+                resolve()
+            }).catch(reject)
         })
     }
 }

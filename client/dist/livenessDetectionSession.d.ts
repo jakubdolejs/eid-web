@@ -5,6 +5,7 @@ import { LivenessDetectionSessionUI } from "./faceDetectionUI";
 import { Bearing, FaceRequirements, Size, FaceRequirementListener, FaceCaptureCallback } from "./types";
 import { Angle, Rect } from "./utils";
 import { FaceDetector } from "./faceDetector";
+import { LivenessCheck } from "./livenessCheck";
 /**
  * @category Face detection
  */
@@ -20,10 +21,11 @@ export declare class LivenessDetectionSession {
     faceDetector: FaceDetector;
     faceDetectionCallback: FaceCaptureCallback;
     faceCaptureCallback: FaceCaptureCallback;
+    livenessCheck: LivenessCheck;
     /**
      * @internal
      */
-    lastCaptureTime: number;
+    lastCaptureTime: number | null;
     private readonly faceBuffer;
     private faceAlignmentStatus;
     private fixTime;
@@ -83,6 +85,10 @@ export declare class LivenessDetectionSession {
      * @internal
      */
     readonly createFaceCapture: (capture: FaceCapture) => Observable<FaceCapture>;
+    /**
+     * @internal
+     */
+    readonly checkLiveness: (result: LivenessDetectionSessionResult) => Observable<LivenessDetectionSessionResult>;
     /**
      * @internal
      */

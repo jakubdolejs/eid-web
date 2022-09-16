@@ -16,7 +16,6 @@ export declare class IdCapture {
     private createBlinkIdCombinedRecognizer;
     private createBlinkIdRecognizer;
     private createBarcodeRecognizer;
-    private imageDataToImage;
     private convertToIdCaptureResult;
     private getResultFromRecognizer;
     private getRecognizerName;

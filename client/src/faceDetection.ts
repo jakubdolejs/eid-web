@@ -1,3 +1,4 @@
+'use strict';
 /**
  * Ver-ID face detection
  * @packageDocumentation
@@ -5,7 +6,7 @@
 
 import { Observable, throwError, Subscription, Subscriber } from "rxjs"
 import { map, filter, take, tap, mergeMap, toArray } from "rxjs/operators"
-import { Angle, Rect, emitRxEvent } from "./utils"
+import { Angle, Rect, emitRxEvent, cropImage, sizeOfImageSource } from "./utils"
 import { FaceRecognition } from "./faceRecognition"
 import { Size, Bearing, FaceRequirementListener, FaceAlignmentStatus, FaceCaptureCallback, ImageSource } from "./types"
 import { LivenessDetectionSessionEventType, LivenessDetectionSessionUI, VerIDLivenessDetectionSessionUI } from "./faceDetectionUI"
@@ -63,6 +64,7 @@ export class FaceDetection {
         try {
             this.checkLivenessSessionAvailability()
         } catch (error) {
+            session.close()
             return throwError(() => error)
         }
         if (session.isClosed) {
@@ -79,7 +81,7 @@ export class FaceDetection {
             }),
             map(session.detectFacePresence),
             map(session.detectFaceAlignment),
-            map(session.detectSpoofAttempt),
+            //map(session.detectSpoofAttempt),
             tap((capture: FaceCapture) => {
                 this.onFaceCapture(session, capture)
             }),
@@ -88,14 +90,11 @@ export class FaceDetection {
             }),
             mergeMap(session.createFaceCapture),
             tap((faceCapture: FaceCapture) => {
-                try {
-                    setTimeout(() => {
-                        if (session.faceCaptureCallback) {
-                            session.faceCaptureCallback(faceCapture)
-                        }
-                    })
-                } catch (error) {
-                }
+                Promise.resolve().then(() => {
+                    if (session.faceCaptureCallback) {
+                        session.faceCaptureCallback(faceCapture)
+                    }
+                })
                 if (new Date().getTime() - session.startTime > session.settings.maxDuration * 1000) {
                     throw new Error("Session timed out")
                 }
@@ -103,14 +102,12 @@ export class FaceDetection {
             take(session.settings.faceCaptureCount),
             toArray(),
             tap(() => {
-                try {
-                    setTimeout(() => {
-                        session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
-                    })
-                } catch (error) {
-                }
+                Promise.resolve().then(() => {
+                    session.ui.trigger({"type":LivenessDetectionSessionEventType.CAPTURE_FINISHED})
+                })
             }),
             mergeMap(session.resultFromCaptures),
+            mergeMap(session.checkLiveness),
             (observable: Observable<LivenessDetectionSessionResult>) => this.livenessDetectionSessionResultObservable(observable, session)
         ))
     }
@@ -134,73 +131,61 @@ export class FaceDetection {
     }
 
     private onFaceCapture = (session: LivenessDetectionSession, capture: FaceCapture): void => {
-        try {
-            if (capture.face) {
-                const now = new Date().getTime()
-                if (session.lastCaptureTime == null && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
-                    session.lastCaptureTime = now
-                } else if (session.lastCaptureTime != null && (capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED || now - session.lastCaptureTime >= session.settings.controlFaceCaptureInterval)) {
-                    session.lastCaptureTime = now
-                    session.controlFaceCaptures.push(capture)
-                    if (session.controlFaceCaptures.length > session.settings.maxControlFaceCount) {
-                        session.controlFaceCaptures.shift()
-                    }
+        if (capture.face) {
+            const now = new Date().getTime()
+            if (session.lastCaptureTime == null && capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED) {
+                session.lastCaptureTime = now
+            } else if (session.lastCaptureTime != null && (capture.faceAlignmentStatus == FaceAlignmentStatus.ALIGNED || now - session.lastCaptureTime >= session.settings.controlFaceCaptureInterval)) {
+                session.lastCaptureTime = now
+                session.controlFaceCaptures.push(capture)
+                if (session.controlFaceCaptures.length > session.settings.maxControlFaceCount) {
+                    session.controlFaceCaptures.shift()
                 }
             }
-            setTimeout(() => {
-                session.ui.trigger({"type": LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture})
-                if (session.faceDetectionCallback) {
-                    session.faceDetectionCallback(capture)
-                }
-            })
-        } catch (error) {
-            
         }
+        Promise.resolve().then(() => {
+            session.ui.trigger({"type": LivenessDetectionSessionEventType.FACE_CAPTURED, "capture": capture})
+            if (session.faceDetectionCallback) {
+                session.faceDetectionCallback(capture)
+            }
+        })
     }
 
     private onVideoPlay(session: LivenessDetectionSession, subscriber: Subscriber<FaceCapture>): () => void {
         return async () => {
+            session.ui.trigger({"type": LivenessDetectionSessionEventType.LOADED})
             let frameCount = 0
             let fps: number | null = null
-            const detectFaceAfterInterval = (interval: number): Promise<FaceCapture> => {
-                return new Promise((resolve, reject) => {
-                    setTimeout(async () => {
-                        try {
-                            const startTime = new Date().getTime()
-                            const faceCapture = await session.faceDetector.detectFace({element: session.ui.video, mirrored: session.settings.useFrontCamera})
-                            if (frameCount > 2 && frameCount < 10) {
-                                const detectionDuration = new Date().getTime() - startTime
-                                const currentFPS = 1000 / detectionDuration
-                                if (fps === null) {
-                                    fps = currentFPS
-                                } else {
-                                    fps += currentFPS
-                                    fps /= 2
-                                }
-                                if (fps < session.settings.minFPS) {
-                                    reject(new Error("Device too slow: "+fps.toFixed(1)+" FPS (required "+session.settings.minFPS+" FPS)"))
-                                    return
-                                }
-                            } else {
-                                fps = null
-                            }
-                            frameCount ++
-                            resolve(faceCapture)
-                        } catch (error) {
-                            reject(error)
-                        }
-                    }, interval)
-                })
+            const detectFace = async (): Promise<FaceCapture> => {
+                const startTime = new Date().getTime()
+                const faceCapture = await session.faceDetector.detectFace({element: session.ui.video, mirrored: session.settings.useFrontCamera})
+                if (frameCount > 2 && frameCount < 10) {
+                    const detectionDuration = new Date().getTime() - startTime
+                    const currentFPS = 1000 / detectionDuration
+                    if (fps === null) {
+                        fps = currentFPS
+                    } else {
+                        fps += currentFPS
+                        fps /= 2
+                    }
+                    if (fps < session.settings.minFPS) {
+                        throw new Error("Device too slow: "+fps.toFixed(1)+" FPS (required "+session.settings.minFPS+" FPS)")
+                    }
+                } else {
+                    fps = null
+                }
+                frameCount ++
+                return faceCapture
             }
 
             async function* detectSingleFace() {
                 while (!subscriber.closed && !session.ui.video.paused && !session.ui.video.ended) {
-                    yield await detectFaceAfterInterval(0)
+                    yield await detectFace()
                 }
             }
 
             try {
-                for await (let faceCapture of detectSingleFace()) {
+                for await (const faceCapture of detectSingleFace()) {
                     if (subscriber.closed) {
                         break
                     }
@@ -215,7 +200,7 @@ export class FaceDetection {
     }
 
     private liveFaceCapture(session: LivenessDetectionSession): Observable<FaceCapture> {
-        return new Observable<FaceCapture>(subscriber => {
+        return new Observable<FaceCapture>((subscriber: Subscriber<FaceCapture>) => {
             this.createFaceDetectorPromise.then(faceDetector => {
                 session.faceDetector = faceDetector
                 session.ui.video.onplay = this.onVideoPlay(session, subscriber)
@@ -236,7 +221,7 @@ export class FaceDetection {
     }
 
     private livenessDetectionSessionResultObservable = (observable: Observable<LivenessDetectionSessionResult>, session: LivenessDetectionSession): Observable<LivenessDetectionSessionResult> => {
-        return new Observable<LivenessDetectionSessionResult>(subscriber => {
+        return new Observable<LivenessDetectionSessionResult>((subscriber: Subscriber<LivenessDetectionSessionResult>) => {
             const subcription: Subscription = observable.subscribe({
                 next: (val: LivenessDetectionSessionResult) => {
                     emitRxEvent(subscriber, {"type": "next", "value": val})
@@ -281,12 +266,14 @@ export class LivenessDetectionSessionResult {
 
     readonly videoURL: string
 
+    livenessScore?: number
+
     /**
      * Constructor
      * @param startTime Date that represents the time the session was started
      * @internal
      */
-    constructor(startTime: Date, faceCaptures?: FaceCapture[], videoURL?: string) {
+    constructor(startTime: Date, faceCaptures?: FaceCapture[], videoURL?: string | undefined) {
         this.startTime = startTime
         this.faceCaptures = faceCaptures ? faceCaptures : []
         this.duration = (new Date().getTime() - startTime.getTime())/1000
@@ -330,43 +317,43 @@ export class LivenessDetectionSessionSettings {
      * Whether to use the device's front-facing (selfie) camera
      * @defaultValue `true`
      */
-    useFrontCamera: boolean = true
+    useFrontCamera = true
     /**
      * How many face captures should be collected in a session
      * @defaultValue `2`
      */
-    faceCaptureCount: number = 2
+    faceCaptureCount = 2
     /**
      * Maximum session duration (seconds)
      * @defaultValue `30`
      */
-    maxDuration: number = 30
+    maxDuration = 30
     /**
      * Horizontal (yaw) threshold where face is considered to be at an angle
      * 
      * For example, a value of 15 indicates that a face with yaw -15 and below is oriented left and a face with yaw 15 or above is oriented right
      * @defaultValue `28`
      */
-    yawThreshold: number = 28
+    yawThreshold = 28
     /**
      * Vertical (pitch) threshold where face is considered to be at an angle
      *
      * For example, a value of 15 indicates that a face with pitch -15 and below is oriented up and a face with pitch 15 or above is oriented down
-     * @defaultValue `12`
+     * @defaultValue `10`
      */
-    pitchThreshold: number = 12
+    pitchThreshold = 10
     /**
      * Number of faces to collect per face capture
      * @defaultValue `2`
      */
-    faceCaptureFaceCount: number = 2
+    faceCaptureFaceCount = 3
     /**
      * When the face is fixed the face detection will pause to allow enough time for the user to read the on-screen instructions
      * 
      * Decreasing the pause time will shorten the session but may lead to a frustrating user experience if the user isn't allowed enough time to read the prompts
      * @defaultValue `0.5`
      */
-    pauseDuration: number = 0.5
+    pauseDuration = 0.5
     /**
      * Where a face is expected in relation to the camera frame
      * @defaultValue `FaceExtents(0.65, 0.85)`
@@ -386,29 +373,29 @@ export class LivenessDetectionSessionSettings {
      * Note that some older browsers may not be capable of recording video
      * @defaultValue `false`
      */
-    recordSessionVideo: boolean = false
+    recordSessionVideo = false
 
     /**
      * Background: Once the initial aligned face is detected the session will start capturing "control" faces at interval set in the `controlFaceCaptureInterval` property until `maxControlFaceCount` faces are collected or the session finishes. 
      * These control faces are then compared to the aligned face to ensure that the person performing the liveness detection is the same person as the one on the aligned face.
      * This prevents attacks where a picture is presented to the camera and a live person finishes the liveness detection.
-     * @defaultValue `4.5`
+     * @defaultValue `3.7`
      */
-    controlFaceSimilarityThreshold: number = 4.5
+    controlFaceSimilarityThreshold = 3.7
 
     /**
      * Interval at which to capture "control" faces. 
      * See `controlFaceSimilarityThreshold` for an explanation.
      * @defaultValue `500`
      */
-    controlFaceCaptureInterval: number = 500
+    controlFaceCaptureInterval = 500
 
     /**
      * Number of "control" faces to capture during a session.
      * See `controlFaceSimilarityThreshold` for an explanation.
      * @defaultValue `4`
      */
-    maxControlFaceCount: number = 4
+    maxControlFaceCount = 4
 
     /**
      * Set your own function if you wish to supply your own graphical user interface for the session.
@@ -437,9 +424,9 @@ export class LivenessDetectionSessionSettings {
     /**
      * Minimum face detection speed in frames per second.
      * If the device cannot detect faces fast enough the session will fail with an error.
-     * @defaultValue `5`
+     * @defaultValue `3.5`
      */
-    minFPS: number = 5
+    minFPS = 3.5
 }
 
 /**
@@ -480,7 +467,7 @@ export class FaceCapture {
     /**
      * Image in which the face was detected
      */
-    readonly image: HTMLImageElement
+    readonly image: Blob
     /**
      * Face or `null` if no face is detected in the image
      */
@@ -514,37 +501,16 @@ export class FaceCapture {
      * `1` means the face is moving straight towards the requested bearing. 
      * `0` means the face is moving in the opposite direction than the requested bearing.
      */
-    angleTrajectory: number
+    angleTrajectory: number | undefined
 
-    angleDistance: number = 0
+    angleDistance = 0
 
-    private _faceImage?: HTMLImageElement = null
     /**
      * Image cropped to the bounds of the detected face
      */
-    get faceImage(): Promise<HTMLImageElement> {
-        if (this._faceImage) {
-            return Promise.resolve(this._faceImage)
-        }
-        return new Promise((resolve, reject) => {
-            const drawFaceImage = () => {
-                this._faceImage = new Image()
-                let canvas = document.createElement("canvas")
-                canvas.width = this.face.bounds.width
-                canvas.height = this.face.bounds.height
-                let ctx = canvas.getContext("2d")
-                ctx.drawImage(this.image, this.face.bounds.x, this.face.bounds.y, this.face.bounds.width, this.face.bounds.height, 0, 0, this.face.bounds.width, this.face.bounds.height)
-                this._faceImage.src = canvas.toDataURL()
-                resolve(this._faceImage)
-            }
-            if (this.image.complete) {
-                drawFaceImage()
-            } else {
-                this.image.onload = drawFaceImage
-                this.image.onerror = reject
-            }
-        })
-    }
+    readonly faceImage: Blob
+    readonly imageSize: Size
+    readonly time: number
 
     /**
      * Constructor
@@ -552,8 +518,17 @@ export class FaceCapture {
      * @param face Face or `null` if no face was detected in the image
      * @internal
      */
-    constructor(image: HTMLImageElement, face: Face) {
+    private constructor(image: Blob, face: Face, imageSize: Size, faceImage: Blob) {
         this.image = image
         this.face = face
+        this.imageSize = imageSize
+        this.faceImage = faceImage
+        this.time = Date.now()
+    }
+
+    static async create(image: Blob, face: Face): Promise<FaceCapture> {
+        const faceImage = await cropImage(image, face ? face.bounds : null)
+        const imageSize = await sizeOfImageSource(image)
+        return new FaceCapture(image, face, imageSize, faceImage)
     }
 }

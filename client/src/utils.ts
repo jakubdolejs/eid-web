@@ -1,7 +1,8 @@
+'use strict';
+
 import { LivenessDetectionSessionSettings } from "./faceDetection"
 import { Axis, Bearing, ImageSource, Size } from "./types"
 import { Subscriber } from "rxjs"
-import { FaceDetectionSource } from "./faceDetector"
 
 /**
  * Circular (ring) buffer implementation
@@ -670,16 +671,17 @@ export function clamp(a: number, limit: number): number {
  * @returns 
  * @internal
  */
-export function blobFromImageSource(imageSource: ImageSource): Promise<Blob> {
-    if (imageSource instanceof Blob) {
-        return Promise.resolve(imageSource as Blob)
+export async function blobFromImageSource(imageSource: ImageSource, cropRect?: Rect): Promise<Blob> {
+    if ((imageSource instanceof Blob) && !cropRect) {
+        return Promise.resolve(imageSource)
     }
-    return new Promise(async (resolve) => {
-        const canvas = await canvasFromImageSource(imageSource)
-        canvas.toBlob(blob => {
-            resolve(blob)
-        })
-    })
+    let canvas = await canvasFromImageSource(imageSource)
+    if (cropRect) {
+        const context = canvas.getContext("2d")
+        const imageData = context.getImageData(cropRect.x, cropRect.y, cropRect.width, cropRect.height)
+        canvas = await canvasFromImageSource(imageData)
+    }
+    return canvasToBlob(canvas)
 }
 
 /**
@@ -692,7 +694,7 @@ export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
         return Promise.reject(new Error("Invalid canvas"))
     }
     return new Promise((resolve) => {
-        canvas.toBlob(blob => {
+        canvas.toBlob((blob: Blob) => {
             resolve(blob)
         })
     })
@@ -706,7 +708,7 @@ export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
  * @internal
  */
 export async function resizeImage(image: ImageData, maxSize: number): Promise<ImageData> {
-    let scale: number = Math.min(maxSize / Math.max(image.width, image.height), 1)
+    const scale: number = Math.min(maxSize / Math.max(image.width, image.height), 1)
     if (scale <= 1) {
         return image
     }
@@ -720,9 +722,7 @@ export async function resizeImage(image: ImageData, maxSize: number): Promise<Im
     try {
         const width = image.width * scale
         const height = image.height * scale
-        const img = new Image()
-        img.src = imgSrc
-        await img.decode()
+        const img = await loadImage(imgSrc)
         canvas = document.createElement("canvas")
         canvas.width = width
         canvas.height = height
@@ -734,50 +734,46 @@ export async function resizeImage(image: ImageData, maxSize: number): Promise<Im
     }
 }
 
+export async function cropImage(imageSource: ImageSource, cropRect?: Rect): Promise<Blob> {
+    const canvas = await canvasFromImageSource(imageSource, cropRect)
+    return canvasToBlob(canvas)
+}
+
 /**
  * 
  * @param imageSource 
  * @returns 
  * @internal
  */
-export async function canvasFromImageSource(imageSource: ImageSource): Promise<HTMLCanvasElement> {
+export async function canvasFromImageSource(imageSource: ImageSource, cropRect?: Rect): Promise<HTMLCanvasElement> {
     if (imageSource instanceof HTMLCanvasElement) {
         return imageSource
     }
     const imageSize = await sizeOfImageSource(imageSource)
+    if (!cropRect) {
+        cropRect = new Rect(0, 0, imageSize.width, imageSize.height)
+    }
     const canvas = document.createElement("canvas")
-    canvas.width = imageSize.width
-    canvas.height = imageSize.height
+    canvas.width = cropRect.width
+    canvas.height = cropRect.height
     const context = canvas.getContext("2d")
     if (imageSource instanceof ImageData) {
-        context.putImageData(imageSource, 0, 0)
+        context.putImageData(imageSource, 0-cropRect.x, 0-cropRect.y)
     } else if (imageSource instanceof HTMLImageElement || imageSource instanceof HTMLVideoElement) {
-        context.drawImage(imageSource, 0, 0)
+        context.drawImage(imageSource, 0-cropRect.x, 0-cropRect.y)
     } else if (imageSource instanceof Blob) {
-        return new Promise((resolve, reject) => {
-            const img = new Image()
-            img.onload = () => {
-                context.drawImage(img, 0, 0)
-                URL.revokeObjectURL(img.src)
-                resolve(canvas)
-            }
-            img.onerror = () => {
-                reject(new Error("Failed to load image"))
-            }
-            img.src = URL.createObjectURL(imageSource)
-        })
+        const src = URL.createObjectURL(imageSource)
+        try {
+            const img = await loadImage(src)
+            context.drawImage(img, 0-cropRect.x, 0-cropRect.y)
+        } finally {
+            URL.revokeObjectURL(src)
+        }
+        return canvas
     } else if (typeof imageSource == "string") {
-        return new Promise((resolve, reject) => {
-            const img = new Image()
-            img.onload = () => {
-                context.drawImage(img, 0, 0)
-                resolve(canvas)
-            }
-            img.onerror = () => {
-                reject(new Error("Failed to load image"))
-            }
-            img.src = imageSource
-        })
+        const img = await loadImage(imageSource)
+        context.drawImage(img, 0-cropRect.x, 0-cropRect.y)
+        return canvas
     } else {
         throw new Error("Invalid image source")
     }
@@ -789,22 +785,24 @@ export async function canvasFromImageSource(imageSource: ImageSource): Promise<H
  * @param imageSource
  * @returns 
  * @internal
+ * @deprecated
  */
-export function imageFromImageSource(imageSource: ImageSource): Promise<HTMLImageElement> {
+export async function imageFromImageSource(imageSource: ImageSource): Promise<HTMLImageElement> {
     if (imageSource instanceof HTMLImageElement) {
         return Promise.resolve(imageSource)
     }
-    return new Promise(async (resolve, reject) => {
-        const blob = await blobFromImageSource(imageSource)
-        const img = new Image()
-        img.onload = () => {
-            URL.revokeObjectURL(img.src)
+    const blob = await blobFromImageSource(imageSource)
+    return new Promise((resolve, reject) => {
+        const img = document.createElement("img")
+        const reader = new FileReader()
+        reader.onload = () => {
+            img.src = reader.result as string
             resolve(img)
         }
-        img.onerror = () => {
+        reader.onerror = () => {
             reject(new Error("Failed to load image"))
         }
-        img.src = URL.createObjectURL(blob)
+        reader.readAsDataURL(blob)
     })
 }
 
@@ -814,59 +812,57 @@ export function imageFromImageSource(imageSource: ImageSource): Promise<HTMLImag
  * @returns 
  * @internal
  */
-export function sizeOfImageSource(imageSource: ImageSource): Promise<Size> {
+export async function sizeOfImageSource(imageSource: ImageSource): Promise<Size> {
     if (imageSource instanceof HTMLCanvasElement) {
-        return Promise.resolve({
+        return {
             "width": imageSource.width,
             "height": imageSource.height
-        })
+        }
     }
     if (imageSource instanceof ImageData) {
-        return Promise.resolve({
+        return {
             "width": imageSource.width,
             "height": imageSource.height
-        })
+        }
     }
     if (imageSource instanceof HTMLVideoElement) {
-        return Promise.resolve({
+        return {
             "width": imageSource.videoWidth,
             "height": imageSource.videoHeight
-        })
+        }
+    }
+    const onImageSize = (image: HTMLImageElement): Size => {
+        return {
+            "width": image.naturalWidth,
+            "height": image.naturalHeight
+        }
+    }
+    if (imageSource instanceof HTMLImageElement) {
+        await (imageSource as HTMLImageElement).decode()
+        return onImageSize(imageSource as HTMLImageElement)
+    } else if (imageSource instanceof Blob) {
+        const src = URL.createObjectURL(imageSource as Blob)
+        try {
+            const img = await loadImage(src)
+            return onImageSize(img)
+        } finally {
+            URL.revokeObjectURL(src)
+        }
+    } else if (typeof imageSource == "string") {
+        const img = await loadImage(imageSource)
+        return onImageSize(img)
+    }
+}
+
+export function loadImage(src: string, image?: HTMLImageElement): Promise<HTMLImageElement> {
+    if (!image) {
+        image = document.createElement("img")
     }
     return new Promise((resolve, reject) => {
-        const onError = () => {
-            reject(new Error("Failed to load image"))
+        image.onload = () => {
+            resolve(image)
         }
-        const onImageSize = (image: HTMLImageElement) => {
-            resolve({
-                "width": image.naturalWidth,
-                "height": image.naturalHeight
-            })
-        }
-        if (imageSource instanceof HTMLImageElement) {
-            if (imageSource.complete) {
-                onImageSize(imageSource)
-            } else {
-                imageSource.onload = () => {
-                    onImageSize(imageSource)
-                }
-                imageSource.onerror = onError
-            }
-        } else if (imageSource instanceof Blob) {
-            const img = new Image()
-            img.onload = () => {
-                URL.revokeObjectURL(img.src)
-                onImageSize(img)
-            }
-            img.onerror = onError
-            img.src = URL.createObjectURL(imageSource)
-        } else if (typeof imageSource == "string") {
-            const img = new Image()
-            img.onload = () => {
-                onImageSize(img)
-            }
-            img.onerror = onError
-            img.src = imageSource
-        }
+        image.onerror = reject
+        image.src = src
     })
 }

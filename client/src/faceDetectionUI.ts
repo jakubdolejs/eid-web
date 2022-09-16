@@ -1,6 +1,8 @@
+'use strict';
+
 import { LivenessDetectionSessionSettings, FaceCapture } from "./faceDetection"
 import { FaceAlignmentStatus } from "./types"
-import { Rect } from "./utils"
+import { Rect, sizeOfImageSource } from "./utils"
 
 /**
  * @category Face detection
@@ -22,6 +24,7 @@ export type LivenessDetectionSessionBaseEvent = {
  * @category Face detection
  */
 export enum LivenessDetectionSessionEventType {
+    LOADED = "face detection loaded",
     FACE_CAPTURED = "face captured",
     CAPTURE_FINISHED = "capture finished",
     CLOSE = "close",
@@ -32,7 +35,7 @@ export enum LivenessDetectionSessionEventType {
  * @category Face detection
  */
 export type LivenessDetectionSessionSimpleEvent = {
-    type: LivenessDetectionSessionEventType.CLOSE | LivenessDetectionSessionEventType.CANCEL | LivenessDetectionSessionEventType.CAPTURE_FINISHED
+    type: LivenessDetectionSessionEventType.LOADED | LivenessDetectionSessionEventType.CLOSE | LivenessDetectionSessionEventType.CANCEL | LivenessDetectionSessionEventType.CAPTURE_FINISHED
 } & LivenessDetectionSessionBaseEvent
 
 /**
@@ -60,7 +63,7 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
     private eventListeners: {[k in LivenessDetectionSessionEventType]?: (event: LivenessDetectionSessionEvent) => void} = {}
     private hasFaceBeenAligned = false
     private processingIndicator: HTMLDivElement
-    readonly video: HTMLVideoElement
+    private _video: HTMLVideoElement
     readonly settings: LivenessDetectionSessionSettings
 
     constructor(settings: LivenessDetectionSessionSettings) {
@@ -71,6 +74,7 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         this.cameraOverlayCanvas.style.left = "0px"
         this.cameraOverlayCanvas.style.top = "0px"
         this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d")
+        this.cameraOverlayCanvas.style.visibility = "hidden"
 
         this.videoContainer = document.createElement("div")
         this.videoContainer.style.position = "fixed"
@@ -81,7 +85,7 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         this.videoContainer.style.backgroundColor = "black"
         document.body.appendChild(this.videoContainer)
 
-        this.video = document.createElement("video")
+        this._video = document.createElement("video")
         this.video.setAttribute("autoplay", "autoplay")
         this.video.setAttribute("muted", "muted")
         this.video.setAttribute("playsinline", "playsinline")
@@ -113,11 +117,11 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         }
 
         this.processingIndicator = document.createElement("div")
-        this.processingIndicator.innerText = "Evaluating captured images"
+        this.processingIndicator.innerText = "Loading face detection"
         this.processingIndicator.style.fontFamily = "Helvetica, Arial, sans-serif"
         this.processingIndicator.style.color = "white"
         this.processingIndicator.style.position = "absolute"
-        this.processingIndicator.style.display = "none"
+        this.processingIndicator.style.display = "flex"
         this.processingIndicator.style.alignItems = "center"
         this.processingIndicator.style.textAlign = "center"
         this.processingIndicator.style.height = "100%"
@@ -132,15 +136,25 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         this.videoContainer.appendChild(this.cancelButton)
     }
 
+    get video() {
+        return this._video
+    }
+
     trigger(event: LivenessDetectionSessionEvent) {
         switch (event.type) {
+            case LivenessDetectionSessionEventType.LOADED:
+                this.processingIndicator.style.display = "none"
+                this.cameraOverlayCanvas.style.visibility = "visible"
+                break
             case LivenessDetectionSessionEventType.FACE_CAPTURED:
                 this.drawDetectedFace(event.capture)
                 break
             case LivenessDetectionSessionEventType.CLOSE:
+                this.processingIndicator.style.display = "none"
                 this.cleanup()
                 break
             case LivenessDetectionSessionEventType.CANCEL:
+                this.processingIndicator.style.display = "none"
                 break
             case LivenessDetectionSessionEventType.CAPTURE_FINISHED:
                 this.showCaptureFinished()
@@ -159,10 +173,11 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         }
     }
 
-    private drawDetectedFace = (capture: FaceCapture): void => {
-        const scale = Math.min(this.videoContainer.clientWidth / capture.image.width, this.videoContainer.clientHeight / capture.image.height)
-        this.cameraOverlayCanvas.width = capture.image.width * scale
-        this.cameraOverlayCanvas.height = capture.image.height * scale
+    private drawDetectedFace = async (capture: FaceCapture): Promise<void> => {
+        const capturedImageSize = await sizeOfImageSource(capture.image)
+        const scale = Math.min(this.videoContainer.clientWidth / capturedImageSize.width, this.videoContainer.clientHeight / capturedImageSize.height)
+        this.cameraOverlayCanvas.width = capturedImageSize.width * scale
+        this.cameraOverlayCanvas.height = capturedImageSize.height * scale
         this.cameraOverlayCanvas.style.left = ((this.videoContainer.clientWidth - this.cameraOverlayCanvas.width) / 2)+"px"
         this.cameraOverlayCanvas.style.top = ((this.videoContainer.clientHeight - this.cameraOverlayCanvas.height) / 2)+"px"
         this.cameraOverlayContext.clearRect(0, 0, this.cameraOverlayCanvas.width, this.cameraOverlayCanvas.height)
@@ -184,7 +199,7 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         if (capture.faceBounds) {
             cutoutRect = capture.faceBounds.scaledBy(scale)
             if (this.settings.useFrontCamera) {
-                cutoutRect = cutoutRect.mirrored(capture.image.width * scale)
+                cutoutRect = cutoutRect.mirrored(capturedImageSize.width * scale)
             }
             if (this.hasFaceBeenAligned) {
                 faceRect = cutoutRect
@@ -244,12 +259,12 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
             default:
                 prompt = "Align your face with the oval"
         }
-        const textSize: number = 24
+        const textSize = 24
         const textY: number = Math.max(faceRect.y - this.cameraOverlayContext.lineWidth * 2, textSize)
         this.cameraOverlayContext.font = textSize+"px Helvetica, Arial, sans-serif"
         this.cameraOverlayContext.textAlign = "center"
         const textWidth: number = this.cameraOverlayContext.measureText(prompt).width
-        const cornerRadius: number = 8
+        const cornerRadius = 8
         const textRect: Rect = new Rect(
             this.cameraOverlayCanvas.width / 2 - textWidth / 2 - cornerRadius,
             textY - textSize,
@@ -277,11 +292,20 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         if (this.videoContainer.parentElement) {
             this.videoContainer.parentElement.removeChild(this.videoContainer)
         }
+        this.cameraOverlayCanvas = undefined
+        this.cameraOverlayContext = undefined
+        this.cancelButton.onclick = undefined
+        this.cancelButton = undefined
+        this.videoContainer = undefined
+        this.processingIndicator = undefined
+        this._video.onplay = undefined
+        this._video = undefined
     }
 
     private showCaptureFinished = () => {
         this.video.style.display = "none"
         this.cameraOverlayCanvas.style.display = "none"
+        this.processingIndicator.innerText = "Evaluating captured images"
         this.processingIndicator.style.display = "flex"
     }
 }
