@@ -67,7 +67,7 @@ function showError(error?: string) {
     const livenessDetectionSettings: LivenessDetectionSessionSettings = new LivenessDetectionSessionSettings()
     if (window["options"]) {
         for (const opt in window["options"]) {
-            if (opt in settings) {
+            if (opt in livenessDetectionSettings) {
                 livenessDetectionSettings[opt] = window["options"][opt]
             }
         }
@@ -116,17 +116,15 @@ function showError(error?: string) {
 }
 
 function faceImageFromImageData(imageData: ImageData, face: RecognizableFace): Promise<HTMLImageElement> {
-    const faceRect: Rect = new Rect(face.x, face.y, face.width, face.height)
-    faceRect.x = Math.max(0, faceRect.x / 100 * imageData.width)
-    faceRect.y = Math.max(0, faceRect.y / 100 * imageData.height)
-    if (faceRect.x + faceRect.width > 100) {
-        faceRect.width = 100 - faceRect.x
+    const faceRect: Rect = new Rect(face.x / 100 * imageData.width, face.y / 100 * imageData.height, face.width / 100 * imageData.width, face.height / 100 * imageData.height)
+    faceRect.x = Math.max(0, faceRect.x)
+    faceRect.y = Math.max(0, faceRect.y)
+    if (faceRect.x + faceRect.width > imageData.width) {
+        faceRect.width = imageData.width - faceRect.x
     }
-    if (faceRect.y + faceRect.height > 100) {
-        faceRect.height = 100 - faceRect.y
+    if (faceRect.y + faceRect.height > imageData.height) {
+        faceRect.height = imageData.height - faceRect.y
     }
-    faceRect.width = faceRect.width / 100 * imageData.width
-    faceRect.height = faceRect.height / 100 * imageData.height
     return imageFromImageData(imageData, faceRect)
 }
 
