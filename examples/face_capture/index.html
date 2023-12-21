@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Face Capture Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="module" src="/script/index.mjs"></script>
+    <style type="text/css">
+        body {
+            padding: 16px;
+            margin: 0px;
+            font-family: sans-serif;
+        }
+        .template {
+            font-family: monospace;
+        }
+        #result {
+            display: none;
+        }
+        .liveFace {
+            max-width: calc(100vw - 32px);
+        }
+        .liveFace img {
+            border-radius: 16px;
+            width: 100%;
+        }
+        #capture {
+            padding: 4px 16px;
+            font-size: 24px;
+            border-radius: 16px;
+            border: 0px;
+            background-color: #007AFF;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Face Capture Example</h1>
+    <p>This example captures a face biometric and displays the captured image.</p>
+    <p><button id="capture" disabled>Capture</button></p>
+    <div id="result">
+        <h2>Result</h2>
+        <div class="liveFace"></div>
+        <h3>Face template</h3>
+        <div>
+            <textarea class="template"></textarea>
+        </div>
+    </div>
+</body>
+</html>

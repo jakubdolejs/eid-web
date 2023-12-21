@@ -1,10 +1,14 @@
 'use strict';
 
-import { Face, FaceCapture } from "./faceDetection"
+import { Face } from "./types";
+import { FaceCapture } from "./types";
 import * as faceapi from "face-api.js/build/es6"
 import { estimateFaceAngle } from "./faceAngle"
 import { estimateFaceAngle as estimateFaceAngleNoseTip } from "./faceAngleNoseTip"
-import { Angle, canvasFromImageSource, Point, Rect, sizeOfImageSource, blobFromImageSource } from "./utils"
+import { canvasFromImageSource, sizeOfImageSource, blobFromImageSource } from "./utils"
+import { Rect } from "./types";
+import { Point } from "./types";
+import { Angle } from "./types";
 import { ImageSource, Size } from "./types"
 
 /**
@@ -43,7 +47,7 @@ export class VerIDFaceDetector implements FaceDetector {
     detectFace = async (source: FaceDetectionSource): Promise<FaceCapture> => {
         const src = source.element instanceof HTMLVideoElement || source.element instanceof HTMLImageElement || source.element instanceof HTMLCanvasElement ? source.element : await canvasFromImageSource(source.element)
         const faceApiFace = await faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({"inputSize": 128})).withFaceLandmarks()
-        let face: Face
+        let face: Face|null
         if (faceApiFace) {
             face = this.faceApiFaceToVerIDFace(faceApiFace, (await sizeOfImageSource(source.element)).width, source.mirrored)
         } else {
@@ -100,8 +104,8 @@ export class VerIDFaceDetectorFactory implements FaceDetectorFactory {
 
     createFaceDetector = async(): Promise<FaceDetector> => {
         await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-            faceapi.nets.faceLandmark68Net.loadFromUri("/models")
+            faceapi.nets.tinyFaceDetector.loadFromUri("/node_modules/@appliedrecognition/ver-id-browser/models"),
+            faceapi.nets.faceLandmark68Net.loadFromUri("/node_modules/@appliedrecognition/ver-id-browser/models")
         ])
         return new VerIDFaceDetector()
     }

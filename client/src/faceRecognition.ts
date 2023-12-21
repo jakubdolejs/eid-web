@@ -5,7 +5,8 @@
  * @packageDocumentation
  */
 
-import { blobFromImageSource, Rect, sizeOfImageSource } from "./utils"
+import { blobFromImageSource, sizeOfImageSource } from "./utils"
+import { Rect } from "./types";
 import { RecognizableFace, RecognizableFaceDetectionInput, RecognizableFaceDetectionOutput, Size, ImageSource } from "./types"
 
 /**

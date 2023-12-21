@@ -1,9 +1,10 @@
 'use strict';
 
 import { Observable, Subscriber, Subscription } from "rxjs"
-import * as BlinkIDSDK from "@microblink/blinkid-in-browser-sdk/es/blinkid-sdk"
+import * as BlinkIDSDK from "@microblink/blinkid-in-browser-sdk"
 import { FaceRecognition } from "./faceRecognition"
-import { Rect, emitRxEvent } from "./utils"
+import { emitRxEvent } from "./utils"
+import { Rect } from "./types";
 import {
     Size,
     RecognizableFace,
@@ -22,27 +23,26 @@ import {
     DocumentSide
 } from "./types"
 import { 
-    BlinkIdCombinedRecognizerSettings, 
+    BlinkIdMultiSideRecognizerSettings, 
     RecognizerRunner, 
     VideoRecognizer, 
     WasmSDK, 
     WasmSDKLoadSettings, 
-    BlinkIdRecognizerResult,
-    BlinkIdCombinedRecognizer, 
-    createBlinkIdCombinedRecognizer, 
+    BlinkIdMultiSideRecognizer, 
+    createBlinkIdMultiSideRecognizer, 
     createRecognizerRunner, 
     RecognizerResultState, 
     MetadataCallbacks,
-    SuccessFrameGrabberRecognizer,
     Recognizer,
-    createBlinkIdRecognizer,
-    BlinkIdRecognizer,
-    BlinkIdRecognizerSettings,
+    createBlinkIdSingleSideRecognizer,
     IdBarcodeRecognizer,
     createIdBarcodeRecognizer,
     OnScanningDone,
     DisplayableQuad,
-    ExtensionFactors
+    ExtensionFactors,
+    BlinkIdSingleSideRecognizer,
+    BlinkIdSingleSideRecognizerSettings,
+    BaseBlinkIdRecognizerResult
 } from "@microblink/blinkid-in-browser-sdk"
 
 /**
@@ -71,7 +71,7 @@ class VerIDIdCaptureUI implements IdCaptureUI {
         document.body.appendChild(this.videoContainer)
         this._video = this.createVideoElement()
         this.cameraOverlayCanvas = this.createCameraOverlayCanvas()
-        this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d")
+        this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d")!
         this._cancelButton = this.createCancelButton()
         this.prompt = this.createPromptElement()
         this.videoContainer.appendChild(this.video)
@@ -100,6 +100,7 @@ class VerIDIdCaptureUI implements IdCaptureUI {
 
     on<Event extends IdCaptureEvent>(eventType: IdCaptureEventType, callback: (event: Event) => void) {
         if (callback) {
+            // @ts-ignore
             this.eventListeners[eventType] = callback
         } else {
             delete this.eventListeners[eventType]
@@ -155,6 +156,7 @@ class VerIDIdCaptureUI implements IdCaptureUI {
                 break
         }
         if (this.eventListeners[event.type]) {
+            // @ts-ignore
             this.eventListeners[event.type](event)
         }
     }
@@ -373,14 +375,7 @@ class VerIDIdCaptureUI implements IdCaptureUI {
         if (this.videoContainer.parentNode) {
             this.videoContainer.parentNode.removeChild(this.videoContainer)
         }
-        this.videoContainer = undefined
-        this.cameraOverlayCanvas = undefined
-        this.cameraOverlayContext = undefined
-        this._cancelButton.onclick = undefined
-        this._cancelButton = undefined
-        this.progressBar = undefined
-        this._video = undefined
-        this.prompt = undefined
+        this._cancelButton.onclick = () => {}
     }
 }
 
@@ -405,8 +400,16 @@ export class IdCapture {
         this.faceRecognition = new FaceRecognition(this.serviceURL)
         const loadSettings: WasmSDKLoadSettings = new BlinkIDSDK.WasmSDKLoadSettings(settings.licenceKey)
         loadSettings.engineLocation = location.origin+settings.resourcesPath
+        loadSettings.workerLocation = location.origin+settings.resourcesPath.replace(/\/+$/, "")+`/BlinkIDWasmSDK.worker.min.js`
         loadSettings.loadProgressCallback = this.onLoadProgressCallback
-        this.loadBlinkWasmModule = BlinkIDSDK.loadWasmModule(loadSettings)
+        this.loadBlinkWasmModule = new Promise(async (resolve, reject) => {
+            try {
+                const wasmModule = await BlinkIDSDK.loadWasmModule(loadSettings)
+                resolve(wasmModule);
+            } catch (error) {
+                reject(error)
+            }
+        });
     }
 
     private onLoadProgressCallback = (percentLoaded: number) => {
@@ -425,9 +428,9 @@ export class IdCapture {
         this.loadListeners.delete(listener)
     }
 
-    private async createBlinkIdCombinedRecognizer(wasmSDK: WasmSDK): Promise<BlinkIdCombinedRecognizer> {
-        const recognizer: BlinkIdCombinedRecognizer = await createBlinkIdCombinedRecognizer(wasmSDK)
-        const recognizerSettings: BlinkIdCombinedRecognizerSettings = await recognizer.currentSettings()
+    private async createBlinkIdCombinedRecognizer(wasmSDK: WasmSDK): Promise<BlinkIdMultiSideRecognizer> {
+        const recognizer: BlinkIdMultiSideRecognizer = await createBlinkIdMultiSideRecognizer(wasmSDK)
+        const recognizerSettings: BlinkIdMultiSideRecognizerSettings = await recognizer.currentSettings()
         recognizerSettings.returnFullDocumentImage = true
         recognizerSettings.fullDocumentImageExtensionFactors = new ExtensionFactors(0.1, 0.1, 0.1, 0.1)
         recognizerSettings.fullDocumentImageDpi = 600
@@ -435,10 +438,12 @@ export class IdCapture {
         return recognizer
     }
 
-    private async createBlinkIdRecognizer(wasmSDK: WasmSDK): Promise<BlinkIdRecognizer> {
-        const recognizer: BlinkIdRecognizer = await createBlinkIdRecognizer(wasmSDK)
-        const recognizerSettings: BlinkIdRecognizerSettings = await recognizer.currentSettings()
+    private async createBlinkIdRecognizer(wasmSDK: WasmSDK): Promise<BlinkIdSingleSideRecognizer> {
+        const recognizer: BlinkIdSingleSideRecognizer = await createBlinkIdSingleSideRecognizer(wasmSDK)
+        const recognizerSettings: BlinkIdSingleSideRecognizerSettings = await recognizer.currentSettings()
         recognizerSettings.returnFullDocumentImage = true
+        recognizerSettings.fullDocumentImageExtensionFactors = new ExtensionFactors(0.1, 0.1, 0.1, 0.1)
+        recognizerSettings.fullDocumentImageDpi = 600
         await recognizer.updateSettings(recognizerSettings)
         return recognizer
     }
@@ -449,12 +454,12 @@ export class IdCapture {
 
     private async convertToIdCaptureResult(result: CombinedResult): Promise<IdCaptureResult> {
         const idCaptureResult: IdCaptureResult = new IdCaptureResult(result.result, result.pages)
-        let face: RecognizableFace
+        let face: RecognizableFace|undefined
         try {
             const img = await idCaptureResult.documentImage(DocumentSide.FRONT, true, 640)
-            face = await this.faceRecognition.detectRecognizableFace(img, null)
+            face = await this.faceRecognition.detectRecognizableFace(img)
         } catch (_error) {
-            face = null
+            face = undefined
         }
         idCaptureResult.face = face
         return idCaptureResult
@@ -464,7 +469,7 @@ export class IdCapture {
         const recognizerName: RecognizerName = recognizer.recognizerName as RecognizerName
         const result: SupportedRecognizerResult = await recognizer.getResult() as SupportedRecognizerResult
         let pages: DocumentPages
-        if (recognizerName == "IdBarcodeRecognizer" || (recognizerName == "BlinkIdRecognizer" && (<BlinkIdRecognizerResult>result).barcode && (<BlinkIdRecognizerResult>result).barcode.barcodeData && (<BlinkIdRecognizerResult>result).barcode.barcodeData.stringData && (<BlinkIdRecognizerResult>result).barcode.barcodeData.stringData.length > 0)) {
+        if (recognizerName == "IdBarcodeRecognizer" || (recognizerName == "BlinkIdRecognizer" && (<BaseBlinkIdRecognizerResult>result).barcode && (<BaseBlinkIdRecognizerResult>result).barcode.barcodeData && (<BaseBlinkIdRecognizerResult>result).barcode.barcodeData.stringData && (<BaseBlinkIdRecognizerResult>result).barcode.barcodeData.stringData.length > 0)) {
             pages = DocumentPages.BACK
         } else if (recognizerName == "BlinkIdRecognizer") {
             pages = DocumentPages.FRONT
@@ -482,18 +487,18 @@ export class IdCapture {
         }
     }
 
-    private getRecognizerName(recognizer: Recognizer): string {
-        if ((recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer) {
-            return (recognizer as SuccessFrameGrabberRecognizer<any>).wrappedRecognizer.recognizerName
-        } else {
-            return recognizer.recognizerName
-        }
-    }
+    // private getRecognizerName(recognizer: Recognizer): string {
+    //     if ((recognizer as any).wrappedRecognizer) {
+    //         return (recognizer as any).wrappedRecognizer.recognizerName
+    //     } else {
+    //         return recognizer.recognizerName
+    //     }
+    // }
 
-    private removeRecognizer(recognizer: SupportedRecognizer, recognizers: SupportedRecognizer[]): SupportedRecognizer[] {
-        const recognizerName = this.getRecognizerName(recognizer)
-        return recognizers.filter(val => this.getRecognizerName(val) != recognizerName)
-    }
+    // private removeRecognizer(recognizer: SupportedRecognizer, recognizers: SupportedRecognizer[]): SupportedRecognizer[] {
+    //     const recognizerName = this.getRecognizerName(recognizer)
+    //     return recognizers.filter(val => this.getRecognizerName(val) != recognizerName)
+    // }
 
     private getRecognitionCallback(videoRecognizer: VideoRecognizer, recognizers: SupportedRecognizer[], callback: (error: any, result?: CombinedResult) => void): OnScanningDone {
         return async (state: RecognizerResultState) => {
@@ -506,7 +511,7 @@ export class IdCapture {
                             callback(null, combinedResult)
                             return
                         }
-                    } catch (err) {
+                    } catch (err: any) {
                         if (err && err.message == "Invalid recognizer state") {
                             videoRecognizer.resumeRecognition(false)
                         } else {
@@ -559,7 +564,7 @@ export class IdCapture {
         return response.json()
     }
 
-    private recognizerRunner: RecognizerRunner
+    private recognizerRunner!: RecognizerRunner
 
     private async getRecognizerRunner(wasmSDK: WasmSDK, recognizers: Recognizer[]): Promise<RecognizerRunner> {
         if (this.recognizerRunner) {
@@ -586,22 +591,22 @@ export class IdCapture {
         return {
             onQuadDetection: (quad: DisplayableQuad) => {
                 switch (quad.detectionStatus) {
-                    case BlinkIDSDK.DetectionStatus.Fail:
+                    case BlinkIDSDK.DetectionStatus.Failed:
                         ui.trigger({type:IdCaptureEventType.CAPTURING})
                         break
                     case BlinkIDSDK.DetectionStatus.Success:
                     case BlinkIDSDK.DetectionStatus.FallbackSuccess:
                         ui.trigger({type:IdCaptureEventType.PAGE_CAPTURED})
                         break
-                    case BlinkIDSDK.DetectionStatus.CameraAtAngle:
+                    case BlinkIDSDK.DetectionStatus.CameraAngleTooSteep:
                         ui.trigger({type:IdCaptureEventType.CAMERA_ANGLED})
                         break
-                    case BlinkIDSDK.DetectionStatus.CameraTooHigh:
+                    case BlinkIDSDK.DetectionStatus.CameraTooFar:
                         ui.trigger({type:IdCaptureEventType.CAMERA_TOO_FAR})
                         break
-                    case BlinkIDSDK.DetectionStatus.CameraTooNear:
-                    case BlinkIDSDK.DetectionStatus.DocumentTooCloseToEdge:
-                    case BlinkIDSDK.DetectionStatus.Partial:
+                    case BlinkIDSDK.DetectionStatus.CameraTooClose:
+                    case BlinkIDSDK.DetectionStatus.DocumentTooCloseToCameraEdge:
+                    case BlinkIDSDK.DetectionStatus.DocumentPartiallyVisible:
                         ui.trigger({type:IdCaptureEventType.CAMERA_TOO_CLOSE})
                         break
                 }
@@ -621,7 +626,7 @@ export class IdCapture {
      * @returns Observable
      */
     captureIdCard(settings?: IdCaptureSessionSettings): Observable<IdCaptureResult> {
-        let sessionSubscription: Subscription
+        let sessionSubscription: Subscription|undefined
         return new Observable((subscriber: Subscriber<IdCaptureResult>) => {
             if (!BlinkIDSDK.isBrowserSupported()) {
                 emitRxEvent(subscriber, {"type": "error", "error": new Error("Unsupported browser")})
@@ -630,13 +635,12 @@ export class IdCapture {
             function disposeVideoRecognizer() {
                 if (videoRecognizer != null) {
                     videoRecognizer.releaseVideoFeed()
-                    videoRecognizer = null
                 }
             }
             async function disposeRecognizerRunner() {
                 if (recognizerRunner) {
                     await recognizerRunner.resetRecognizers(true)
-                    recognizerRunner = null
+                    recognizerRunner = undefined
                 }
             }
             let resolvedSettings: IdCaptureSessionSettings
@@ -646,7 +650,7 @@ export class IdCapture {
                 resolvedSettings = settings
             }
             let videoRecognizer: VideoRecognizer
-            let recognizerRunner: RecognizerRunner
+            let recognizerRunner: RecognizerRunner|undefined
             let recognizers: SupportedRecognizer[]
             const ui: IdCaptureUI = resolvedSettings.createUI()
             ui.on(IdCaptureEventType.CANCEL, () => {
@@ -659,9 +663,21 @@ export class IdCapture {
                 }
                 ui.trigger(event)
             }
-            this.registerLoadListener(progressListener)
-            this.loadBlinkWasmModule.then(async (wasmSDK: WasmSDK) => {
-                ui.trigger({type:IdCaptureEventType.LOADED})
+            this.registerLoadListener(progressListener);
+            (async () => {
+                let wasmSDK: WasmSDK
+                try {
+                    wasmSDK = await this.loadBlinkWasmModule;
+                    ui.trigger({type:IdCaptureEventType.LOADED})
+                } catch (error) {
+                    requestAnimationFrame(() => {
+                        ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
+                    })
+                    emitRxEvent(subscriber, {"type": "error", "error": error});
+                    return;
+                } finally {
+                    this.unregisterLoadListener(progressListener)
+                }
                 try {
                     recognizers = await this.createRecognizers(wasmSDK, resolvedSettings)
                     const pageCount = recognizers.length
@@ -704,22 +720,16 @@ export class IdCapture {
                         disposeVideoRecognizer()
                         disposeRecognizerRunner()
                     })
-                    recognizerRunner = null
+                    recognizerRunner = undefined
                 } catch (error) {
                     disposeRecognizerRunner()
                     emitRxEvent(subscriber, {"type": "error", "error": error})
                 }
-            }).catch(error => {
-                requestAnimationFrame(() => {
-                    ui.trigger({type:IdCaptureEventType.LOADING_FAILED})
-                })
-                emitRxEvent(subscriber, {"type": "error", "error": error})
-            }).finally(() => {
-                this.unregisterLoadListener(progressListener)
-            })
+            })();
             return () => {
                 if (sessionSubscription) {
                     sessionSubscription.unsubscribe()
+                    sessionSubscription = undefined
                 }
                 disposeVideoRecognizer()
                 disposeRecognizerRunner()
@@ -756,7 +766,7 @@ export class IdCaptureSettings {
      * @param resourcesPath Path to resources used by the ID capture
      * @param serviceURL URL for the server accepting the supporting face detection and ID capture calls
      */
-    constructor(licenceKey: string, resourcesPath: string, serviceURL: string = "") {
+    constructor(licenceKey: string, resourcesPath: string = "/node_modules/@microblink/blinkid-in-browser-sdk/resources", serviceURL: string = "") {
         this.licenceKey = licenceKey
         this.resourcesPath = resourcesPath
         this.serviceURL = serviceURL ? serviceURL.replace(/[\/\s]+$/, "") : ""

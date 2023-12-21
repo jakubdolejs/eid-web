@@ -9,6 +9,7 @@ export class TrustmaticLivenessCheck extends LivenessCheck {
         const dataURL = canvas.toDataURL()
         return {
             "faceImageBase": dataURL,
+            // @ts-ignore
             "sessionId": crypto["randomUUID"]()
         }
     }

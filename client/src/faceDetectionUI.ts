@@ -1,8 +1,10 @@
 'use strict';
 
-import { LivenessDetectionSessionSettings, FaceCapture } from "./faceDetection"
+import { FaceCapture } from "./types";
+import { LivenessDetectionSessionSettings } from "./livenessDetectionSession";
 import { FaceAlignmentStatus } from "./types"
-import { Rect, sizeOfImageSource } from "./utils"
+import { sizeOfImageSource } from "./utils"
+import { Rect } from "./types";
 
 /**
  * @category Face detection
@@ -73,7 +75,7 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         this.cameraOverlayCanvas.style.position = "absolute"
         this.cameraOverlayCanvas.style.left = "0px"
         this.cameraOverlayCanvas.style.top = "0px"
-        this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d")
+        this.cameraOverlayContext = this.cameraOverlayCanvas.getContext("2d")!
         this.cameraOverlayCanvas.style.visibility = "hidden"
 
         this.videoContainer = document.createElement("div")
@@ -161,12 +163,13 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
                 break
         }
         if (this.eventListeners[event.type]) {
-            this.eventListeners[event.type](event)
+            this.eventListeners[event.type]!(event)
         }
     }
 
     on<Event extends LivenessDetectionSessionEvent>(eventType: LivenessDetectionSessionEventType, callback: (event: Event) => void) {
         if (callback) {
+            // @ts-ignore
             this.eventListeners[eventType] = callback
         } else {
             delete this.eventListeners[eventType]
@@ -292,14 +295,9 @@ export class VerIDLivenessDetectionSessionUI implements LivenessDetectionSession
         if (this.videoContainer.parentElement) {
             this.videoContainer.parentElement.removeChild(this.videoContainer)
         }
-        this.cameraOverlayCanvas = undefined
-        this.cameraOverlayContext = undefined
-        this.cancelButton.onclick = undefined
-        this.cancelButton = undefined
-        this.videoContainer = undefined
-        this.processingIndicator = undefined
-        this._video.onplay = undefined
-        this._video = undefined
+        this.cancelButton.onclick = () => {}
+        this._video.onplay = () => {}
+        this._video
     }
 
     private showCaptureFinished = () => {

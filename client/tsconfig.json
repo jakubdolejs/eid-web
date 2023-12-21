@@ -1,29 +1,15 @@
-{  
+{
     "compilerOptions": {
-        "outDir": "./dist",
-        "target": "ES2015",
-        "module": "es2015",
-        "sourceMap": true,
-        "declaration": true,
+        "target": "ES2020",
+        "module": "es6",
         "moduleResolution": "node",
-        "skipLibCheck": true,
-        "lib": ["es2015", "es2016", "dom", "es2018.promise"]
-    },  
-    "include": [  
-        "./src/**/*"
-    ],
-    "typedocOptions": {
-        "entryPoints": "./src/index.ts",
-        "out": "../docs",
-        "excludePrivate": true,
-        "excludeInternal": true,
-        "categorizeByGroup": false,
-        "categoryOrder": [
-            "Face detection", "Face recognition", "ID capture", "QR codes", "Face detection testing", "*"
-        ],
-        "toc": [
-            "FaceDetection", "FaceRecognition", "IdCapture"
-        ],
-        "readme": "none"
-    }
+        "declaration": true,
+        "declarationDir": "./types",
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitReturns": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "types": []
+    },
+    "include": ["./src/**/*"]
 }

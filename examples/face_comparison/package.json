@@ -1,0 +1,25 @@
+{
+  "name": "face_comparison",
+  "version": "1.0.0",
+  "description": "",
+  "module": "deploy.js",
+  "scripts": {
+    "clean": "rm -rf script config.json node_modules/@appliedrecognition",
+    "build-client": "pushd ../../client && npm run build && npm pack && popd",
+    "build": "npm run clean && npm run build-client && npm i && esbuild src/index.mjs --bundle --sourcemap --platform=node --target=es2015 --outfile=script/index.mjs",
+    "deploy": "npm run build && node deploy.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@appliedrecognition/ver-id-browser": "file:../../client/appliedrecognition-ver-id-browser-2.1.0.tgz"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1",
+    "esbuild": "^0.19.10",
+    "http-server": "^14.1.1",
+    "ngrok": "^5.0.0-beta.2",
+    "open": "^10.0.0"
+  }
+}

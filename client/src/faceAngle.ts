@@ -1,7 +1,8 @@
 'use strict';
 
 import { LandmarkStandardization } from "./landmarkStandardization"
-import { Point, Angle } from "./utils"
+import { Point } from "./types";
+import { Angle } from "./types";
 
 function getMidPointBetweenPoints(p1: Point, p2: Point): Point {
     return new Point(p1.x + (p2.x - p1.x) / 2, p1.y + (p2.y - p1.y) /2)

@@ -1,6 +1,7 @@
 'use strict';
 
-import { Face, FaceCapture } from "./faceDetection";
+import { Face } from "./types";
+import { FaceCapture } from "./types";
 import { FaceDetectionSource, FaceDetector, FaceDetectorFactory } from "./faceDetector";
 import { FaceRequirements, FaceRequirementListener } from "./types";
 import { sizeOfImageSource, canvasToBlob } from "./utils";
@@ -18,9 +19,9 @@ enum FaceImageSrc {
  */
 export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
 
-    private face: Face
-    private requestedFace: Face
-    private lastRequestTime: Date
+    private face: Face|undefined
+    private requestedFace: Face|undefined
+    private lastRequestTime: Date|undefined
     private turnDurationMs: number = 2000
     private canvas: HTMLCanvasElement
     private readonly images: Record<keyof typeof FaceImageSrc, HTMLImageElement>
@@ -56,9 +57,12 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
     }
 
     readonly detectFace = async (source: FaceDetectionSource): Promise<FaceCapture> => {
-        let face: Face
+        let face: Face|undefined
         if (!this.face) {
             this.face = this.requestedFace
+        }
+        if (!this.face) {
+            throw new Error("Face not detected")
         }
         face = this.face
         if (this.lastRequestTime) {
@@ -102,10 +106,12 @@ export class TestFaceDetector implements FaceDetector, FaceRequirementListener {
         }
         this.canvas.width = size.width
         this.canvas.height = size.height
-        this.canvas.getContext("2d").drawImage(image, size.width / 2 - image.naturalWidth * scale / 2, size.height / 2 - image.naturalHeight * scale / 2, image.naturalWidth * scale, image.naturalHeight * scale)
+        this.canvas.getContext("2d")!.drawImage(image, size.width / 2 - image.naturalWidth * scale / 2, size.height / 2 - image.naturalHeight * scale / 2, image.naturalWidth * scale, image.naturalHeight * scale)
         const blob = await canvasToBlob(this.canvas)
         if (face) {
             this.jitterFace(face)
+        } else {
+            throw new Error("Face not detected")
         }
         return FaceCapture.create(blob, face)
     }
@@ -126,6 +132,7 @@ export class TestFaceDetectorFactory implements FaceDetectorFactory {
             "UP_RIGHT": document.createElement("img")
         }
         await Promise.all(Object.entries(images).map(entry => {
+            // @ts-ignore
             entry[1].src = FaceImageSrc[entry[0]]
             return entry[1].decode()
         }))

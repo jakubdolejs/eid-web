@@ -1,7 +1,7 @@
 'use strict';
 
-import { LivenessDetectionSessionSettings } from "./faceDetection"
-import { Axis, Bearing, ImageSource, Size } from "./types"
+import { LivenessDetectionSessionSettings } from "./livenessDetectionSession";
+import { Angle, Axis, Bearing, ImageSource, Rect, Size } from "./types"
 import { Subscriber } from "rxjs"
 
 /**
@@ -36,9 +36,9 @@ export class CircularBuffer<Type> {
      * Dequeue (remove) the first element from the buffer and return it
      * @returns First element in the buffer or `null` if the buffer is empty
      */
-    dequeue(): Type {
+    dequeue(): Type|undefined {
         if (this.buffer.length == 0) {
-            return null
+            return undefined
         }
         return this.buffer.shift()
     }
@@ -55,13 +55,13 @@ export class CircularBuffer<Type> {
         return this.buffer.length == 0
     }
     /**
-     * Last element in the buffer or `null` if the buffer is empty
+     * Last element in the buffer or `undefined` if the buffer is empty
      */
-    get lastElement(): Type {
+    get lastElement(): Type|undefined {
         if (this.buffer.length > 0) {
             return this.buffer[this.buffer.length-1]
         }
-        return null
+        return undefined
     }
     /**
      * `true` if the buffer is full
@@ -72,11 +72,11 @@ export class CircularBuffer<Type> {
     /**
      * Get an element in the buffer
      * @param index Index of the element 
-     * @returns Element at the given index or `null` if the buffer doesn't contain an element at the given index
+     * @returns Element at the given index or `undefined` if the buffer doesn't contain an element at the given index
      */
-    get(index: number): Type {
+    get(index: number): Type|undefined {
         if (index < 0 || index >= this.buffer.length) {
-            return null
+            return undefined
         }
         return this.buffer[index]
     }
@@ -98,183 +98,6 @@ export class CircularBuffer<Type> {
             return this.buffer[0]
         }
         return this.buffer.reduce(fn)
-    }
-}
-
-/**
- * Angle
- * @internal
- */
-export class Angle {
-    /**
-     * Yaw
-     */
-    yaw: number
-    /**
-     * Pitch
-     */
-    pitch: number
-    /**
-     * Roll
-     */
-    roll: number
-    /**
-     * Constructor
-     * @param yaw Yaw
-     * @param pitch Pitch
-     * @param roll Roll
-     */
-    constructor(yaw?: number, pitch?: number, roll?: number) {
-        this.yaw = yaw || 0
-        this.pitch = pitch || 0
-        this.roll = roll || 0
-    }
-
-    /**
-     * Arc tangent of the pitch and yaw (used for displaying the angle on screen)
-     */
-    get screenAngle(): number {
-        return Math.atan2(this.pitch, 0-this.yaw)
-    }
-}
-
-/**
- * Point
- * @internal
- */
-export class Point {
-    /**
-     * Horizontal coordinate
-     */
-    x: number
-    /**
-     * Vertical coordinate
-     */
-    y: number
-
-    /**
-     * Constructor
-     * @param x Horizontal coordinate
-     * @param y Vertical coordinate
-     */
-    constructor(x?: number, y?: number) {
-        this.x = x || 0
-        this.y = y || 0
-    }
-}
-
-/**
- * Rectangle
- * @internal
- */
-export class Rect {
-    /**
-     * Left edge of the rectangle
-     */
-    x: number
-    /**
-     * Top edge of the rectangle
-     */
-    y: number
-    /**
-     * Top edge of the rectangle
-     */
-    width: number
-    /**
-     * Rectangle height
-     */
-    height: number
-
-    /**
-     * Constructor
-     * @param x Left edge of the rectangle
-     * @param y Top edge of the rectangle
-     * @param width Top edge of the rectangle
-     * @param height Rectangle height
-     */
-    constructor(x: number, y: number, width: number, height: number) {
-        this.x = x
-        this.y = y
-        this.width = width
-        this.height = height
-    }
-
-    /**
-     * Inset all edges of the rectangle by the given amounts
-     * @param xInset Horizontal inset
-     * @param yInset Vertical inset
-     */
-    inset(xInset: number, yInset: number) {
-        this.x += xInset
-        this.y += yInset
-        this.width -= xInset * 2
-        this.height -= yInset * 2
-    }
-
-    /**
-     * Find out whether this rectangle contains another rectangle
-     * @param rect Challenge rectangle 
-     * @returns `true` if this rectangle contains the challenge rectangle
-     */
-    contains(rect: Rect): boolean {
-        return this.x <= rect.x && this.y <= rect.y && this.right >= rect.right && this.bottom >= rect.bottom
-    }
-
-    /**
-     * Center of the rectangle
-     */
-    get center(): Point {
-        return new Point(this.x + this.width / 2, this.y + this.height / 2)
-    }
-
-    /**
-     * Scale rectangle by the given scale factor and return a new rectangle
-     * @param scaleX Horizontal scale
-     * @param scaleY Vertical scale (optional, if not specified scaleX will be used)
-     * @returns New rectangle that is this rectangle scaled by the scale values
-     */
-    scaledBy(scaleX: number, scaleY?: number): Rect {
-        if (scaleY === undefined || scaleY == null) {
-            scaleY = scaleX
-        }
-        return new Rect(
-            this.x * scaleX,
-            this.y * scaleY,
-            this.width * scaleX,
-            this.height * scaleY
-        )
-    }
-
-    /**
-     * @param planeWidth Width of the plane in which the rectangle should be mirrored 
-     * @returns Rectangle mirrored horizontally along the plane's vertical axis
-     */
-    mirrored(planeWidth: number): Rect {
-        return new Rect(planeWidth - this.x - this.width, this.y, this.width, this.height)
-    }
-
-    get right(): number {
-        return this.x + this.width
-    }
-
-    get bottom(): number {
-        return this.y + this.height
-    }
-
-    equals = (other: Rect): boolean => {
-        if (this.x != other.x) {
-            return false
-        }
-        if (this.y != other.y) {
-            return false
-        }
-        if (this.width != other.width) {
-            return false
-        }
-        if (this.height != other.height) {
-            return false
-        }
-        return true
     }
 }
 
@@ -467,7 +290,7 @@ export class AngleBearingEvaluation {
  */
 export class Smoothing {
     buffer: CircularBuffer<number>
-    private _smoothedValue: number = null
+    private _smoothedValue: number|undefined
 
     constructor(bufferSize: number) {
         this.buffer = new CircularBuffer(bufferSize)
@@ -478,27 +301,30 @@ export class Smoothing {
         this._smoothedValue = this.calculateSmoothedValue()
     }
 
-    removeFirstSample(): number {
+    removeFirstSample(): number|undefined {
         return this.buffer.dequeue()
     }
 
-    get smoothedValue(): number {
+    get smoothedValue(): number|undefined {
         return this._smoothedValue
     }
 
-    private calculateSmoothedValue(): number {
+    private calculateSmoothedValue(): number|undefined {
         if (this.buffer.length == 0) {
-            return null
+            return undefined
         }
-        const val: number = this.buffer.reduce(function(previous, next) {
+        const val: number|null = this.buffer.reduce(function(previous, next) {
             return previous + next
         })
-        return val / this.buffer.length
+        if (val) {
+            return val / this.buffer.length
+        }
+        return undefined;
     }
 
     reset() {
         this.buffer.clear()
-        this._smoothedValue = null
+        this._smoothedValue = undefined
     }
 }
 
@@ -552,7 +378,7 @@ export class RectSmoothing {
     private ySmoothing: Smoothing
     private widthSmoothing: Smoothing
     private heightSmoothing: Smoothing
-    private _smoothedValue: Rect = null
+    private _smoothedValue: Rect|undefined
 
     constructor(bufferSize: number) {
         this.xSmoothing = new Smoothing(bufferSize)
@@ -569,7 +395,7 @@ export class RectSmoothing {
         this._smoothedValue = this.calculateSmoothedValue()
     }
 
-    get smoothedValue(): Rect {
+    get smoothedValue(): Rect|undefined {
         return this._smoothedValue
     }
 
@@ -578,7 +404,7 @@ export class RectSmoothing {
         this.ySmoothing.reset()
         this.widthSmoothing.reset()
         this.heightSmoothing.reset()
-        this._smoothedValue = null
+        this._smoothedValue = undefined
     }
 
     removeFirstSample() {
@@ -588,9 +414,9 @@ export class RectSmoothing {
         this.heightSmoothing.removeFirstSample()
     }
     
-    private calculateSmoothedValue(): Rect {
-        if (this.xSmoothing.smoothedValue == null) {
-            return null
+    private calculateSmoothedValue(): Rect|undefined {
+        if (this.xSmoothing.smoothedValue === undefined || this.ySmoothing.smoothedValue === undefined || this.widthSmoothing.smoothedValue === undefined || this.heightSmoothing.smoothedValue === undefined) {
+            return undefined
         }
         return new Rect(
             this.xSmoothing.smoothedValue,
@@ -608,17 +434,17 @@ export class AngleSmoothing {
     
     private yawSmoothing: Smoothing
     private pitchSmoothing: Smoothing
-    private _smoothedValue: Angle
+    private _smoothedValue: Angle|undefined
 
     constructor(bufferSize: number) {
         this.yawSmoothing = new Smoothing(bufferSize)
         this.pitchSmoothing = new Smoothing(bufferSize)
-        this._smoothedValue = null
+        this._smoothedValue = undefined
     }
 
-    private calculateSmoothedValue(): Angle {
-        if (this.yawSmoothing.smoothedValue == null) {
-            return null
+    private calculateSmoothedValue(): Angle|undefined {
+        if (this.yawSmoothing.smoothedValue === undefined) {
+            return undefined
         }
         return new Angle(
             this.yawSmoothing.smoothedValue,
@@ -626,7 +452,7 @@ export class AngleSmoothing {
         )
     }
 
-    get smoothedValue(): Angle {
+    get smoothedValue(): Angle|undefined {
         return this._smoothedValue
     }
 
@@ -639,7 +465,7 @@ export class AngleSmoothing {
     reset() {
         this.yawSmoothing.reset()
         this.pitchSmoothing.reset()
-        this._smoothedValue = null
+        this._smoothedValue = undefined
     }
 
     removeFirstSample() {
@@ -678,7 +504,7 @@ export async function blobFromImageSource(imageSource: ImageSource, cropRect?: R
     let canvas = await canvasFromImageSource(imageSource)
     if (cropRect) {
         const context = canvas.getContext("2d")
-        const imageData = context.getImageData(cropRect.x, cropRect.y, cropRect.width, cropRect.height)
+        const imageData = context!.getImageData(cropRect.x, cropRect.y, cropRect.width, cropRect.height)
         canvas = await canvasFromImageSource(imageData)
     }
     return canvasToBlob(canvas)
@@ -693,9 +519,13 @@ export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
     if (!canvas) {
         return Promise.reject(new Error("Invalid canvas"))
     }
-    return new Promise((resolve) => {
-        canvas.toBlob((blob: Blob) => {
-            resolve(blob)
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob: Blob|null) => {
+            if (blob) {
+                resolve(blob)
+            } else {
+                reject(new Error("Failed to convert canvas to blob"))
+            }
         })
     })
 }
@@ -716,7 +546,7 @@ export async function resizeImage(image: ImageData, maxSize: number): Promise<Im
     canvas.width = image.width
     canvas.height = image.height
     let context = canvas.getContext("2d")
-    context.putImageData(image, 0, 0)
+    context!.putImageData(image, 0, 0)
     const blob = await canvasToBlob(canvas)
     const imgSrc = URL.createObjectURL(blob)
     try {
@@ -727,8 +557,8 @@ export async function resizeImage(image: ImageData, maxSize: number): Promise<Im
         canvas.width = width
         canvas.height = height
         context = canvas.getContext("2d")
-        context.drawImage(img, 0, 0, width, height)
-        return context.getImageData(0, 0, width, height)
+        context!.drawImage(img, 0, 0, width, height)
+        return context!.getImageData(0, 0, width, height)
     } finally {
         URL.revokeObjectURL(imgSrc)
     }
@@ -758,21 +588,21 @@ export async function canvasFromImageSource(imageSource: ImageSource, cropRect?:
     canvas.height = cropRect.height
     const context = canvas.getContext("2d")
     if (imageSource instanceof ImageData) {
-        context.putImageData(imageSource, 0-cropRect.x, 0-cropRect.y)
+        context!.putImageData(imageSource, 0-cropRect.x, 0-cropRect.y)
     } else if (imageSource instanceof HTMLImageElement || imageSource instanceof HTMLVideoElement) {
-        context.drawImage(imageSource, 0-cropRect.x, 0-cropRect.y)
+        context!.drawImage(imageSource, 0-cropRect.x, 0-cropRect.y)
     } else if (imageSource instanceof Blob) {
         const src = URL.createObjectURL(imageSource)
         try {
             const img = await loadImage(src)
-            context.drawImage(img, 0-cropRect.x, 0-cropRect.y)
+            context!.drawImage(img, 0-cropRect.x, 0-cropRect.y)
         } finally {
             URL.revokeObjectURL(src)
         }
         return canvas
     } else if (typeof imageSource == "string") {
         const img = await loadImage(imageSource)
-        context.drawImage(img, 0-cropRect.x, 0-cropRect.y)
+        context!.drawImage(img, 0-cropRect.x, 0-cropRect.y)
         return canvas
     } else {
         throw new Error("Invalid image source")
@@ -851,6 +681,8 @@ export async function sizeOfImageSource(imageSource: ImageSource): Promise<Size>
     } else if (typeof imageSource == "string") {
         const img = await loadImage(imageSource)
         return onImageSize(img)
+    } else {
+        throw new Error("Invalid image source")
     }
 }
 
@@ -859,10 +691,10 @@ export function loadImage(src: string, image?: HTMLImageElement): Promise<HTMLIm
         image = document.createElement("img")
     }
     return new Promise((resolve, reject) => {
-        image.onload = () => {
-            resolve(image)
+        image!.onload = () => {
+            resolve(image!)
         }
-        image.onerror = reject
-        image.src = src
+        image!.onerror = reject
+        image!.src = src
     })
 }

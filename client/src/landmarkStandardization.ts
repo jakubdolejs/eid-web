@@ -1,6 +1,6 @@
 'use strict';
 
-import { Point } from "./utils"
+import { Point } from "./types";
 
 /**
  * @category ID capture

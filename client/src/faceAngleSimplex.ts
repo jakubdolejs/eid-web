@@ -1,6 +1,8 @@
 'use strict';
 
-import { Point, Angle, clamp } from "./utils"
+import { clamp } from "./utils"
+import { Point } from "./types";
+import { Angle } from "./types";
 
 /**
  * @param landmarks Face landmarks
@@ -36,27 +38,31 @@ class State {
 
     private vertMap: Pair<number, Vertex>[] = []
 
-    constructor(base: Vertex = null, delta: Vertex = null, errfn: (vert: Vertex) => number = null, frac: number = 0.125) {
+    constructor(base: Vertex|null = null, delta: Vertex|null = null, errfn: ((vert: Vertex) => number)|null = null, frac: number = 0.125) {
         if (base == null && delta == null) {
             return
         }
-        if (base.length != delta.length) {
+        if (base!.length != delta!.length) {
             throw new Error()
         }
-        for (let i=0; i<base.length; i++) {
+        for (let i=0; i<base!.length; i++) {
             let vert = base
-            for (let j=0; j<vert.length; j++) {
+            for (let j=0; j<vert!.length; j++) {
                 if (j != i) {
-                    vert.set(vert.get(j) + frac * delta.get(j), j)
+                    vert!.set(vert!.get(j) + frac * delta!.get(j), j)
                 } else if (frac >= 0) {
-                    vert.set(vert.get(j) - delta.get(j), j)
+                    vert!.set(vert!.get(j) - delta!.get(j), j)
                 } else {
-                    vert.set(vert.get(j) + delta.get(j), j)
+                    vert!.set(vert!.get(j) + delta!.get(j), j)
                 }
             }
-            this.insert(errfn(vert), vert)
+            if (errfn != null) {
+                this.insert(errfn(vert!), vert!)
+            }
         }
-        this.insert(errfn(base), base)
+        if (errfn != null) {
+            this.insert(errfn(base!), base!)
+        }
     }
 
     begin(): IterableIterator<Pair<number,Vertex>> {
@@ -84,7 +90,7 @@ class State {
     }
 
     coeffMinMax(i: number): Pair<number,number> {
-        let r: Pair<number,number>
+        let r: Pair<number,number> = {first: 0, second: 0}
         r.first = r.second = this.vertMap[i].second.first
         for (; i<this.vertMap.length; i++) {
             if (r.first > this.vertMap[i].second.first) {
@@ -244,6 +250,7 @@ function spreadAll(limit: number): (s: State) => boolean {
     return (s: State): boolean => {
         for (let i=0, n = s.coeffCount(); i < n; i++) {
             const r = s.coeffMinMax(i)
+            // @ts-ignore
             const z = r[1] - r[0]
             if (z < 0) {
                 throw new Error()
@@ -265,7 +272,7 @@ function step(s: State, errfn: (vert: Vertex) => number, alpha: number = 1.0, be
     let result = it.next()
     let mid: Vertex = result.value
     while (!result.done) {
-        mid.add(result.value)
+        mid.add(result.value.second)
         result = it.next()
     }
     mid.subtract(worstV.second)

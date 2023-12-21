@@ -8,7 +8,7 @@ export abstract class LivenessCheck {
             const headers = await this.createLivenessCheckRequestHeaders()
             const response = await fetch("/check_liveness", {"method": "POST", "cache": "no-cache", "body": JSON.stringify(body), "headers": headers})
             return this.parseLivenessCheckResponse(response)
-        } catch (error) {
+        } catch (error: any) {
             throw new Error("Liveness check failed: "+error?.message)
         }
     }

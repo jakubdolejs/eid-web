@@ -1,6 +1,8 @@
 'use strict';
 
-import { Point, Angle, clamp } from "./utils"
+import { clamp } from "./utils"
+import { Point } from "./types";
+import { Angle } from "./types";
 
 /**
  * @param landmarks Face landmarks

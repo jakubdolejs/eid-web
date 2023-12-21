@@ -1,5 +1,0 @@
-{
-    "deno.codeLens.test": false,
-    "deno.enable": false,
-    "eslint.enable": true
-}
