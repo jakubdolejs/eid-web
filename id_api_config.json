@@ -1,0 +1,20 @@
+{
+    "port":8080,
+    "enableHTMLOutput":true,
+    "imagePreprocessing": {
+        "enabled":false,
+        "maxImageWidth":3000
+    },
+    "faceDetection": {
+        "serverURL":"http://detcv:8080",
+        "faceQualityThreshold":9,
+        "authenticityScoreThreshold":0.6,
+        "authenticityModelPrefixes": ["license01","license02"],
+        "defaultAuthenticityModelPrefix":"license01",
+        "faceTemplateVersion": 24
+    },
+    "idCapture": {
+        "serverURL":"http://scanner:8080",
+        "cropPassportImages":true
+    }
+}

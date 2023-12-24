@@ -1,0 +1,49 @@
+version: '3.3'
+volumes:
+  logs: {}
+networks:
+  identity_api: {}
+configs:
+  id_api:
+    file: ./id_api_config.json
+services:
+  identityapi:
+    image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/identity_api:1.17.2
+    depends_on:
+      - scanner
+      - detcv
+      - passport_signature_detector
+    networks:
+      - identity_api
+    configs:
+      - source: id_api
+        target: /config/identity_api.json
+    ports:
+      - '8080:8080'
+  scanner:
+    image: microblink/api:3.4
+    environment:
+      - LICENSEE=${LICENSEE}
+      - >-
+        LICENSE_KEY=${LICENSE_KEY}
+      - HEALTH_CUSTOM_URL=/healthz
+    networks:
+      - identity_api
+    ports:
+      - '8083:8080'
+  detcv:
+    image: 725614911995.dkr.ecr.us-east-1.amazonaws.com/restful-servers_detcv:1.6.4
+    command: '-p 8080'
+    networks:
+      - identity_api
+    volumes:
+      - logs:/logs
+    ports:
+      - '8084:8080'
+  passport_signature_detector:
+    image: >-
+      725614911995.dkr.ecr.us-east-1.amazonaws.com/passport-signature-detector:1.0.2
+    networks:
+      - identity_api
+    ports:
+      - '8081:8080'

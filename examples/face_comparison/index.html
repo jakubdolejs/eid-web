@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Face Capture Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="module" src="/script/index.mjs"></script>
+    <style type="text/css">
+        body {
+            padding: 16px;
+            margin: 0px;
+            font-family: sans-serif;
+        }
+        #result {
+            display: none;
+        }
+        #files {
+            display: flex;
+        }
+        div.file:first-child {
+            margin-right: 16px;
+        }
+        div.file input {
+            margin-bottom: 16px;
+        }
+        div.file img {
+            border-radius: 12px;
+        }
+        div.imageContainer {
+            display: none;
+            border-radius: 12px;
+            background-color: #eee;
+            width: 225px;
+            height: 300px;
+            position: relative;
+        }
+        div.imageContainer div {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Face Comparison Example</h1>
+    <p>This example shows how to compare faces detected in images.</p>
+    <div id="files">
+        <div class="file file1">
+            <input type="file" id="file1" accept="image/png, image/jpeg" />
+            <div class="imageContainer file1"><div>Detecting face in image</div></div>
+        </div>
+        <div class="file file2">
+            <input type="file" id="file2" accept="image/png, image/jpeg" />
+            <div class="imageContainer file2"><div>Detecting face in image</div></div>
+        </div>
+    </div>
+    <div id="result">
+        <h2 id="score">Result</h2>
+        <p>We recommend threshold of 4.5 for high confidence</p>
+    </div>
+</body>
+</html>

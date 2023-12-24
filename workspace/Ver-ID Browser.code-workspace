@@ -1,0 +1,15 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },{
+            "path": "../client"
+        },{
+            "path": "../examples/face_capture"
+        },{
+            "path": "../examples/id_capture"
+        },{
+            "path": "../examples/face_comparison"
+        }
+    ]
+}
