@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Face Capture Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="module" src="/script/index.mjs"></script>
+    <style type="text/css">
+        body {
+            padding: 16px;
+            margin: 0px;
+            font-family: sans-serif;
+        }
+        #template {
+            font-family: monospace;
+        }
+        #result {
+            display: none;
+        }
+        .document {
+            max-width: calc(100vw - 32px);
+        }
+        .document img {
+            border-radius: 16px;
+            width: 100%;
+        }
+        #capture {
+            padding: 4px 16px;
+            font-size: 24px;
+            border-radius: 16px;
+            border: 0px;
+            background-color: #007AFF;
+            color: #fff;
+            display: none;
+        }
+        #loading_progress {
+            /* display: none; */
+            position: relative;
+            width: 200px;
+            height: 20px;
+            border-radius: 8px;
+            border: 2px solid #000;
+        }
+        #loading_progress div {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 0%;
+            height: 100%;
+            background-color: #000;
+            border-radius: 6px;
+        }
+        #capture_container {
+            display: none;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            height: 100vh;
+        }
+        #message {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            padding: 16px;
+            height: 60px;
+            background-color: #000;
+            color: #fff;
+            font-size: 24px;
+            text-align: center;
+        }
+        #video_container {
+            position: absolute;
+            top: 60px;
+            left: 0px;
+            right: 0px;
+            height: calc(100% - 40px);
+            background-color: #000;
+        }
+        #video, #canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #result {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+        }
+        #result canvas {
+            max-width: calc(100% - 40px);
+            max-height: calc(100% - 40px);
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ID Capture Example</h1>
+    <p>This example captures an identity document and displays the result.</p>
+    <div id="loading_progress"><div></div></div>
+    <p><button id="capture" disabled>Capture</button></p>
+    <div id="capture_container">
+        <div id="message"></div>
+        <div id="video_container">
+            <video id="video" playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    <div id="result">
+        <canvas></canvas>
+    </div>
+</body>
+</html>
