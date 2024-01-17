@@ -127,8 +127,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 multiSideGenericIDRecognizer?.delete();
 
                 clearCanvas();
-
-                videoConta
             });
         }
         catch (error) {
